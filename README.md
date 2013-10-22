@@ -13,4 +13,5 @@ Setting up the Go environment
 Compiling and executing source code
 -----------------------------------
 For running .go files in your command line use: "go run filename.go"
+
 For compiling .go file to .exe file use: "go build filename.go"
