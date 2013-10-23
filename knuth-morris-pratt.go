@@ -3,7 +3,7 @@ import "fmt" //implements fomratted I/O.
 import "os" //accessing command-line arguments
 import "log" //simple logging package
 
-/* 	implementation of Knuth-Morris-Pratt alghoritm.
+/* 	Implementation of Knuth-Morris-Pratt alghoritm.
 	Requires two command line arguments.
 	
 	@argument string to be searched "for" (pattern, search word), no spaces allowed
@@ -14,38 +14,44 @@ func main() {
 	// Error handling & declaration
 	args := os.Args;
 	if (len(args) <= 2) {
-		log.Fatal("Not enough arguments. Two string arguments separated by spaces are required.");
+		log.Fatal("Not enough arguments. Two string arguments separated by spaces are required!");
 	}
 	pattern := args[1];
 	s := args[2];
 	for i := 3; i<len(args); i++ {
 		s = s +" "+ args[i];
 	}
-	a := len(args[1]);
-	b := len(s);
-	if ( a > b ) {
-		log.Fatal("Pattern (%d) is longer than text (%d).",a,b);
+	if ( len(args[1]) > len(s) ) {
+		log.Fatal("Pattern  is longer than text!");
 	}
-
 	// Alghoritm execution
 	fmt.Printf("\nRunning: Knuth-Morris-Pratt alghoritm.\n\n");
-	fmt.Printf("Search word (%d chars long): '%s'.\n",a, pattern);
-	fmt.Printf("Text        (%d chars long): '%s'.\n\n",b, s);
-
+	fmt.Printf("Search word (%d chars long): '%s'.\n",len(args[1]), pattern);
+	fmt.Printf("Text        (%d chars long): '%s'.\n\n",len(s), s);
 	knp(s, pattern);
 }
 
 /*  Function knp performing the Knuth-Morris-Pratt alghoritm.
-    Prints whether the word/pattern was found in the text or not.
+    Prints whether the word/pattern was found and on what position in the text or not.
 	
 	@param s string/text to be searched in
 	@param w word/pattern to be serached for
 */  
-func knp(s, w string) {
-	/*
-	m := 0; //denotes the position within s which is the begining of a propective match for w
-	i := 0; //index in w denoting the character currently under consideration
-	*/
-	fmt.Println("Unsupported Operation");
-	
+func knp(text, word string) {
+	m, i := 0, 0; //M beginning of the current match in text, I position of the current character in word
+	for  m + i < len(text) {
+		fmt.Printf("---Comparing on positions %d %d characters %c %c\n",m,i,word[i],text[m+i]);
+		if (word[i] == text[m+i]) {
+			if (i == len(word) - 1) {
+				fmt.Printf("\nWord '%s' was found at position %d.",word, m);
+				return;
+			}
+			i++; 
+		} else {
+			m = m + i + 1; //cannot always add +1, could miss something
+			i=0;
+		}
+	}
+	fmt.Printf("Word was not found");
+	return;
 }
