@@ -1,4 +1,4 @@
-﻿package main //package main required for standalone executable
+﻿package main
 import (
 	"fmt" //implements fomratted I/O.
 	"os" //accessing command-line arguments
@@ -36,8 +36,8 @@ func main() {
 /*  Function knp performing the Knuth-Morris-Pratt alghoritm.
     Prints whether the word/pattern was found and on what position in the text or not.
 	
-	@param s string/text to be searched in
-	@param w word/pattern to be serached for
+	@param text string/text to be searched in
+	@param word word/pattern to be serached for
 */  
 func knp(text, word string) {
 	m, i, c := 0, 0, 0 //m - current match in text, i - current character in w, c - ammount of comparations
