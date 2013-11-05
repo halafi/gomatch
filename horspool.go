@@ -41,22 +41,23 @@ func main() {
 func horspool(text, word string) {
 	//Perprocessing
 	d := horspool_table(word)  //line 3.
+	//Map output
 	for key, value := range d {
 		fmt.Printf("%c %d\n", key, value)
 	}
 	//Searching
-	//j := -1 //
 	pos := 0
-	//Searching
-	for pos <= (len(text) - len(word)) {
-		/*j := len(pattern)
-		for j > 0 & text[pos + j] = word[j] {
-			j = j - 1
+	for pos <= len(text) - len(word) {
+		/*j := len(word)
+		for j>0 && text[pos+j]==word[j] {
+			 j--
 		}
-		if (j == 0) {
-			fmt.Printf("\n\nWord %q was found at position %d in %q. \n.",word, pos+1, text)
+		if j==0 {
+			//fmt.Printf("\n\nWord %q was found at position %d in %q. \n%d comparisons were done.",word, m, text,c)
+			fmt.Printf("\n\nWord %q was found at position %d in %q. \n",word, pos+1, text)
 		}*/
-		//pos = pos + d[t[pos] + len(word)]
+		pos = pos +  d[text[pos + len(word)]]
+		fmt.Printf("%c %d", d[text[pos + len(word)]], pos)
 	}
 	return
 }
