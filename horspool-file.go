@@ -2,35 +2,34 @@
 import (
 	"fmt" //implements fomratted I/O.
 	"log" //simple logging package
-	"os" //accessing command-line arguments
+	"io/ioutil" // some I/O utility functions
 )
 
 /* 	Implementation of Boyer-Moore-Horspool algorithm (Sufix based aproach).
-	Requires two command line arguments.
+	Requires two files in the folder with this file:
 	
-	@argument string to be searched "for" (pattern, search word), no spaces allowed
-	@argument one space
-	@argument string to be searched "in" (text), single spaces allowed
+	@File pattern.txt containing the pattern to be searched for
+	@File text.txt containing the text to be searched in
 */
 func main() {
-	// Error handling & declaration
-	args := os.Args
-	if (len(args) <= 2) {
-		log.Fatal("Not enough arguments. Two string arguments separated by spaces are required!")
+	// Error handling & file input
+	patFile, err := ioutil.ReadFile("pattern.txt")
+	if err != nil {
+		log.Fatal(err)
 	}
-	pattern := args[1]
-	s := args[2]
-	for i := 3; i<len(args); i++ {
-		s = s +" "+ args[i]
+	textFile, err := ioutil.ReadFile("text.txt")
+	if err != nil {
+		log.Fatal(err)
 	}
-	if ( len(args[1]) > len(s) ) {
+
+	if (len(patFile) > len(textFile)) {
 		log.Fatal("Pattern  is longer than text!")
 	}
 	// Alghoritm execution
 	fmt.Printf("\nRunning: Horspool alghoritm.\n\n")
-	fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
-	fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
-	horspool(s, pattern)
+	fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
+	fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
+	horspool(string(textFile), string(patFile))
 }
 
 /*  Function horspool performing the Horspool algorithm

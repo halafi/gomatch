@@ -1,8 +1,8 @@
 ﻿package main
 import (
 	"fmt" //implements fomratted I/O.
-	"os" //accessing command-line arguments
 	"log" //simple logging package
+	"os" //accessing command-line arguments
 )
 
 /* 	Implementation of Knuth-Morris-Pratt algorithm (Prefix based aproach).
