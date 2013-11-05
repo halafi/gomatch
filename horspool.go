@@ -35,48 +35,40 @@ func main() {
 /*  Function knp performing the Knuth-Morris-Pratt alghoritm.
     Prints whether the word/pattern was found and on what position in the text or not.
 	
-	@param text string/text to be searched in
-	@param word word/pattern to be serached for
+	@param t string/text to be searched in
+	@param p word/pattern to be serached for
 */  
-func horspool(text, word string) {
+func horspool(t, p string) {
+	m, n, c, pos := len(p), len(t), 0, 0
 	//Perprocessing
-	d := horspool_table(word)  //line 3.
+	d := make(map[uint8]int) //map[KeyType]ValueType http://blog.golang.org/go-maps-in-action
+	for i := 0; i < len(t); i++ {
+		d[t[i]] = len(p)
+	}
+	for i := 0; i < len(p); i++ {
+		d[p[i]] = len(p)-i
+	}
+	
 	//Map output
 	for key, value := range d {
-		fmt.Printf("%c %d\n", key, value)
+		fmt.Printf("%c:%d; ", key, value)
 	}
+	
 	//Searching
-	pos := 0
-	for pos <= len(text) - len(word) {
-		/*j := len(word)
-		for j>0 && text[pos+j]==word[j] {
-			 j--
+	for pos <= n - m { //n - m = 8
+		j := m // j = 4
+		fmt.Printf("\n   comparing characters %c %c at positions %d %d",t[pos+j-1],p[j-1], pos+j-1, j-1)
+		c++
+		for j > 0 && t[pos+j-1] == p[j-1] { //t[0+4-1] == p[4-1]
+			fmt.Printf(" - match")
+			j--
 		}
 		if j==0 {
-			//fmt.Printf("\n\nWord %q was found at position %d in %q. \n%d comparisons were done.",word, m, text,c)
-			fmt.Printf("\n\nWord %q was found at position %d in %q. \n",word, pos+1, text)
-		}*/
-		pos = pos +  d[text[pos + len(word)]]
-		fmt.Printf("%c %d", d[text[pos + len(word)]], pos)
+				fmt.Printf("\n\nWord %q was found at position %d in %q. \n%d comparisons were done.",p, pos+1, t, c)
+				return
+			}
+		pos = pos + d[t[pos + m -1]] // pos = 8 + d[t[11]]
 	}
+	fmt.Printf("\n\nWord was not found.\n%d comparisons were done.",c)
 	return
-}
-
-/*
-	Preprocessing.
-	
-	@param word word to be analyzed
-	@param d map to be filled
-*/
-func horspool_table(word string)(d map[uint8]int) {
-	d = make(map[uint8]int) //map[KeyType]ValueType http://blog.golang.org/go-maps-in-action
-	for i := 0; i<len(word); i++ {
-		d[word[i]] = len(word)
-		//fmt.Printf("%c %d\n",word[i], len(word))
-	}
-	for i := 1; i < (len(word)-1); i++ {
-		d[word[i]] = len(word)-i
-		//fmt.Printf("%c %d\n", word[i], len(word)-i)
-	}
-    return d
 }
