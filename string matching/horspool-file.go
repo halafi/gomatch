@@ -36,7 +36,7 @@ func main() {
     Prints whether the word/pattern was found and on what position in the text or not.
 	
 	@param t string/text to be searched in
-	@param p word/pattern to be serached for
+	@param p pattern/word to be serached for
 */  
 func horspool(t, p string) {
 	m, n, c, pos := len(p), len(t), 0, 0
