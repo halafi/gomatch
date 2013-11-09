@@ -1,6 +1,13 @@
 ﻿package main
 import ("fmt"; "log"; "io/ioutil")
 
+/** user defined CONSTANT
+	Set runInSilentMode to:
+		@true to run in silent mode
+		@false to print everything
+*/
+const runInSilentMode bool = true
+
 /**
  	Implementation of Backward Oracle Matching algorithm (Factor based aproach).
 	Requires two files in the folder with this file.
@@ -9,7 +16,6 @@ import ("fmt"; "log"; "io/ioutil")
 	@File text.txt containing the text to be searched in
 */
 func main() {
-	// Error handling & file input
 	patFile, err := ioutil.ReadFile("pattern.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -21,10 +27,13 @@ func main() {
 	if (len(patFile) > len(textFile)) {
 		log.Fatal("Pattern  is longer than text!")
 	}
-	// Alghoritm execution
-	fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
-	fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
-	fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
+	if(runInSilentMode==false) {
+		fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
+		fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
+		fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
+	} else {
+		fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 9 in the code).")
+	}
 	bom(string(textFile), string(patFile))
 }
 
@@ -41,55 +50,32 @@ func bom(t, p string) {
 	oracle := oracleOnLine(reverse(p))
 	occurences := make([]int, len(t))
 	currentOcc := 0
-	//searching
 	pos = 0
-	fmt.Printf("\n\nWe are reading backwards in %q, searching for %q\n\nat position %d:\n",t, p, pos+m-1)
-
+	if(runInSilentMode==false) {
+		fmt.Printf("\n\nWe are reading backwards in %q, searching for %q\n\nat position %d:\n",t, p, pos+m-1)
+	}
 	for (pos <= n - m) {
-		current = 0 //initial state of oracle
+		current = 0 //initial state of the oracle
 		j = m
 		for j > 0 && stateExists(current, oracle) {
-			//prettyprint(:O)
-			if (current == 0 && !(getTransition(current, t[pos+j-1], oracle) == -1)) {
-				fmt.Printf("\n -->(%d)---(%c)--->(%d)", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
-			} else if (getTransition(current, t[pos+j-1], oracle) == -1 && current !=0) {
-				//fmt.Printf("\n    (%d)---(%c)        FAIL on [%c]", current, t[pos+j-1], t[pos+j-1])
-				fmt.Printf("\n    (%d)---(%c)       ", current, t[pos+j-1])
-			} else if (getTransition(current, t[pos+j-1], oracle) == -1 && current ==0) {
-				//fmt.Printf("\n -->(%d)---(%c)        FAIL on [%c]", current, t[pos+j-1], t[pos+j-1])
-				fmt.Printf("\n -->(%d)---(%c)       ", current, t[pos+j-1])
-			} else {
-				fmt.Printf("\n    (%d)---(%c)--->(%d)", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+			if(runInSilentMode==false) {
+				prettyPrint(current, j, n, pos, t, oracle)
 			}
-			fmt.Printf(" ")
-			for a := 0; a < pos+j-1; a++ {
-				fmt.Printf("%c", t[a])
-			}
-			if (getTransition(current, t[pos+j-1], oracle) == -1) {
-				fmt.Printf("[%c]", t[pos+j-1])
-			} else {
-				fmt.Printf("[%c]", t[pos+j-1])
-			}
-			for a := pos+j; a<n; a++ {
-					fmt.Printf("%c", t[a])
-			}
-			if (getTransition(current, t[pos+j-1], oracle) == -1) {
-				fmt.Printf(" FAIL on the character[%c]", t[pos+j-1])
-			}
-			//prettyprint
 			current = getTransition(current, t[pos+j-1], oracle)
 			j--
 		}
 		if stateExists(current, oracle){
-			fmt.Printf(" We got an occurence!")
+			if(runInSilentMode==false) {
+				fmt.Printf(" We got an occurence!")
+			}
 			occurences[currentOcc] = pos
 			currentOcc++
-			//fmt.Printf("\n\nWord %q was found at position %d in %q. \n",p, pos, t)
-			//return
 		}
 		pos = pos + j +1
 		if (pos+m-1 < len(t)) {
-			fmt.Printf("\n\nposition %d:\n",pos+m-1)
+			if(runInSilentMode==false) {
+				fmt.Printf("\n\nposition %d:\n",pos+m-1)
+			}
 		}
 	}
 	fmt.Printf("\n\n")
@@ -115,7 +101,9 @@ func bom(t, p string) {
 	@return oracle built oracle
 */
 func oracleOnLine(p string)(oracle map[int]map[uint8]int) {
-	fmt.Printf("Oracle construction: \n")
+	if(runInSilentMode==false) {
+		fmt.Printf("Oracle construction: \n")
+	}
 	oracle = make(map[int]map[uint8]int)
 	supply := make([]int, len(p)+2) //supply function
 	createNewState(0, oracle)
@@ -172,10 +160,11 @@ func reverse(s string) string {
 }
 
 ////Follows some AUTOMATON FUNCTIONS.
-////		Automaton states are stored in map[int]map[uint8]int:
-////			- for each initial state(key) there is a 'value': set of unique characters(keywords) with their destination states (values).
-////			- lets assume, that state 0 is always the inital state of the automaton
-////			- state -1 is given by some functions as an non-existing state
+////Automaton states are stored in map[int]map[uint8]int:
+//// - for each initial state(key) there is a 'value':
+////   set of unique characters(keywords) with their destination states (values).
+//// - lets assume, that state 0 is always the inital state of the automaton
+//// - state -1 is given by some functions as a non-existing state
 
 /**
 	Automaton function for creating a new state.
@@ -185,7 +174,9 @@ func reverse(s string) string {
 func createNewState(state int, oracle map[int]map[uint8]int) {
 	emptyMap := make(map[uint8]int)
 	oracle[state] = emptyMap
-	//fmt.Printf("\n State %d was created", state)
+	if(runInSilentMode==false) {
+		fmt.Printf("\ncreated state %d", state)
+	}
 }
 
 /**
@@ -196,7 +187,9 @@ func createTransition(fromState int, overChar uint8, toState int, oracle map[int
 	stateMap := oracle[fromState]
 	stateMap[overChar]= toState
 	oracle[fromState] = stateMap
-	fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState)
+	if(runInSilentMode==false) {
+		fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState)
+	}
 }
 
 /**
@@ -230,4 +223,34 @@ func stateExists(state int, oracle map[int]map[uint8]int)bool {
 	} else {
 		return true
 	}
+}
+
+/**
+	Just some printing of what the alghoritm does.
+*/
+func prettyPrint(current int, j int, n int, pos int, t string, oracle map[int]map[uint8]int) {
+	if (current == 0 && !(getTransition(current, t[pos+j-1], oracle) == -1)) {
+		fmt.Printf("\n -->(%d)---(%c)--->(%d)", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+	} else if (getTransition(current, t[pos+j-1], oracle) == -1 && current !=0) {
+		fmt.Printf("\n    (%d)---(%c)       ", current, t[pos+j-1])
+	} else if (getTransition(current, t[pos+j-1], oracle) == -1 && current ==0) {
+		fmt.Printf("\n -->(%d)---(%c)       ", current, t[pos+j-1])
+	} else {
+		fmt.Printf("\n    (%d)---(%c)--->(%d)", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+	}
+	fmt.Printf(" ")
+	for a := 0; a < pos+j-1; a++ {
+		fmt.Printf("%c", t[a])
+	}
+	if (getTransition(current, t[pos+j-1], oracle) == -1) {
+		fmt.Printf("[%c]", t[pos+j-1])
+	} else {
+		fmt.Printf("[%c]", t[pos+j-1])
+	}
+	for a := pos+j; a<n; a++ {
+			fmt.Printf("%c", t[a])
+	}
+	if (getTransition(current, t[pos+j-1], oracle) == -1) {
+		fmt.Printf(" FAIL on the character[%c]", t[pos+j-1])
+	}	
 }
