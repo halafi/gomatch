@@ -39,9 +39,29 @@ func main() {
 	@param p pattern/word to be serached for
 */  
 func bom(t, p string) {
-	oracle := oracleOnLine(p)
+	n, m := len(t), len(p)
+	var current, j, pos int
+	//preprocessing
+	oracle := oracleOnLine(reverse(p))
+	//searching
+	pos = 0
+	fmt.Printf("\n\nDebug information: (-1 = state doesn't exist)\n\n pos = %d\n",pos)
+	for (pos <= n - m) {
+		current = 0 //initial state of oracle
+		j = m
+		for j > 0 && stateExists(current, oracle) {
+			fmt.Printf("    σ(%d, %c) = %d\n", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+			current = getTransition(current, t[pos+j-1], oracle)
+			j--
+		}
+		if stateExists(current, oracle){
+			fmt.Printf("\n\nWord %q was found at position %d in %q. \n",p, pos, t)
+			return
+		}
+		pos = pos + j +1
+		fmt.Printf("\n pos = %d\n",pos)
+	}
 	fmt.Printf("\n\nWord was not found.\n")
-	oracle[0] = oracle[0]
 	return
 }
 
@@ -52,7 +72,7 @@ func bom(t, p string) {
 	@return oracle built oracle
 */
 func oracleOnLine(p string)(oracle map[int]map[uint8]int) {
-	//m := len(p)
+	fmt.Printf("Oracle construction: \n")
 	oracle = make(map[int]map[uint8]int)
 	supply := make([]int, len(p)+2) //supply function
 	createNewState(0, oracle)
@@ -75,10 +95,9 @@ func oracleAddLetter(oracle map[int]map[uint8]int, supply []int, orP string, o u
 	m := len(orP)
 	var s int
 	createNewState(m + 1, oracle)
-	//createNewState(m, oracle)
 	createTransition(m, o, m + 1, oracle)
-	k := supply[m] //0 (nil) the first time
-	for k > -1 && getTransition(k,o, oracle) == 0 {
+	k := supply[m]
+	for k > -1 && getTransition(k,o, oracle) == -1 {
 		createTransition(k, o, m + 1, oracle)
 		k = supply[k]
 	}
@@ -116,14 +135,43 @@ func createTransition(fromState int, overChar uint8, toState int, oracle map[int
 	stateMap := oracle[fromState]
 	stateMap[overChar]= toState
 	oracle[fromState] = stateMap
-	fmt.Printf("\n σ(%d,%c)=%d;",fromState,overChar,toState)
+	fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState)
 }
 
 /*	Returns a 'toState' from state 'fromState' over char 'overChar' :).
 	@return toState state for the desired transition
 */
 func getTransition(fromState int, overChar uint8, oracle map[int]map[uint8]int)(toState int) {
+	var ok bool
+	if (!stateExists(fromState, oracle)) {
+		return -1
+	}
 	stateMap := oracle[fromState]
-	toState = stateMap[overChar]
+	toState, ok = stateMap[overChar]
+	if (ok == false) {
+		return -1
+		
+	}
 	return toState
+}
+
+func stateExists(state int, oracle map[int]map[uint8]int)bool {
+	_, ok := oracle[state]
+	if (!ok || state == -1 || oracle[state] == nil) {
+		//fmt.Printf("\n State %d doesnt exists.", state)
+		return false
+	} else {
+		//fmt.Printf("\n State %d exists.", state)
+		return true
+	}
+}
+
+func reverse(s string) string {
+    l := len(s)
+    m := make([]rune, l)
+    for _, c := range s {
+        l--
+        m[l] = c
+    }
+    return string(m)
 }
