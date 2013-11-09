@@ -1,45 +1,78 @@
 ﻿package main
-import ("fmt"; "log"; "io/ioutil")
+import ("fmt"; "log"; "os"; "io/ioutil")
 
-/** user defined CONSTANT
+/** user defined CONSTANTS
 	Set runInSilentMode to:
 		@true to run in silent mode
 		@false to print everything
+	Set commandLineInput to:
+		@true to take two command line arguments
+		@false to take two files "pattern.txt" AND "text.txt"
 */
-const runInSilentMode bool = true
+const runInSilentMode bool = false
+const commandLineInput bool = false
 
 /**
  	Implementation of Backward Oracle Matching algorithm (Factor based aproach).
-	Requires two files in the folder with this file.
 	
-	@File pattern.txt containing the pattern to be searched for
-	@File text.txt containing the text to be searched in
+	IF(commandLineInput == true) Requires two command line arguments.
+	@argument string to be searched "for" (pattern, search word), no spaces allowed
+	@argument one space
+	@argument string to be searched "in" (text), single spaces allowed
+	
+	IF(commandLineInput == false) requires two files in the same folder
+	@file pattern.txt containing the pattern to be searched for
+	@file text.txt containing the text to be searched in
 */
 func main() {
-	patFile, err := ioutil.ReadFile("pattern.txt")
-	if err != nil {
-		log.Fatal(err)
+	if (commandLineInput == true) { //in case of command line input
+		args := os.Args
+		if (len(args) <= 2) {
+			log.Fatal("Not enough arguments. Two string arguments separated by spaces are required!")
+		}
+		pattern := args[1]
+		s := args[2]
+		for i := 3; i<len(args); i++ {
+			s = s +" "+ args[i]
+		}
+		if ( len(args[1]) > len(s) ) {
+			log.Fatal("Pattern  is longer than text!")
+		} 
+		if(runInSilentMode==false) {
+			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
+			fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
+			fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
+		} else {
+			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).")
+		}
+		bom(s, pattern)
+	} else if (commandLineInput == false) { //in case of file line input
+		patFile, err := ioutil.ReadFile("pattern.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		textFile, err := ioutil.ReadFile("text.txt")
+		if err != nil {
+			log.Fatal(err)
+		}
+		if (len(patFile) > len(textFile)) {
+			log.Fatal("Pattern  is longer than text!")
+		}
+		if(runInSilentMode==false) {
+			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
+			fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
+			fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
+		} else {
+			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).")
+		}
+		bom(string(textFile), string(patFile))
 	}
-	textFile, err := ioutil.ReadFile("text.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if (len(patFile) > len(textFile)) {
-		log.Fatal("Pattern  is longer than text!")
-	}
-	if(runInSilentMode==false) {
-		fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
-		fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
-		fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
-	} else {
-		fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 9 in the code).")
-	}
-	bom(string(textFile), string(patFile))
 }
 
 /**
 	Function bom performing the Backward Oracle Matching alghoritm.
-    Prints whether the word/pattern was found (+position) or that it was not found.
+    Prints whether the word/pattern was found + positions of possible multiple occurences
+	or that the word was not found.
 	
 	@param t string/text to be searched in
 	@param p pattern/word to be serached for
