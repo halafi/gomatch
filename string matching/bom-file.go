@@ -1,12 +1,9 @@
 ﻿package main
-import (
-	"fmt" //implements fomratted I/O.
-	"log" //simple logging package
-	"io/ioutil" // some I/O utility functions
-)
+import ("fmt"; "log"; "io/ioutil")
 
-/* 	Implementation of Backward Oracle Matching algorithm (Factor based aproach).
-	Requires two files in the folder with this file:
+/**
+ 	Implementation of Backward Oracle Matching algorithm (Factor based aproach).
+	Requires two files in the folder with this file.
 	
 	@File pattern.txt containing the pattern to be searched for
 	@File text.txt containing the text to be searched in
@@ -21,7 +18,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	if (len(patFile) > len(textFile)) {
 		log.Fatal("Pattern  is longer than text!")
 	}
@@ -32,8 +28,9 @@ func main() {
 	bom(string(textFile), string(patFile))
 }
 
-/*  Function bom performing the Backward Oracle Matching alghoritm.
-    Prints whether the word/pattern was found and on what position in the text or not.
+/**
+	Function bom performing the Backward Oracle Matching alghoritm.
+    Prints whether the word/pattern was found (+position) or that it was not found.
 	
 	@param t string/text to be searched in
 	@param p pattern/word to be serached for
@@ -41,31 +38,77 @@ func main() {
 func bom(t, p string) {
 	n, m := len(t), len(p)
 	var current, j, pos int
-	//preprocessing
 	oracle := oracleOnLine(reverse(p))
+	occurences := make([]int, len(t))
+	currentOcc := 0
 	//searching
 	pos = 0
-	fmt.Printf("\n\nDebug information: (-1 = state doesn't exist)\n\n pos = %d\n",pos)
+	fmt.Printf("\n\nWe are reading backwards in %q, searching for %q\n\nat position %d:\n",t, p, pos+m-1)
+
 	for (pos <= n - m) {
 		current = 0 //initial state of oracle
 		j = m
 		for j > 0 && stateExists(current, oracle) {
-			fmt.Printf("    σ(%d, %c) = %d\n", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+			//prettyprint(:O)
+			if (current == 0 && !(getTransition(current, t[pos+j-1], oracle) == -1)) {
+				fmt.Printf("\n -->(%d)---(%c)--->(%d)", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+			} else if (getTransition(current, t[pos+j-1], oracle) == -1 && current !=0) {
+				//fmt.Printf("\n    (%d)---(%c)        FAIL on [%c]", current, t[pos+j-1], t[pos+j-1])
+				fmt.Printf("\n    (%d)---(%c)       ", current, t[pos+j-1])
+			} else if (getTransition(current, t[pos+j-1], oracle) == -1 && current ==0) {
+				//fmt.Printf("\n -->(%d)---(%c)        FAIL on [%c]", current, t[pos+j-1], t[pos+j-1])
+				fmt.Printf("\n -->(%d)---(%c)       ", current, t[pos+j-1])
+			} else {
+				fmt.Printf("\n    (%d)---(%c)--->(%d)", current, t[pos+j-1], getTransition(current, t[pos+j-1], oracle))
+			}
+			fmt.Printf(" ")
+			for a := 0; a < pos+j-1; a++ {
+				fmt.Printf("%c", t[a])
+			}
+			if (getTransition(current, t[pos+j-1], oracle) == -1) {
+				fmt.Printf("[%c]", t[pos+j-1])
+			} else {
+				fmt.Printf("[%c]", t[pos+j-1])
+			}
+			for a := pos+j; a<n; a++ {
+					fmt.Printf("%c", t[a])
+			}
+			if (getTransition(current, t[pos+j-1], oracle) == -1) {
+				fmt.Printf(" FAIL on the character[%c]", t[pos+j-1])
+			}
+			//prettyprint
 			current = getTransition(current, t[pos+j-1], oracle)
 			j--
 		}
 		if stateExists(current, oracle){
-			fmt.Printf("\n\nWord %q was found at position %d in %q. \n",p, pos, t)
-			return
+			fmt.Printf(" We got an occurence!")
+			occurences[currentOcc] = pos
+			currentOcc++
+			//fmt.Printf("\n\nWord %q was found at position %d in %q. \n",p, pos, t)
+			//return
 		}
 		pos = pos + j +1
-		fmt.Printf("\n pos = %d\n",pos)
+		if (pos+m-1 < len(t)) {
+			fmt.Printf("\n\nposition %d:\n",pos+m-1)
+		}
 	}
-	fmt.Printf("\n\nWord was not found.\n")
+	fmt.Printf("\n\n")
+	if (currentOcc > 0) {
+		fmt.Printf("\nWord %q was found at positions: {", p)
+		for k := 0; k<currentOcc-1; k++ {
+			fmt.Printf("%d, ",occurences[k])
+		}
+		fmt.Printf("%d",occurences[currentOcc-1])
+		fmt.Printf("} in %q.\n", t)
+	}
+	if(currentOcc == 0) {
+		fmt.Printf("\nWord was not found.\n")
+	}
 	return
 }
 
-/*	Construction of the factor oracle automaton for a word p.
+/**
+	Construction of the factor oracle automaton for a word p.
 
 	@param p pattern to be added
 	@param supply supply map
@@ -84,7 +127,8 @@ func oracleOnLine(p string)(oracle map[int]map[uint8]int) {
 	return oracle
 }
 
-/*	Adds one letter to the oracle.
+/**
+	Adds one letter to the oracle.
 
 	@param oracle oracle to add letter to
 	@param p pattern (not whole, contained in oracle)
@@ -110,26 +154,43 @@ func oracleAddLetter(oracle map[int]map[uint8]int, supply []int, orP string, o u
 	return oracle, orP+string(o)
 }
 
+/**	
+	Function that takes string and reverses it.
+	
+	@author Walter http://stackoverflow.com/a/10043083
+	@param s string to be reversed
+	@return reversed string
+*/
+func reverse(s string) string {
+    l := len(s)
+    m := make([]rune, l)
+    for _, c := range s {
+        l--
+        m[l] = c
+    }
+    return string(m)
+}
 
-// 	Follows some automaton functions.
-//	Automaton states are stored in map[int]map[uint8]int:
-//		- for each initial state(key) there is a 'value': set of unique characters(keywords) with their destination states (values).
-//		- lets assume, that state 0 is always the inital state of the automaton
+////Follows some AUTOMATON FUNCTIONS.
+////		Automaton states are stored in map[int]map[uint8]int:
+////			- for each initial state(key) there is a 'value': set of unique characters(keywords) with their destination states (values).
+////			- lets assume, that state 0 is always the inital state of the automaton
+////			- state -1 is given by some functions as an non-existing state
 
-/*	Automaton function for adding a new state.
-	@param state state number to add state for
-	@param oracle oracle to add state to
-	@return oracle oracle with added state
+/**
+	Automaton function for creating a new state.
+	@param state state number of state to be created
+	@param oracle factor oracle to add state to
 */
 func createNewState(state int, oracle map[int]map[uint8]int) {
 	emptyMap := make(map[uint8]int)
 	oracle[state] = emptyMap
-	fmt.Printf("\n State %d was created", state)
+	//fmt.Printf("\n State %d was created", state)
 }
 
-/* 	Automaton function for adding a transition from 'state' over 'letter' to 'end' state.
+/**
+ 	Automaton function for creating a transition σ(state,letter)=end.
 	@usage createTransition(fromSate, overChar, toState, oracle)
-	@return oracle oracle with added transition
 */
 func createTransition(fromState int, overChar uint8, toState int, oracle map[int]map[uint8]int) {
 	stateMap := oracle[fromState]
@@ -138,8 +199,9 @@ func createTransition(fromState int, overChar uint8, toState int, oracle map[int
 	fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState)
 }
 
-/*	Returns a 'toState' from state 'fromState' over char 'overChar' :).
-	@return toState state for the desired transition
+/**
+	Returns toState from 'σ(fromState,overChar)=toState'.
+	@return toState state for the desired transition function σ, -1 if there is nothing to return
 */
 func getTransition(fromState int, overChar uint8, oracle map[int]map[uint8]int)(toState int) {
 	var ok bool
@@ -149,29 +211,23 @@ func getTransition(fromState int, overChar uint8, oracle map[int]map[uint8]int)(
 	stateMap := oracle[fromState]
 	toState, ok = stateMap[overChar]
 	if (ok == false) {
-		return -1
-		
+		return -1	
 	}
 	return toState
 }
 
+/**
+	Checks if state 'state' exists.
+	@param state state to check for
+	@param oracle oracle to check state for in
+	@return true if state exists
+	@return false if state doesn't exist
+*/
 func stateExists(state int, oracle map[int]map[uint8]int)bool {
 	_, ok := oracle[state]
 	if (!ok || state == -1 || oracle[state] == nil) {
-		//fmt.Printf("\n State %d doesnt exists.", state)
 		return false
 	} else {
-		//fmt.Printf("\n State %d exists.", state)
 		return true
 	}
-}
-
-func reverse(s string) string {
-    l := len(s)
-    m := make([]rune, l)
-    for _, c := range s {
-        l--
-        m[l] = c
-    }
-    return string(m)
 }
