@@ -16,5 +16,5 @@ Running the source code
 
 Explanations of single string matching file names
 -------------------------------------------------
-1. alghoritmName-file.go reads two .txt files: pattern.txt and text.txt
-2. alghoritmName-args.go reads two command line arguments: pattern(space)text
+1. algorithmName-file.go reads two .txt files: pattern.txt and text.txt
+2. algorithmName-args.go reads two command line arguments: pattern(space)text
