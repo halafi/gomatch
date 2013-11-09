@@ -13,8 +13,3 @@ Running the source code
 -----------------------
 1. For running *.go files in your command line use: "go run filename.go"
 2. For compiling *.go file to *.exe file use: "go build filename.go"
-
-Explanations of single string matching file names
--------------------------------------------------
-1. algorithmName-file.go reads two .txt files: pattern.txt and text.txt
-2. algorithmName-args.go reads two command line arguments: pattern(space)text
