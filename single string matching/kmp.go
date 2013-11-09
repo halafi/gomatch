@@ -8,7 +8,8 @@ import ("fmt"; "log"; "os"; "io/ioutil")
 */
 const commandLineInput bool = false
 
-/* 	Implementation of Knuth-Morris-Pratt algorithm (Prefix based aproach).
+/**
+	Implementation of Knuth-Morris-Pratt algorithm (Prefix based aproach).
 
 	IF(commandLineInput == true) Requires two command line arguments.
 	@argument string to be searched "for" (pattern, search word), no spaces allowed

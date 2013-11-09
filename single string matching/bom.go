@@ -9,7 +9,7 @@ import ("fmt"; "log"; "os"; "io/ioutil")
 		@true to take two command line arguments
 		@false to take two files "pattern.txt" AND "text.txt"
 */
-const runInSilentMode bool = false
+const runInSilentMode bool = true //very slow
 const commandLineInput bool = false
 
 /**
