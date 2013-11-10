@@ -34,7 +34,7 @@ func main() {
 		if ( len(args[1]) > len(s) ) {
 			log.Fatal("Pattern  is longer than text!")
 		} 
-		fmt.Printf("\nRunning: Horspool alghoritm.\n\n")
+		fmt.Printf("\nRunning: Horspool algorithm.\n\n")
 		fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
 		fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		horspool(s, pattern)
@@ -50,7 +50,7 @@ func main() {
 		if (len(patFile) > len(textFile)) {
 			log.Fatal("Pattern  is longer than text!")
 		}
-		fmt.Printf("\nRunning: Horspool alghoritm.\n\n")
+		fmt.Printf("\nRunning: Horspool algorithm.\n\n")
 		fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
 		fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
 		horspool(string(textFile), string(patFile))

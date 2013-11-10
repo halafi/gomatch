@@ -39,11 +39,11 @@ func main() {
 			log.Fatal("Pattern  is longer than text!")
 		} 
 		if(runInSilentMode==false) {
-			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
+			fmt.Printf("\nRunning: Backward Oracle Matching algorithm.\n\n")
 			fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
 			fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		} else {
-			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).")
+			fmt.Printf("\nRunning: Backward Oracle Matching algorithm in SILENT mode (see line 12 in the code).")
 		}
 		bom(s, pattern)
 	} else if (commandLineInput == false) { //in case of file line input

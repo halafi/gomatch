@@ -34,7 +34,7 @@ func main() {
 		if ( len(args[1]) > len(s) ) {
 			log.Fatal("Pattern  is longer than text!")
 		}
-		fmt.Printf("\nRunning: Knuth-Morris-Pratt alghoritm.\n\n")
+		fmt.Printf("\nRunning: Knuth-Morris-Pratt algorithm.\n\n")
 		fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
 		fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		knp(s, pattern)
@@ -50,7 +50,7 @@ func main() {
 		if (len(patFile) > len(textFile)) {
 			log.Fatal("Pattern  is longer than text!")
 		}
-		fmt.Printf("\nRunning: Knuth-Morris-Pratt alghoritm.\n\n")
+		fmt.Printf("\nRunning: Knuth-Morris-Pratt algorithm.\n\n")
 		fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
 		fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
 		knp(string(textFile), string(patFile))
@@ -58,7 +58,7 @@ func main() {
 }
 
 /**
-	Function knp performing the Knuth-Morris-Pratt alghoritm.
+	Function knp performing the Knuth-Morris-Pratt algorithm.
 	Prints whether the word/pattern was found and on what position in the text or not.
 	
 	@param text string/text to be searched in
