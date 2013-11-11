@@ -1,5 +1,5 @@
 ﻿package main
-import ("fmt"; "log"; /*"os";*/"strings"; "io/ioutil")
+import ("fmt"; "log"; /*"os";*/"strings"; "io/ioutil"; /*"time"*/)
 
 /**
  	Implementation of Set Backward Oracle Matching algorithm (Factor based aproach).
@@ -29,7 +29,10 @@ func main() {
 		fmt.Printf("%q ", patterns[i])
 	}
 	fmt.Printf("\n\nIn text (%d chars long): \n%q\n\n",len(textFile), textFile)
+	//startTime := time.Now()
 	sbom(string(textFile), patterns)
+	//elapsed := time.Since(startTime)
+	//fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
 }
 
 /**
@@ -43,27 +46,78 @@ func sbom(t string, p []string) {
 		return
 	}
 	//preprocessing
-	minLength := computeMinLength(p)
-	p = trimToLength(p, minLength)
-	p = reverseAll(p)
+	lmin := computeMinLength(p)
+	//p = reverseAll(trimToLength(p, lmin))
 	//print
-		fmt.Printf("Minimum length of one pattern is: %d.\n Trimmed and then reversed patterns: ", minLength)
+		fmt.Printf("Minimum length of one pattern is: %d.\n Trimmed and then reversed patterns: ", lmin)
 		for i := 0; i < len(p); i++ {
 			fmt.Printf("%q ", p[i])
 		}
 	//print
-	//or := buildOracleMultiple(p)
+	or := buildOracleMultiple(p)
+	or = or
 	//searching
 	return
 }
 
 func buildOracleMultiple(p []string) map[int]map[uint8]int {
 	oracle := make(map[int]map[uint8]int)
-	//orTrie := map[int]map[uint8]int
-	//supply := make([]int, len(p)+2) //supply function
+	//computes the maximum ammount of states (dynamic allocation in go?)
+	ln := 0
+	for i:=0; i<len(p); i++ {
+		ln = ln + len(p[i])
+	}
+	supply := make([]int, ln)
+	orTrie, orTrieF := constructTrie(p)
+	orTrie = orTrie
+	//fmt.Printf("%t", orTrieF[8]==true)
+	i := 0 //root of trie
+	supply[i] = -1
+	for current := 0; current < 14 /*getLastSTate?*/; current++ {
+		parent = getParent(orTrie, current) //to be implemented getParent(), getLastState()
+	}
 	return oracle
 }
 
+/**
+	Function that constructs Trie as an automaton for a set of strings .
+	Returns built triematon + array of terminal states
+*/
+func constructTrie(p []string) (map[int]map[uint8]int, []bool) {
+	var current, j int
+	ln, state := 0, 1
+	trie := make(map[int]map[uint8]int)
+	//computes the maximum ammount of states (dynamic allocation in go?)
+	for i:=0; i<len(p); i++ {
+		ln = ln + len(p[i])
+	}
+	isTerminal := make([]bool, ln)
+	f := make([]int, ln)
+	createNewState(0, trie)
+	for i:=0; i<len(p); i++ {
+		current = 0
+		j = 0
+		for j < len(p[i]) && getTransition(current, p[i][j], trie)!=-1 {
+			current = getTransition(current, p[i][j], trie)
+			j++
+		}
+		for j < len(p[i]) {
+			createNewState(state, trie)
+			isTerminal[state]=false
+			createTransition(current, p[i][j], state, trie)
+			current = state
+			j++
+			state++
+		}
+		if isTerminal[current] {
+			f[current] = f[current] + i
+		} else {
+			isTerminal[current] = true
+			f[current] = i
+		}
+	}
+	return trie, isTerminal
+}
 /**
 	Function that takes a set of strings, desired length and trims the set of strings to that length.
 */
