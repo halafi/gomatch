@@ -42,17 +42,14 @@ func main() {
 	@param p list of patterns to be serached for
 */  
 func sbom(t string, p []string) {
-	if(len(p) == 0) {
-		return
-	}
 	//preprocessing
 	lmin := computeMinLength(p)
-	//p = reverseAll(trimToLength(p, lmin))
+	p = reverseAll(trimToLength(p, lmin))
 	//print
-		fmt.Printf("Minimum length of one pattern is: %d.\n Trimmed and then reversed patterns: ", lmin)
-		for i := 0; i < len(p); i++ {
-			fmt.Printf("%q ", p[i])
-		}
+	fmt.Printf("Minimum length of one pattern is: %d.\n Trimmed and then reversed patterns: ", lmin)
+	for i := range p { //equal to for i := 0; i < len(p); i++ {
+		fmt.Printf("%q ", p[i])
+	}
 	//print
 	or := buildOracleMultiple(p)
 	or = or
@@ -61,20 +58,18 @@ func sbom(t string, p []string) {
 }
 
 func buildOracleMultiple(p []string) map[int]map[uint8]int {
+	var parent int
+	var o uint8
 	oracle := make(map[int]map[uint8]int)
-	//computes the maximum ammount of states (dynamic allocation in go?)
-	ln := 0
-	for i:=0; i<len(p); i++ {
-		ln = ln + len(p[i])
-	}
-	supply := make([]int, ln)
 	orTrie, orTrieF := constructTrie(p)
+	supply := make([]int, len(orTrieF))
 	orTrie = orTrie
-	//fmt.Printf("%t", orTrieF[8]==true)
 	i := 0 //root of trie
 	supply[i] = -1
-	for current := 0; current < 14 /*getLastSTate?*/; current++ {
-		parent = getParent(orTrie, current) //to be implemented getParent(), getLastState()
+	
+	for current := 0; current < len(orTrieF); current++ {
+		o, parent = getParent(current, orTrie)
+		fmt.Printf("\n you can get from %d over %c to %d", parent, o, current)
 	}
 	return oracle
 }
@@ -85,14 +80,10 @@ func buildOracleMultiple(p []string) map[int]map[uint8]int {
 */
 func constructTrie(p []string) (map[int]map[uint8]int, []bool) {
 	var current, j int
-	ln, state := 0, 1
+	state := 1
 	trie := make(map[int]map[uint8]int)
-	//computes the maximum ammount of states (dynamic allocation in go?)
-	for i:=0; i<len(p); i++ {
-		ln = ln + len(p[i])
-	}
-	isTerminal := make([]bool, ln)
-	f := make([]int, ln)
+	isTerminal := make([]bool, 1)
+	f := make([]int, 1)
 	createNewState(0, trie)
 	for i:=0; i<len(p); i++ {
 		current = 0
@@ -102,6 +93,14 @@ func constructTrie(p []string) (map[int]map[uint8]int, []bool) {
 			j++
 		}
 		for j < len(p[i]) {
+			if state==len(isTerminal) { //dynamic array size
+				newIsTerminal := make([]bool, cap(isTerminal)+1)
+				copy(newIsTerminal, isTerminal) //copy(dst, src)
+				isTerminal = newIsTerminal
+				newF := make([]int, cap(f)+1)
+				copy(newF, f)
+				f = newF
+			}
 			createNewState(state, trie)
 			isTerminal[state]=false
 			createTransition(current, p[i][j], state, trie)
@@ -118,6 +117,7 @@ func constructTrie(p []string) (map[int]map[uint8]int, []bool) {
 	}
 	return trie, isTerminal
 }
+
 /**
 	Function that takes a set of strings, desired length and trims the set of strings to that length.
 */
@@ -181,6 +181,22 @@ func reverse(s string) string {
 //// - state -1 is given by some functions as a non-existing state
 
 /**
+	Function that should return previous state of a state (only works for trie (finds the first previous state in automaton).
+*/
+func getParent(state int, oracle map[int]map[uint8]int) (uint8, int) {
+	for key, value := range oracle {
+		for subkey, subvalue := range value {
+			if subvalue == state {
+				//fmt.Printf("\nPARENT of %d is %d", state, key)
+				return subkey, key
+			}
+		}
+	}
+	//fmt.Printf("\nPARENT of %d is -1", state)
+	return 'e', -1
+}
+
+/**
 	Automaton function for creating a new state.
 	@param state state number of state to be created
 	@param oracle factor oracle to add state to
@@ -188,9 +204,7 @@ func reverse(s string) string {
 func createNewState(state int, oracle map[int]map[uint8]int) {
 	emptyMap := make(map[uint8]int)
 	oracle[state] = emptyMap
-	//if(runInSilentMode==false) {
-		fmt.Printf("\ncreated state %d", state)
-	//}
+	fmt.Printf("\ncreated state %d", state) //
 }
 
 /**
@@ -201,9 +215,8 @@ func createTransition(fromState int, overChar uint8, toState int, oracle map[int
 	stateMap := oracle[fromState]
 	stateMap[overChar]= toState
 	oracle[fromState] = stateMap
-	//if(runInSilentMode==false) {
-		fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState)
-	//}
+	fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState) //
+
 }
 
 /**
