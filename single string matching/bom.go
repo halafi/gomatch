@@ -1,5 +1,5 @@
 ﻿package main
-import ("fmt"; "log"; "os"; "io/ioutil")
+import ("fmt"; "log"; "os"; "io/ioutil"; "time")
 
 /** user defined CONSTANTS
 	Set runInSilentMode to:
@@ -40,12 +40,15 @@ func main() {
 		} 
 		if(runInSilentMode==false) {
 			fmt.Printf("\nRunning: Backward Oracle Matching algorithm.\n\n")
-			fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
-			fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		} else {
-			fmt.Printf("\nRunning: Backward Oracle Matching algorithm in SILENT mode (see line 12 in the code).")
+			fmt.Printf("\nRunning: Backward Oracle Matching algorithm in SILENT mode (see line 12 in the code).\n\n")
 		}
+		fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
+		fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
+		startTime := time.Now()
 		bom(s, pattern)
+		elapsed := time.Since(startTime)
+		fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
 	} else if (commandLineInput == false) { //in case of file line input
 		patFile, err := ioutil.ReadFile("pattern.txt")
 		if err != nil {
@@ -60,12 +63,15 @@ func main() {
 		}
 		if(runInSilentMode==false) {
 			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
-			fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
-			fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
 		} else {
-			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).")
+			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).\n\n")
 		}
+		fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
+		fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
+		startTime := time.Now()
 		bom(string(textFile), string(patFile))
+		elapsed := time.Since(startTime)
+		fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
 	}
 }
 
@@ -113,12 +119,12 @@ func bom(t, p string) {
 	}
 	fmt.Printf("\n\n")
 	if (currentOcc > 0) {
-		fmt.Printf("\nWord %q was found at positions: {", p)
+		fmt.Printf("Word %q was found %d times at positions: {", p, currentOcc)
 		for k := 0; k<currentOcc-1; k++ {
 			fmt.Printf("%d, ",occurences[k])
 		}
 		fmt.Printf("%d",occurences[currentOcc-1])
-		fmt.Printf("} in %q.\n", t)
+		fmt.Printf("}.\n")
 	}
 	if(currentOcc == 0) {
 		fmt.Printf("\nWord was not found.\n")
