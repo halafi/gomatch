@@ -1,5 +1,5 @@
 ﻿package main
-import ("fmt"; "log"; /*"os";*/"strings"; "io/ioutil"; /*"time"*/)
+import ("fmt"; "log"; /*"os";*/"strings"; "io/ioutil"; "time")
 
 /**
  	Implementation of Set Backward Oracle Matching algorithm (Factor based aproach).
@@ -29,10 +29,10 @@ func main() {
 		fmt.Printf("%q ", patterns[i])
 	}
 	fmt.Printf("\n\nIn text (%d chars long): \n%q\n\n",len(textFile), textFile)
-	//startTime := time.Now()
+	startTime := time.Now()
 	sbom(string(textFile), patterns)
-	//elapsed := time.Since(startTime)
-	//fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
+	elapsed := time.Since(startTime)
+	fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
 }
 
 /**
@@ -44,46 +44,61 @@ func main() {
 func sbom(t string, p []string) {
 	//preprocessing
 	lmin := computeMinLength(p)
-	p = reverseAll(trimToLength(p, lmin))
-	//print
-	fmt.Printf("Minimum length of one pattern is: %d.\n Trimmed and then reversed patterns: ", lmin)
-	for i := range p { //equal to for i := 0; i < len(p); i++ {
-		fmt.Printf("%q ", p[i])
+	or, orF, isTerminalForP := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
+	f := make([]int, len(orF)) //used for storing a set of states
+	fmt.Printf("\n\nSBOM: \n")
+	for q := range orF {
+		f[q] = -1
 	}
-	//print
-	or := buildOracleMultiple(p)
-	or = or
+	for i := range p {
+		f[isTerminalForP[i]] = isTerminalForP[i]
+		fmt.Printf("\n%q has terminal state %d", p[i], isTerminalForP[i])
+	}
 	//searching
+	or=or
+	isTerminalForP = isTerminalForP
+	
 	return
 }
 
-func buildOracleMultiple(p []string) map[int]map[uint8]int {
-	var parent int
+func buildOracleMultiple(p []string) (map[int]map[uint8]int, []bool, []int) {
+	var parent, down int
 	var o uint8
-	oracle := make(map[int]map[uint8]int)
-	orTrie, orTrieF := constructTrie(p)
+	orTrie, orTrieF, isTerminalForP := constructTrie(p)
 	supply := make([]int, len(orTrieF))
-	orTrie = orTrie
 	i := 0 //root of trie
 	supply[i] = -1
-	
-	for current := 0; current < len(orTrieF); current++ {
+	fmt.Printf("\n\nOracle construction: \n")
+	for current := 1; current < len(orTrieF); current++ {
 		o, parent = getParent(current, orTrie)
-		fmt.Printf("\n you can get from %d over %c to %d", parent, o, current)
+		//fmt.Printf("current %d", current)
+		down = supply[parent]
+		for stateExists(down, orTrie) && getTransition(down, o, orTrie) == -1 {
+			createTransition(down, o, current, orTrie)
+			down = supply[down]
+		}
+		if stateExists(down, orTrie) {
+			supply[current] = getTransition(down, o, orTrie)
+		} else {
+			supply[current] = i
+		}
+		 
 	}
-	return oracle
+	return orTrie, orTrieF, isTerminalForP
 }
 
 /**
 	Function that constructs Trie as an automaton for a set of strings .
 	Returns built triematon + array of terminal states
 */
-func constructTrie(p []string) (map[int]map[uint8]int, []bool) {
+func constructTrie(p []string) (map[int]map[uint8]int, []bool, []int) {
 	var current, j int
 	state := 1
 	trie := make(map[int]map[uint8]int)
 	isTerminal := make([]bool, 1)
+	isTerminalForP := make([]int, 1)
 	f := make([]int, 1)
+	fmt.Printf("\n\nTrie construction: \n")
 	createNewState(0, trie)
 	for i:=0; i<len(p); i++ {
 		current = 0
@@ -112,10 +127,17 @@ func constructTrie(p []string) (map[int]map[uint8]int, []bool) {
 			f[current] = f[current] + i
 		} else {
 			isTerminal[current] = true
+			fmt.Printf("\n%d is terminal for %q.", current, p[i])  //
+			if i==len(isTerminalForP) { //dynamic array size
+				newIsTerminalForP := make([]int, cap(isTerminalForP)+1)
+				copy(newIsTerminalForP, isTerminalForP) //copy(dst, src)
+				isTerminalForP = newIsTerminalForP
+			}
+			isTerminalForP[i] = current
 			f[current] = i
 		}
 	}
-	return trie, isTerminal
+	return trie, isTerminal, isTerminalForP
 }
 
 /**
@@ -192,8 +214,8 @@ func getParent(state int, oracle map[int]map[uint8]int) (uint8, int) {
 			}
 		}
 	}
-	//fmt.Printf("\nPARENT of %d is -1", state)
-	return 'e', -1
+	//fmt.Printf("\nPARENT of %d is 0", state)
+	return 'f', 0
 }
 
 /**
