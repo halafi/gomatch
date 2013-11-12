@@ -43,6 +43,9 @@ func main() {
 */  
 func sbom(t string, p []string) {
 	//preprocessing
+	var j, current int
+	var word string
+	n := len(t)
 	lmin := computeMinLength(p)
 	or, orF, isTerminalForP := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
 	f := make([]int, len(orF)) //used for storing a set of states
@@ -55,12 +58,37 @@ func sbom(t string, p []string) {
 		fmt.Printf("\n%q has terminal state %d", p[i], isTerminalForP[i])
 	}
 	//searching
+	pos := 0
+	for pos <= n - lmin {
+		current = 0
+		j = lmin
+		for j >= 1 && stateExists(current, or) {
+			current = getTransition(current, t[pos+j], or)
+			j--
+		}
+		word = getWord(pos, pos+lmin, t)
+		fmt.Printf("%q", word)
+		if stateExists(current, or) && j == 0 /*&& word = reversed(L(current)*/ {
+			//verify all the patterns in f(current) one by one against the text
+			j = 1
+		}
+		pos = pos+j
+	}
+	
 	or=or
 	isTerminalForP = isTerminalForP
-	
 	return
 }
 
+func getWord(begin, end int, t string) string {
+	d := make([]uint8, end-begin+1)
+	for j,i:= 0,begin; i<=end; i++ {
+		d[j] = t[i]
+		j++
+	}
+	s2 := string(d)
+	return s2
+}
 func buildOracleMultiple(p []string) (map[int]map[uint8]int, []bool, []int) {
 	var parent, down int
 	var o uint8
