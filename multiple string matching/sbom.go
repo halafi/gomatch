@@ -1,13 +1,13 @@
 ﻿package main
-import ("fmt"; "log"; /*"os";*/"strings"; "io/ioutil"; "time")
+import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 
 /**
  	Implementation of Set Backward Oracle Matching algorithm (Factor based aproach).
 	Searches for a set of strings in file "patterns.txt" in text file text.txt.
 	
 	Requires two files in the same folder as the algorithm
-	@file patterns.txt containing the patterns to be searched for separated by ", " 
-		  !!!cannot end with ", " followed by nothing
+	@file patterns.txt containing the patterns to be searched for separated by "," 
+		  !!!cannot end with "," followed by nothing
 	@file text.txt containing the text to be searched in
 */
 func main() {
@@ -19,7 +19,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	patterns := strings.Split(string(patFile), ", ")
+	patterns := strings.Split(string(patFile), ",")
 	fmt.Printf("\nRunning: Set Backward Oracle Matching algorithm.\n\n")
 	fmt.Printf("Searching for %d patterns/words:\n",len(patterns))
 	for i := 0; i < len(patterns); i++ {
@@ -42,53 +42,107 @@ func main() {
 	@param p list of patterns to be serached for
 */  
 func sbom(t string, p []string) {
-	//preprocessing
+	occurences := make(map[int][]int)
+	occArray := make([]int, 0)
 	var j, current int
 	var word string
 	n := len(t)
 	lmin := computeMinLength(p)
-	or, orF, isTerminalForP := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
-	f := make([]int, len(orF)) //used for storing a set of states
-	fs := make([]string, len(orF))
-	fmt.Printf("\n\nSBOM: \n")
-	for q := range orF {
-		f[q] = -1
-		fs[q] = ""
+	or, orF, f := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
+	orF=orF //probably not needed
+	fmt.Printf("\n\nSBOM: \n\n")
+	/*for q := range orF {
+		f[q] = make([]int, 0)
 	}
 	for i := range p {
-		f[isTerminalForP[i]] = isTerminalForP[i]
-		fmt.Printf("\n%q has terminal state %d", p[i], isTerminalForP[i])
-	}
+		f[f[i]] = f[i]+p[i]
+		fmt.Printf("%q has terminal state %d\n", p[i], f[i])
+	}*/
+	fmt.Println()
 	//searching
 	pos := 0
 	for pos <= n - lmin {
 		current = 0
 		j = lmin
+		fmt.Printf("Position: %d, we read: ", pos)
 		for j >= 1 && stateExists(current, or) {
-			//fmt.Printf("we here, %c ", t[pos+j])
-			current = getTransition(current, t[pos+j], or)
+			fmt.Printf("%c", t[pos+j-1])
+			current = getTransition(current, t[pos+j-1], or)
+			if (current == -1) {
+				fmt.Printf(" (FAIL) ")
+			} else {
+				fmt.Printf(", ")
+			}
 			j--
 		}
-		word = getWord(pos, pos+lmin, t)
-		fmt.Printf("%q, %d" ,word, j)
-		//fmt.Printf("%q %d %t", word, current, stateExists(current, or))
-		if stateExists(current, or) && j == 0 /*&& strings.HasPrefix(word, f[current])*/ { //hasprefix(s, prefix string)
-			//verify all the patterns in f(current) one by one against the text
-			fmt.Printf("%q", fs[current])
-			if fs[current] == word {
-				fmt.Printf("\noccurence")
+		fmt.Printf("in the factor oracle. \n")
+		word = getWord(pos, pos+lmin-1, t)
+		if stateExists(current, or) && j == 0 && strings.HasPrefix(word, getCommonPrefix(p, f[current], lmin)) {
+			for i := range p {
+				//fmt.Printf("if %q = %q", p[i], word)
+				if p[i] == word {
+					//occurence
+					fmt.Printf("- Occurence\n")
+					occArray = occurences[current]
+					newArray := make([]int, cap(occArray)+1)
+					copy(newArray, occArray) //copy(dst, src)
+					occArray = newArray
+					occurences[i] = occArray
+					occurences[i][len(occArray)-1] = pos
+				}
 			}
-			fmt.Printf("we here")
-			j = 1
+			j = 0
 		}
 		pos = pos + j + 1
 	}
-	
-	or=or
-	isTerminalForP = isTerminalForP
+	fmt.Printf("\n\n")
+	for key, value := range occurences {
+		fmt.Printf("\nThere were %d occurences for word: %q at positions ",len(value), p[key])
+		for i := range value {
+			fmt.Printf("%d", value[i])
+			if i != len(value)-1 {
+				fmt.Printf(", ")
+			}
+		}
+		fmt.Printf(".")
+	}
 	return
 }
 
+/**
+	Returns a prefix of size l.
+*/
+func getCommonPrefix(p []string, array []int, l int) (prefix string) {
+	for i := range array {
+		r := []rune(p[array[i]])
+		newR := make([]rune, l)
+		for j := 0; j < l; j++ {
+			newR[j] = r[j]
+		}
+		prefix = string(newR)
+	}
+	return prefix
+}
+
+/**
+	Function that takes a set of strings, desired length and trims the set of strings to that length.
+*/
+func trimToLength(p []string, minLength int) (trimmed []string) {
+	trimmed = make([]string, len(p))
+	for i := 0; i < len(p); i++ {
+		r := []rune(p[i])
+		newR := make([]rune, minLength)
+		for j := 0; j < minLength; j++ {
+			newR[j] = r[j]
+		}
+		trimmed[i]=string(newR)
+	}
+	return trimmed
+}
+
+/**
+	Function that return word in text at position begin - end.
+*/
 func getWord(begin, end int, t string) string {
 	d := make([]uint8, end-begin+1)
 	for j,i:= 0,begin; i<=end; i++ {
@@ -99,43 +153,47 @@ func getWord(begin, end int, t string) string {
 	return s2
 }
 
-func buildOracleMultiple(p []string) (map[int]map[uint8]int, []bool, []int) {
+/**
+	Functions that build factor oracle.
+*/
+func buildOracleMultiple(p []string) (map[int]map[uint8]int, []bool, map[int][]int) {
 	var parent, down int
 	var o uint8
-	orTrie, orTrieF, isTerminalForP := constructTrie(p)
+	orTrie, orTrieF, f := constructTrie(p)
+	toReturn := orTrie //for getParent to have only one parent
 	supply := make([]int, len(orTrieF))
 	i := 0 //root of trie
 	supply[i] = -1
 	fmt.Printf("\n\nOracle construction: \n")
 	for current := 1; current < len(orTrieF); current++ {
-		o, parent = getParent(current, orTrie)
-		//fmt.Printf("current %d", current)
+		o, parent = getParent(current, orTrie) //getParent might fail
+		fmt.Printf("\nparent of %d is %d", current, parent)
 		down = supply[parent]
-		for stateExists(down, orTrie) && getTransition(down, o, orTrie) == -1 {
-			createTransition(down, o, current, orTrie)
+		for stateExists(down, toReturn) && getTransition(down, o, toReturn) == -1 {
+			createTransition(down, o, current, toReturn)
 			down = supply[down]
 		}
-		if stateExists(down, orTrie) {
-			supply[current] = getTransition(down, o, orTrie)
+		if stateExists(down, toReturn) {
+			supply[current] = getTransition(down, o, toReturn)
 		} else {
 			supply[current] = i
 		}
 		 
 	}
-	return orTrie, orTrieF, isTerminalForP
+	return orTrie, orTrieF, f
 }
 
 /**
 	Function that constructs Trie as an automaton for a set of strings .
 	Returns built triematon + array of terminal states
 */
-func constructTrie(p []string) (map[int]map[uint8]int, []bool, []int) {
+func constructTrie(p []string) (map[int]map[uint8]int, []bool, map[int][]int) {
 	var current, j int
 	state := 1
 	trie := make(map[int]map[uint8]int)
 	isTerminal := make([]bool, 1)
-	isTerminalForP := make([]int, 1)
-	f := make([]int, 1)
+	array := make([]int, 0)
+	f := make(map[int][]int)  //0-1,2; 1-7; (terminal states for pattern i in f[i]
 	fmt.Printf("\n\nTrie construction: \n")
 	createNewState(0, trie)
 	for i:=0; i<len(p); i++ {
@@ -150,9 +208,6 @@ func constructTrie(p []string) (map[int]map[uint8]int, []bool, []int) {
 				newIsTerminal := make([]bool, cap(isTerminal)+1)
 				copy(newIsTerminal, isTerminal) //copy(dst, src)
 				isTerminal = newIsTerminal
-				newF := make([]int, cap(f)+1)
-				copy(newF, f)
-				f = newF
 			}
 			createNewState(state, trie)
 			isTerminal[state]=false
@@ -162,35 +217,24 @@ func constructTrie(p []string) (map[int]map[uint8]int, []bool, []int) {
 			state++
 		}
 		if isTerminal[current] {
-			f[current] = f[current] + i
+			array = f[current]
+			newArray := make([]int, cap(array)+1)
+			copy(newArray, array) //copy(dst, src)
+			array = newArray
+			array[len(array)-1] = i
+			f[current] = array
+			fmt.Printf(" and %d", i)
 		} else {
-			isTerminal[current] = true
-			fmt.Printf("\n%d is terminal for %q.", current, p[i])  //
-			if i==len(isTerminalForP) { //dynamic array size
-				newIsTerminalForP := make([]int, cap(isTerminalForP)+1)
-				copy(newIsTerminalForP, isTerminalForP) //copy(dst, src)
-				isTerminalForP = newIsTerminalForP
-			}
-			isTerminalForP[i] = current
-			f[current] = i
+			isTerminal[current] = true //mark current as terminal
+			fmt.Printf("\n%d is terminal for word number %d", current, i) 
+			newArray := make([]int, 1)
+			copy(newArray, array) //copy(dst, src)
+			array = newArray
+			array[len(array)-1] = i
+			f[current] = array
 		}
 	}
-	return trie, isTerminal, isTerminalForP
-}
-
-/**
-	Function that takes a set of strings, desired length and trims the set of strings to that length.
-*/
-func trimToLength(p []string, minLength int) []string {
-	for i := 0; i < len(p); i++ {
-		r := []rune(p[i])
-		newR := make([]rune, minLength)
-		for j := 0; j < minLength; j++ {
-			newR[j] = r[j]
-		}
-		p[i]=string(newR)
-	}
-	return p
+	return trie, isTerminal, f
 }
 
 /**
@@ -209,11 +253,12 @@ func computeMinLength(p []string) int{
 /**	
 	Function that takes an array of strings and reverses it.
 */
-func reverseAll(s []string) []string {
+func reverseAll(s []string) (reversed []string) {
+	reversed = make([]string, len(s))
 	for i := 0; i < len(s); i++ {
-		s[i] = reverse(s[i])
+		reversed[i] = reverse(s[i])
 	}
-	return s
+	return reversed
 }
 
 /**	
