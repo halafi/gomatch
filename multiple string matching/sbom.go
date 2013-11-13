@@ -48,17 +48,8 @@ func sbom(t string, p []string) {
 	var word string
 	n := len(t)
 	lmin := computeMinLength(p)
-	or, orF, f := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
-	orF=orF //probably not needed
-	fmt.Printf("\n\nSBOM: \n\n")
-	/*for q := range orF {
-		f[q] = make([]int, 0)
-	}
-	for i := range p {
-		f[f[i]] = f[i]+p[i]
-		fmt.Printf("%q has terminal state %d\n", p[i], f[i])
-	}*/
-	fmt.Println()
+	or, f := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
+	fmt.Printf("\n\nSBOM:\n\n")
 	//searching
 	pos := 0
 	for pos <= n - lmin {
@@ -78,17 +69,16 @@ func sbom(t string, p []string) {
 		fmt.Printf("in the factor oracle. \n")
 		word = getWord(pos, pos+lmin-1, t)
 		if stateExists(current, or) && j == 0 && strings.HasPrefix(word, getCommonPrefix(p, f[current], lmin)) {
-			for i := range p {
-				//fmt.Printf("if %q = %q", p[i], word)
-				if p[i] == word {
+			for i := range f[current] {
+				if p[f[current][i]] == getWord(pos, pos-1+len(p[f[current][i]]), t) {
 					//occurence
-					fmt.Printf("- Occurence\n")
-					occArray = occurences[current]
+					fmt.Printf("- Occurence, %q = %q\n", p[f[current][i]], word)
+					occArray = occurences[f[current][i]]
 					newArray := make([]int, cap(occArray)+1)
 					copy(newArray, occArray) //copy(dst, src)
 					occArray = newArray
-					occurences[i] = occArray
-					occurences[i][len(occArray)-1] = pos
+					occurences[f[current][i]] = occArray
+					occurences[f[current][i]][len(occArray)-1] = pos
 				}
 			}
 			j = 0
@@ -97,7 +87,7 @@ func sbom(t string, p []string) {
 	}
 	fmt.Printf("\n\n")
 	for key, value := range occurences {
-		fmt.Printf("\nThere were %d occurences for word: %q at positions ",len(value), p[key])
+		fmt.Printf("\nThere were %d occurences for word: %q at positions: ",len(value), p[key])
 		for i := range value {
 			fmt.Printf("%d", value[i])
 			if i != len(value)-1 {
@@ -107,6 +97,88 @@ func sbom(t string, p []string) {
 		fmt.Printf(".")
 	}
 	return
+}
+
+/**
+	Functions that build factor oracle.
+*/
+func buildOracleMultiple(p []string) (toReturn map[int]map[uint8]int, f map[int][]int) {
+	var parent, down int
+	var o uint8
+	orTrie, orTrieF, f := constructTrie(p)
+	toReturn = orTrie
+	supply := make([]int, len(orTrieF))
+	i := 0 //root of trie
+	supply[i] = -1
+	fmt.Printf("\n\nOracle construction: \n")
+	for current := 1; current < len(orTrieF); current++ {
+		o, parent = getParent(current, orTrie)
+		down = supply[parent]
+		for stateExists(down, toReturn) && getTransition(down, o, toReturn) == -1 {
+			createTransition(down, o, current, toReturn)
+			down = supply[down]
+		}
+		if stateExists(down, toReturn) {
+			supply[current] = getTransition(down, o, toReturn)
+		} else {
+			supply[current] = i
+		}
+	}
+	return toReturn, f
+}
+
+/**
+	Function that constructs Trie as an automaton for a set of strings .
+	Returns built triematon + array of terminal states
+*/
+func constructTrie(p []string) (map[int]map[uint8]int, []bool, map[int][]int) {
+	var current, j int
+	state := 1
+	trie := make(map[int]map[uint8]int)
+	isTerminal := make([]bool, 1)
+	array := make([]int, 0)
+	f := make(map[int][]int)  //0-1,2; 1-7; (terminal states for pattern i in f[i]
+	fmt.Printf("\n\nTrie construction: \n")
+	createNewState(0, trie)
+	for i:=0; i<len(p); i++ {
+		current = 0
+		j = 0
+		for j < len(p[i]) && getTransition(current, p[i][j], trie)!=-1 {
+			current = getTransition(current, p[i][j], trie)
+			j++
+		}
+		for j < len(p[i]) {
+			if state==len(isTerminal) {
+				newIsTerminal := make([]bool, cap(isTerminal)+1)
+				copy(newIsTerminal, isTerminal) //copy(dst, src)
+				isTerminal = newIsTerminal
+			}
+			createNewState(state, trie)
+			isTerminal[state]=false
+			createTransition(current, p[i][j], state, trie)
+			current = state
+			j++
+			state++
+		}
+		if isTerminal[current] {
+			array = f[current]
+			newArray := make([]int, cap(array)+1)
+			copy(newArray, array) //copy(dst, src)
+			array = newArray
+			array[len(array)-1] = i
+			f[current] = array
+			fmt.Printf(" and %d", i)
+		} else {
+			isTerminal[current] = true //mark current as terminal
+			fmt.Printf("\n%d is terminal for word number %d", current, i) 
+			newArray := make([]int, 1)
+			copy(newArray, array) //copy(dst, src)
+			array = newArray
+			array[len(array)-1] = i
+			f[current] = array
+		}
+	}
+	return trie, isTerminal, f
 }
 
 /**
@@ -151,90 +223,6 @@ func getWord(begin, end int, t string) string {
 	}
 	s2 := string(d)
 	return s2
-}
-
-/**
-	Functions that build factor oracle.
-*/
-func buildOracleMultiple(p []string) (map[int]map[uint8]int, []bool, map[int][]int) {
-	var parent, down int
-	var o uint8
-	orTrie, orTrieF, f := constructTrie(p)
-	toReturn := orTrie //for getParent to have only one parent
-	supply := make([]int, len(orTrieF))
-	i := 0 //root of trie
-	supply[i] = -1
-	fmt.Printf("\n\nOracle construction: \n")
-	for current := 1; current < len(orTrieF); current++ {
-		o, parent = getParent(current, orTrie) //getParent might fail
-		fmt.Printf("\nparent of %d is %d", current, parent)
-		down = supply[parent]
-		for stateExists(down, toReturn) && getTransition(down, o, toReturn) == -1 {
-			createTransition(down, o, current, toReturn)
-			down = supply[down]
-		}
-		if stateExists(down, toReturn) {
-			supply[current] = getTransition(down, o, toReturn)
-		} else {
-			supply[current] = i
-		}
-		 
-	}
-	return orTrie, orTrieF, f
-}
-
-/**
-	Function that constructs Trie as an automaton for a set of strings .
-	Returns built triematon + array of terminal states
-*/
-func constructTrie(p []string) (map[int]map[uint8]int, []bool, map[int][]int) {
-	var current, j int
-	state := 1
-	trie := make(map[int]map[uint8]int)
-	isTerminal := make([]bool, 1)
-	array := make([]int, 0)
-	f := make(map[int][]int)  //0-1,2; 1-7; (terminal states for pattern i in f[i]
-	fmt.Printf("\n\nTrie construction: \n")
-	createNewState(0, trie)
-	for i:=0; i<len(p); i++ {
-		current = 0
-		j = 0
-		for j < len(p[i]) && getTransition(current, p[i][j], trie)!=-1 {
-			current = getTransition(current, p[i][j], trie)
-			j++
-		}
-		for j < len(p[i]) {
-			if state==len(isTerminal) { //dynamic array size
-				newIsTerminal := make([]bool, cap(isTerminal)+1)
-				copy(newIsTerminal, isTerminal) //copy(dst, src)
-				isTerminal = newIsTerminal
-			}
-			createNewState(state, trie)
-			isTerminal[state]=false
-			createTransition(current, p[i][j], state, trie)
-			current = state
-			j++
-			state++
-		}
-		if isTerminal[current] {
-			array = f[current]
-			newArray := make([]int, cap(array)+1)
-			copy(newArray, array) //copy(dst, src)
-			array = newArray
-			array[len(array)-1] = i
-			f[current] = array
-			fmt.Printf(" and %d", i)
-		} else {
-			isTerminal[current] = true //mark current as terminal
-			fmt.Printf("\n%d is terminal for word number %d", current, i) 
-			newArray := make([]int, 1)
-			copy(newArray, array) //copy(dst, src)
-			array = newArray
-			array[len(array)-1] = i
-			f[current] = array
-		}
-	}
-	return trie, isTerminal, f
 }
 
 /**
