@@ -49,9 +49,11 @@ func sbom(t string, p []string) {
 	lmin := computeMinLength(p)
 	or, orF, isTerminalForP := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
 	f := make([]int, len(orF)) //used for storing a set of states
+	fs := make([]string, len(orF))
 	fmt.Printf("\n\nSBOM: \n")
 	for q := range orF {
 		f[q] = -1
+		fs[q] = ""
 	}
 	for i := range p {
 		f[isTerminalForP[i]] = isTerminalForP[i]
@@ -63,16 +65,23 @@ func sbom(t string, p []string) {
 		current = 0
 		j = lmin
 		for j >= 1 && stateExists(current, or) {
+			//fmt.Printf("we here, %c ", t[pos+j])
 			current = getTransition(current, t[pos+j], or)
 			j--
 		}
 		word = getWord(pos, pos+lmin, t)
-		fmt.Printf("%q", word)
-		if stateExists(current, or) && j == 0 /*&& word = reversed(L(current)*/ {
+		fmt.Printf("%q, %d" ,word, j)
+		//fmt.Printf("%q %d %t", word, current, stateExists(current, or))
+		if stateExists(current, or) && j == 0 /*&& strings.HasPrefix(word, f[current])*/ { //hasprefix(s, prefix string)
 			//verify all the patterns in f(current) one by one against the text
+			fmt.Printf("%q", fs[current])
+			if fs[current] == word {
+				fmt.Printf("\noccurence")
+			}
+			fmt.Printf("we here")
 			j = 1
 		}
-		pos = pos+j
+		pos = pos + j + 1
 	}
 	
 	or=or
@@ -89,6 +98,7 @@ func getWord(begin, end int, t string) string {
 	s2 := string(d)
 	return s2
 }
+
 func buildOracleMultiple(p []string) (map[int]map[uint8]int, []bool, []int) {
 	var parent, down int
 	var o uint8
