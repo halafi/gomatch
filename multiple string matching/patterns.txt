@@ -1,1 +1,1 @@
-announce, annual, annually
+erlock, :, Adventure, end, Sherlock, spam

@@ -7,7 +7,7 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 	@true prints various extra stuff out, but slows down the sbom execution
 	@false will be quick and quiet
 */
-const debugMode bool = true
+const debugMode bool = false
 
 /**
  	Implementation of Set Backward Oracle Matching algorithm.

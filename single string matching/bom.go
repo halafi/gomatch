@@ -40,11 +40,11 @@ func main() {
 		} 
 		if(runInSilentMode==false) {
 			fmt.Printf("\nRunning: Backward Oracle Matching algorithm.\n\n")
+			fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
+			fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		} else {
 			fmt.Printf("\nRunning: Backward Oracle Matching algorithm in SILENT mode (see line 12 in the code).\n\n")
 		}
-		fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
-		fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		startTime := time.Now()
 		bom(s, pattern)
 		elapsed := time.Since(startTime)
@@ -63,11 +63,11 @@ func main() {
 		}
 		if(runInSilentMode==false) {
 			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
+			fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
+			fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
 		} else {
 			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).\n\n")
 		}
-		fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
-		fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
 		startTime := time.Now()
 		bom(string(textFile), string(patFile))
 		elapsed := time.Since(startTime)
@@ -119,12 +119,12 @@ func bom(t, p string) {
 	}
 	fmt.Printf("\n\n")
 	if (currentOcc > 0) {
-		fmt.Printf("Word %q was found %d times at positions: {", p, currentOcc)
+		fmt.Printf("Word %q was found %d times at positions: ", p, currentOcc)
 		for k := 0; k<currentOcc-1; k++ {
 			fmt.Printf("%d, ",occurences[k])
 		}
 		fmt.Printf("%d",occurences[currentOcc-1])
-		fmt.Printf("}.\n")
+		fmt.Printf(".\n")
 	}
 	if(currentOcc == 0) {
 		fmt.Printf("\nWord was not found.\n")
