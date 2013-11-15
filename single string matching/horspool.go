@@ -1,22 +1,16 @@
 ﻿package main
 import ("fmt"; "log"; "os"; "io/ioutil")
 
-/** user defined CONSTANT
-	Set commandLineInput to:
-		@true to take two command line arguments
-		@false to take two files "pattern.txt" AND "text.txt"
-*/
 const commandLineInput bool = false
 
 /**
  	Implementation of Boyer-Moore-Horspool algorithm (Sufix based aproach).
 	
-	IF(commandLineInput == true) Requires two command line arguments.
+	If(commandLineInput == true) requires two command line arguments separated by one space.
 	@argument string to be searched "for" (pattern, search word), no spaces allowed
-	@argument one space
 	@argument string to be searched "in" (text), single spaces allowed
 	
-	IF(commandLineInput == false) requires two files in the same folder
+	If(commandLineInput == false) requires two files in the same folder as this file.
 	@file pattern.txt containing the pattern to be searched for
 	@file text.txt containing the text to be searched in
 */

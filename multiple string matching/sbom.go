@@ -4,7 +4,7 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 /** 
 	User defined.
 	
-	@true prints various extra stuff out, but slows down the sbom execution
+	@true prints various extra stuff out, but slows down the execution
 	@false will be quick and quiet
 */
 const debugMode bool = false

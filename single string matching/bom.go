@@ -1,15 +1,13 @@
 ﻿package main
 import ("fmt"; "log"; "os"; "io/ioutil"; "time")
 
-/** user defined CONSTANTS
-	Set runInSilentMode to:
-		@true to run in silent mode
-		@false to print everything
-	Set commandLineInput to:
-		@true to take two command line arguments
-		@false to take two files "pattern.txt" AND "text.txt"
+/** 
+	User defined.
+	
+	@true prints various extra stuff out, but slows down the bom execution
+	@false will be quick and quiet
 */
-const runInSilentMode bool = true //very slow
+const debugMode bool = false
 const commandLineInput bool = false
 
 /**
@@ -38,12 +36,12 @@ func main() {
 		if ( len(args[1]) > len(s) ) {
 			log.Fatal("Pattern  is longer than text!")
 		} 
-		if(runInSilentMode==false) {
+		if(debugMode==true) {
 			fmt.Printf("\nRunning: Backward Oracle Matching algorithm.\n\n")
 			fmt.Printf("Search word (%d chars long): %q.\n",len(args[1]), pattern)
 			fmt.Printf("Text        (%d chars long): %q.\n\n",len(s), s)
 		} else {
-			fmt.Printf("\nRunning: Backward Oracle Matching algorithm in SILENT mode (see line 12 in the code).\n\n")
+			fmt.Printf("\nRunning: Backward Oracle Matching algorithm.\n\n")
 		}
 		startTime := time.Now()
 		bom(s, pattern)
@@ -61,12 +59,12 @@ func main() {
 		if (len(patFile) > len(textFile)) {
 			log.Fatal("Pattern  is longer than text!")
 		}
-		if(runInSilentMode==false) {
+		if(debugMode==true) {
 			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
 			fmt.Printf("Search word (%d chars long): %q.\n",len(patFile), patFile)
 			fmt.Printf("Text        (%d chars long): %q.\n\n",len(textFile), textFile)
 		} else {
-			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm in SILENT mode (see line 12 in the code).\n\n")
+			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
 		}
 		startTime := time.Now()
 		bom(string(textFile), string(patFile))
@@ -90,21 +88,21 @@ func bom(t, p string) {
 	occurences := make([]int, len(t))
 	currentOcc := 0
 	pos = 0
-	if(runInSilentMode==false) {
+	if(debugMode==true) {
 		fmt.Printf("\n\nWe are reading backwards in %q, searching for %q\n\nat position %d:\n",t, p, pos+m-1)
 	}
 	for (pos <= n - m) {
 		current = 0 //initial state of the oracle
 		j = m
 		for j > 0 && stateExists(current, oracle) {
-			if(runInSilentMode==false) {
+			if(debugMode==true) {
 				prettyPrint(current, j, n, pos, t, oracle)
 			}
 			current = getTransition(current, t[pos+j-1], oracle)
 			j--
 		}
 		if stateExists(current, oracle){
-			if(runInSilentMode==false) {
+			if(debugMode==true) {
 				fmt.Printf(" We got an occurence!")
 			}
 			occurences[currentOcc] = pos
@@ -112,7 +110,7 @@ func bom(t, p string) {
 		}
 		pos = pos + j +1
 		if (pos+m-1 < len(t)) {
-			if(runInSilentMode==false) {
+			if(debugMode==true) {
 				fmt.Printf("\n\nposition %d:\n",pos+m-1)
 			}
 		}
@@ -140,7 +138,7 @@ func bom(t, p string) {
 	@return oracle built oracle
 */
 func oracleOnLine(p string)(oracle map[int]map[uint8]int) {
-	if(runInSilentMode==false) {
+	if(debugMode==true) {
 		fmt.Printf("Oracle construction: \n")
 	}
 	oracle = make(map[int]map[uint8]int)
@@ -182,11 +180,8 @@ func oracleAddLetter(oracle map[int]map[uint8]int, supply []int, orP string, o u
 }
 
 /**	
-	Function that takes string and reverses it.
-	
-	@author Walter http://stackoverflow.com/a/10043083
-	@param s string to be reversed
-	@return reversed string
+	Function that takes a single string and reverses it.
+	@author 'Walter' http://stackoverflow.com/a/10043083
 */
 func reverse(s string) string {
     l := len(s)
@@ -198,50 +193,39 @@ func reverse(s string) string {
     return string(m)
 }
 
-////Follows some AUTOMATON FUNCTIONS.
-////Automaton states are stored in map[int]map[uint8]int:
-//// - for each initial state(key) there is a 'value':
-////   set of unique characters(keywords) with their destination states (values).
-//// - lets assume, that state 0 is always the inital state of the automaton
-//// - state -1 is given by some functions as a non-existing state
+/*******************          Automaton functions          *******************/
 
 /**
-	Automaton function for creating a new state.
-	@param state state number of state to be created
-	@param oracle factor oracle to add state to
+	Automaton function for creating a new state 'state'.
+	@param 'at' automaton
 */
-func createNewState(state int, oracle map[int]map[uint8]int) {
-	emptyMap := make(map[uint8]int)
-	oracle[state] = emptyMap
-	if(runInSilentMode==false) {
+func createNewState(state int, at map[int]map[uint8]int) {
+	at[state] = make(map[uint8]int)
+	if debugMode==true {
 		fmt.Printf("\ncreated state %d", state)
 	}
 }
 
 /**
- 	Automaton function for creating a transition σ(state,letter)=end.
-	@usage createTransition(fromSate, overChar, toState, oracle)
+ 	Creates a transition for function σ(state,letter) = end.
+	@param 'at' automaton
 */
-func createTransition(fromState int, overChar uint8, toState int, oracle map[int]map[uint8]int) {
-	stateMap := oracle[fromState]
-	stateMap[overChar]= toState
-	oracle[fromState] = stateMap
-	if(runInSilentMode==false) {
+func createTransition(fromState int, overChar uint8, toState int, at map[int]map[uint8]int) {
+	at[fromState][overChar]= toState
+	if debugMode==true {
 		fmt.Printf("\n    σ(%d,%c)=%d;",fromState,overChar,toState)
 	}
 }
 
 /**
-	Returns toState from 'σ(fromState,overChar)=toState'.
-	@return toState state for the desired transition function σ, -1 if there is nothing to return
+	Returns ending state for transition σ(fromState,overChar), '-1' if there is none.
+	@param 'at' automaton
 */
-func getTransition(fromState int, overChar uint8, oracle map[int]map[uint8]int)(toState int) {
-	var ok bool
-	if (!stateExists(fromState, oracle)) {
+func getTransition(fromState int, overChar uint8, at map[int]map[uint8]int)(toState int) {
+	if (!stateExists(fromState, at)) {
 		return -1
 	}
-	stateMap := oracle[fromState]
-	toState, ok = stateMap[overChar]
+	toState, ok := at[fromState][overChar]
 	if (ok == false) {
 		return -1	
 	}
@@ -249,19 +233,15 @@ func getTransition(fromState int, overChar uint8, oracle map[int]map[uint8]int)(
 }
 
 /**
-	Checks if state 'state' exists.
-	@param state state to check for
-	@param oracle oracle to check state for in
-	@return true if state exists
-	@return false if state doesn't exist
+	Checks if state 'state' exists. Returns 'true' if it does, 'false' otherwise.
+	@param 'at' automaton
 */
-func stateExists(state int, oracle map[int]map[uint8]int)bool {
-	_, ok := oracle[state]
-	if (!ok || state == -1 || oracle[state] == nil) {
+func stateExists(state int, at map[int]map[uint8]int)bool {
+	_, ok := at[state]
+	if (!ok || state == -1 || at[state] == nil) {
 		return false
-	} else {
-		return true
 	}
+	return true
 }
 
 /**
