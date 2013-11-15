@@ -14,7 +14,7 @@ const debugMode bool = false
 	Searches for a set of strings (in 'patterns.txt') in text (in 'text.txt').
 	Requires two files in the same folder as the algorithm:
 	
-	@file 'patterns.txt' containing the patterns to be searched for separated by ", " 
+	@file 'patterns.txt' containing the patterns to be searched for separated by single spaces
 	@file 'text.txt' containing the text to be searched in
 */
 func main() {
@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	patterns := strings.Split(string(patFile), ", ")
+	patterns := strings.Split(string(patFile), " ")
 	fmt.Printf("\nRunning: Set Backward Oracle Matching algorithm.\n\n")
 	if debugMode==true { 
 		fmt.Printf("Searching for %d patterns/words:\n",len(patterns))

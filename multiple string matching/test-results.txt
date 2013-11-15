@@ -1,0 +1,25 @@
+Comparison of multiple string matching algorithms in this repo.
+#TEST1----------------------------------------------------------
+patterns: 1000, text: 15460 words
+
+SBOM - executed in 30.52 secs
+AC   - executed in 36.40 secs
+AdAc - executed in 51.32 secs
+
+#TEST2----------------------------------------------------------
+patterns: 1460, text: 15460 words
+
+SBOM - executed in 46.08 secs
+AC   - executed in 49.98 secs
+AdAc - executed in 82.31 secs
+
+#TEST3----------------------------------------------------------
+patterns: 1000, text 30920 words
+
+SBOM - executed in 112.67 secs
+AC   - executed in secs 122.33 secs
+AdAc - executed in secs 144.94 secs
+
+
+#Conclusion-----------------------------------------------------
+SBOM performed best in all tests.

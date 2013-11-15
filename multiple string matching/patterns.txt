@@ -1,1 +1,1 @@
-erlock, :, Adventure, end, Sherlock, spam
+erlock : Adventure end Sherlock spam
