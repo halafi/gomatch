@@ -10,7 +10,7 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 const debugMode bool = false
 
 /**
- 	Implementation of Set Backward Oracle Matching algorithm.
+ 	Implementation of Set Backward Oracle Matching algorithm (Factor based).
 	Searches for a set of strings (in 'patterns.txt') in text (in 'text.txt').
 	Requires two files in the same folder as the algorithm:
 	
@@ -116,7 +116,7 @@ func sbom(t string, p []string) {
 }
 
 /**
-	Functions that build factor oracle.
+	Function that builds factor oracle.
 */
 func buildOracleMultiple (p []string) (orToReturn map[int]map[uint8]int, f map[int][]int) {
 	orTrie, stateIsTerminal, f := constructTrie(p)
