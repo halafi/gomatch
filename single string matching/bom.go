@@ -43,10 +43,7 @@ func main() {
 		} else {
 			fmt.Printf("\nRunning: Backward Oracle Matching algorithm.\n\n")
 		}
-		startTime := time.Now()
 		bom(s, pattern)
-		elapsed := time.Since(startTime)
-		fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
 	} else if (commandLineInput == false) { //in case of file line input
 		patFile, err := ioutil.ReadFile("pattern.txt")
 		if err != nil {
@@ -66,10 +63,7 @@ func main() {
 		} else {
 			fmt.Printf("\nRunning: Backward Oracle Matching alghoritm.\n\n")
 		}
-		startTime := time.Now()
 		bom(string(textFile), string(patFile))
-		elapsed := time.Since(startTime)
-		fmt.Printf("\nElapsed %f secs\n", elapsed.Seconds())
 	}
 }
 
@@ -82,6 +76,7 @@ func main() {
 	@param p pattern/word to be serached for
 */  
 func bom(t, p string) {
+	startTime := time.Now()
 	n, m := len(t), len(p)
 	var current, j, pos int
 	oracle := oracleOnLine(reverse(p))
@@ -115,6 +110,8 @@ func bom(t, p string) {
 			}
 		}
 	}
+	elapsed := time.Since(startTime)
+	fmt.Printf("\n\nElapsed %f secs\n", elapsed.Seconds())
 	fmt.Printf("\n\n")
 	if (currentOcc > 0) {
 		fmt.Printf("Word %q was found %d times at positions: ", p, currentOcc)

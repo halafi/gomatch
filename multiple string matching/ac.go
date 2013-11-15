@@ -1,4 +1,4 @@
-﻿package main
+package main
 import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 
 /** 
@@ -10,7 +10,7 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 const debugMode bool = false
 
 /**
- 	Implementation of Set Backward Oracle Matching algorithm.
+ 	Implementation of Basic Aho-Corasick algorithm.
 	Searches for a set of strings (in 'patterns.txt') in text (in 'text.txt').
 	Requires two files in the same folder as the algorithm:
 	
@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 	patterns := strings.Split(string(patFile), ", ")
-	fmt.Printf("\nRunning: Set Backward Oracle Matching algorithm.\n\n")
+	fmt.Printf("\nRunning: Basic Aho-Corasick algorithm.\n\n")
 	if debugMode==true { 
 		fmt.Printf("Searching for %d patterns/words:\n",len(patterns))
 	}
@@ -40,65 +40,48 @@ func main() {
 		}
 	}
 	if debugMode==true { 
-		fmt.Printf("\n\nIn text (%d chars long): \n%q\n\n",len(textFile), textFile)
+		//fmt.Printf("\n\nIn text (%d chars long): \n%q\n\n",len(textFile), textFile)
 	}
-	sbom(string(textFile), patterns)
+	ahoCorasick(string(textFile), patterns)
 }
 
 /**
-	Function sbom performing the Set Backward Oracle Matching alghoritm. 
+	Function performing the Basic Aho-Corasick alghoritm. 
 	Finds and prints occurences of each pattern. 
 	
 	@param t text to be searched in
 	@param p list of patterns to be serached for
 */  
-func sbom(t string, p []string) {
+func ahoCorasick(t string, p []string) {
 	startTime := time.Now()
 	occurences := make(map[int][]int)
-	lmin := computeMinLength(p)
-	or, f := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
+	ac, f, s := buildAc(p)
 	if debugMode==true {
-		fmt.Printf("\n\nSBOM:\n\n")
+		fmt.Printf("\n\nAC:\n\n")
 	}
-	pos := 0
-	for pos <= len(t) - lmin {
-		current := 0
-		j := lmin
-		if debugMode==true {
-			fmt.Printf("Position: %d, we read: ", pos)
+	current := 0
+	for pos := 0; pos < len(t); pos++ {
+		for getTransition(current, t[pos], ac) == -1 && s[current] != -1 {
+			current = s[current]
 		}
-		for j >= 1 && stateExists(current, or) {
-			if debugMode==true {
-				fmt.Printf("%c", t[pos+j-1])
-			}
-			current = getTransition(current, t[pos+j-1], or)
-			if debugMode==true {
-				if (current == -1) {
-					fmt.Printf(" (FAIL) ")
-				} else {
-					fmt.Printf(", ")
-				}
-			}
-			j--
+		if getTransition(current, t[pos], ac) != -1 {
+			current = getTransition(current, t[pos], ac)
+		} else {
+			current = 0
 		}
-		if debugMode==true {
-			fmt.Printf("in the factor oracle. \n")
-		}
-		word := getWord(pos, pos+lmin-1, t)
-		if stateExists(current, or) && j == 0 && strings.HasPrefix(word, getCommonPrefix(p, f[current], lmin)) { //check for prefix match
+		_, ok := f[current]
+		if ok {
 			for i := range f[current] {
-				if p[f[current][i]] == getWord(pos, pos-1+len(p[f[current][i]]), t) { //check for word match
+				if p[f[current][i]] == getWord(pos-len(p[f[current][i]])+1, pos, t) { //check for word match
 					if debugMode==true {
-						fmt.Printf("- Occurence, %q = %q\n", p[f[current][i]], word)
+						fmt.Printf("Occurence at position %d, %q = %q\n", pos-len(p[f[current][i]])+1, p[f[current][i]], p[f[current][i]])
 					}
 					newOccurences := intArrayCapUp(occurences[f[current][i]])
 					occurences[f[current][i]] = newOccurences
-					occurences[f[current][i]][len(newOccurences)-1] = pos
+					occurences[f[current][i]][len(newOccurences)-1] = pos-len(p[f[current][i]])+1
 				}
 			}
-			j = 0
 		}
-		pos = pos + j + 1
 	}
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n\nElapsed %f secs\n", elapsed.Seconds())
@@ -115,32 +98,51 @@ func sbom(t string, p []string) {
 	return
 }
 
-/**
-	Functions that build factor oracle.
-*/
-func buildOracleMultiple (p []string) (orToReturn map[int]map[uint8]int, f map[int][]int) {
-	orTrie, stateIsTerminal, f := constructTrie(p)
-	s := make([]int, len(stateIsTerminal)) //supply function
-	i := 0 //root of trie
-	orToReturn = orTrie
+func buildAc(p []string) (acToReturn map[int]map[uint8]int, f map[int][]int, s []int) {
+	acTrie, stateIsTerminal, f := constructTrie(p)
+	s = make([]int, len(stateIsTerminal)) //supply function
+	i := 0 //root of acTrie
+	acToReturn = acTrie
 	s[i] = -1
 	if debugMode==true {
-		fmt.Printf("\n\nOracle construction: \n")
+		fmt.Printf("\n\nAC construction: \n")
 	}
 	for current := 1; current < len(stateIsTerminal); current++ {
-		o, parent := getParent(current, orTrie)
+		o, parent := getParent(current, acTrie)
 		down := s[parent]
-		for stateExists(down, orToReturn) && getTransition(down, o, orToReturn) == -1 {
-			createTransition(down, o, current, orToReturn)
+		for stateExists(down, acToReturn) && getTransition(down, o, acToReturn) == -1 {
 			down = s[down]
 		}
-		if stateExists(down, orToReturn) {
-			s[current] = getTransition(down, o, orToReturn)
+		if stateExists(down, acToReturn) {
+			s[current] = getTransition(down, o, acToReturn)
+			if stateIsTerminal[s[current]] == true {
+				stateIsTerminal[current] = true
+				f[current] = arrayUnion(f[current], f[s[current]]) //F(Current) <- F(Current) union F(S(Current))
+				if debugMode==true {
+					fmt.Printf(" f[%d] set to: ", current)
+					for i := range f[current] {
+						fmt.Printf("%d\n", f[current][i])
+					}
+				}
+			}
 		} else {
-			s[current] = i
+			s[current] = i //initial state?
 		}
 	}
-	return orToReturn, f
+	if debugMode==true {
+		fmt.Printf("\nsupply function: \n")
+		for i:= range s {
+			fmt.Printf("\ns[%d]=%d", i, s[i])
+		}
+		fmt.Printf("\n\n")
+		for i,j := range f {
+			fmt.Printf("f[%d]=", i)
+			for k := range j {
+				fmt.Printf("%d\n", j[k])
+			}
+		}
+	}
+	return acToReturn, f, s
 }
 
 /**
@@ -193,6 +195,35 @@ func constructTrie (p []string) (trie map[int]map[uint8]int, stateIsTerminal []b
 	return trie, stateIsTerminal, f
 }
 
+/**
+	Returns 'true' if arry of int's 's' contains int 'e', 'false' otherwise.
+	
+	@author Mostafa http://stackoverflow.com/a/10485970
+*/
+func contains(s []int, e int) bool {
+    for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+    return false
+}
+
+/*******************          String functions          *******************/
+/**
+	Function that returns word found in text 't' at position range 'begin' to 'end'.
+*/
+func getWord(begin, end int, t string) string {
+	for end >= len(t) {
+		return ""
+	}
+	d := make([]uint8, end-begin+1)
+	for j, i := 0, begin; i <= end; i, j = i+1, j+1 {
+		d[j] = t[i]
+	}
+	return string(d)
+}
+
 /*******************   Array size allocation functions  *******************/
 /**
 	Dynamically increases an array size of int's by 1.
@@ -214,88 +245,18 @@ func boolArrayCapUp (old []bool)(new []bool) {
 	return new
 }
 
-/*******************          String functions          *******************/
-/**	
-	Function that takes an array of strings and reverses it.
-*/
-func reverseAll(s []string) (reversed []string) {
-	reversed = make([]string, len(s))
-	for i := 0; i < len(s); i++ {
-		reversed[i] = reverse(s[i])
-	}
-	return reversed
-}
-
-/**	
-	Function that takes a single string and reverses it.
-	@author 'Walter' http://stackoverflow.com/a/10043083
-*/
-func reverse(s string) string {
-    l := len(s)
-    m := make([]rune, l)
-    for _, c := range s {
-        l--
-        m[l] = c
-    }
-    return string(m)
-}
-
 /**
-	Returns a prefix size 'lmin' for one string 'p' of first index found in 'f'.
-	It is not needed to compare all the strings from 'p' indexed in 'f',
-	thanks to the konwledge of 'lmin'.
+	Concats two arrays of int's into one.
 */
-func getCommonPrefix(p []string, f []int, lmin int) string {
-	r := []rune(p[f[0]])
-	newR := make([]rune, lmin)
-	for j := 0; j < lmin; j++ {
-		newR[j] = r[j]
-	}
-	return string(newR)
-}
-
-/**
-	Function that takes a set of strings 'p' and their wanted 'length'
-	and then trims each string in that set to have desired 'length'.
-*/
-func trimToLength(p []string, length int) (trimmedP []string) {
-	trimmedP = make([]string, len(p))
-	for i := range p {
-		r := []rune(p[i])
-		newR := make([]rune, length)
-		for j := 0; j < length; j++ {
-			newR[j] = r[j]
-		}
-		trimmedP[i]=string(newR)
-	}
-	return trimmedP
-}
-
-/**
-	Function that returns word found in text 't' at position range 'begin' to 'end'.
-*/
-func getWord(begin, end int, t string) string {
-	for end >= len(t) {
-		return ""
-	}
-	d := make([]uint8, end-begin+1)
-	for j, i := 0, begin; i <= end; i, j = i+1, j+1 {
-		d[j] = t[i]
-	}
-	return string(d)
-}
-
-/**
-	Function that computes minimal length string in a set of strings.
-*/
-func computeMinLength(p []string) (lmin int){
-	lmin = len(p[0])
-	for i:=1; i<len(p); i++ {
-		if (len(p[i])<lmin) {
-			lmin = len(p[i])
+func arrayUnion (to, from []int) (concat []int) {
+	concat = to
+	for i := range(from) {
+		if (!contains(concat, from[i])) {
+			concat = intArrayCapUp(concat)
+			concat[len(concat)-1] = from[i]
 		}
 	}
-	return lmin
+	return concat
 }
 
 /*******************          Automaton functions          *******************/
