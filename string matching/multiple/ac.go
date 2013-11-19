@@ -7,10 +7,10 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 	@true prints various extra stuff out, but slows down the execution
 	@false will be quick and quiet
 */
-const debugMode bool = false
+const debugMode bool = true
 
 /**
- 	Implementation of Advanced Aho-Corasick algorithm (Prefix based).
+ 	Implementation of Basic Aho-Corasick algorithm (Prefix based).
 	Searches for a set of strings (in 'patterns.txt') in text (in 'text.txt').
 	Requires two files in the same folder as the algorithm:
 	
@@ -27,7 +27,7 @@ func main() {
 		log.Fatal(err)
 	}
 	patterns := strings.Split(string(patFile), " ")
-	fmt.Printf("\nRunning: Advanced Aho-Corasick algorithm.\n\n")
+	fmt.Printf("\nRunning: Basic Aho-Corasick algorithm.\n\n")
 	if debugMode==true { 
 		fmt.Printf("Searching for %d patterns/words:\n",len(patterns))
 	}
@@ -55,16 +55,26 @@ func main() {
 func ahoCorasick(t string, p []string) {
 	startTime := time.Now()
 	occurences := make(map[int][]int)
-	ac, f := buildExtendedAc(p)
+	ac, f, s := buildAc(p)
 	if debugMode==true {
 		fmt.Printf("\n\nAC:\n\n")
 	}
 	current := 0
 	for pos := 0; pos < len(t); pos++ {
+		if debugMode==true {
+			fmt.Printf("Position: %d, we read: %c", pos, t[pos])
+        }
+		for getTransition(current, t[pos], ac) == -1 && s[current] != -1 {
+			current = s[current]
+		}
 		if getTransition(current, t[pos], ac) != -1 {
 			current = getTransition(current, t[pos], ac)
+			fmt.Printf(" (Continue) \n")
 		} else {
 			current = 0
+			if debugMode==true {
+				fmt.Printf(" (FAIL) \n")
+			}
 		}
 		_, ok := f[current]
 		if ok {
@@ -96,11 +106,11 @@ func ahoCorasick(t string, p []string) {
 }
 
 /**
-	Functions that builds extended Aho Corasick automaton.
+	Functions that builds Aho Corasick automaton.
 */
-func buildExtendedAc(p []string) (acToReturn map[int]map[uint8]int, f map[int][]int) {
+func buildAc(p []string) (acToReturn map[int]map[uint8]int, f map[int][]int, s []int) {
 	acTrie, stateIsTerminal, f := constructTrie(p)
-	s := make([]int, len(stateIsTerminal)) //supply function
+	s = make([]int, len(stateIsTerminal)) //supply function
 	i := 0 //root of acTrie
 	acToReturn = acTrie
 	s[i] = -1
@@ -142,24 +152,7 @@ func buildExtendedAc(p []string) (acToReturn map[int]map[uint8]int, f map[int][]
 			}
 		}
 	}
-	if debugMode==true {
-		fmt.Printf("\n\nAdAC completion: \n")
-	}
-	//advanced Aho-Corasick part
-	a := computeAlphabet(p) //concat of all patterns in p
-	for j := range a {
-		if getTransition(i, a[j], acToReturn) == -1 {
-			createTransition(i, a[j], i, acToReturn)
-		}
-	}
-	for current := 1; current < len(stateIsTerminal); current++ {
-		for j := range a {
-			if getTransition(current, a[j], acToReturn) == -1 {
-				createTransition(current, a[j], getTransition(s[current], a[j], acToReturn), acToReturn)
-			}
-		}	
-	}
-	return acToReturn, f
+	return acToReturn, f, s
 }
 
 /**
@@ -239,17 +232,6 @@ func getWord(begin, end int, t string) string {
 		d[j] = t[i]
 	}
 	return string(d)
-}
-
-/**
-	Function that returns string of all the possible characters in given patterns.
-*/
-func computeAlphabet(p []string)(s string) {
-	s = p[0]
-	for i := 1; i < len(p); i++ {
-		s = s + p[i]
-	}
-	return s
 }
 
 /*******************   Array size allocation functions  *******************/
