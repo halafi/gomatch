@@ -7,13 +7,12 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time")
 	@true prints various extra stuff out, but slows down the execution
 	@false will be quick and quiet
 */
-const debugMode bool = true
+const debugMode bool = false
 
 /**
- 	Based on Aho-Corasick algorithm.
+ 	THE BIG ONE.
 */
 func main() {
-	//load patterns.txt, separate regexes and text patterns
 	patFile, err := ioutil.ReadFile("patterns.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -23,14 +22,11 @@ func main() {
 		log.Fatal(err)
 	}
 	matchLines := strings.Split(string(patFile), "\n")
-	regexesPerLine, wordsPerLine := separate(matchLines)
-	
-	fmt.Printf("\nJSONIZER v.00000000001\n----------------------\n----------------------\n")
+	regexesPerLine, wordsPerLine, p := separate(matchLines) //declaration
+	fmt.Printf("\nJSONIZER v.00000000002\n----------------------\n----------------------\n")
 	if debugMode==true { 
 		fmt.Printf("\nThere are %d matches defined in 'patterns.txt':\n",len(matchLines))
-	}
-	if debugMode==true { 
-		for i := 0; i < len(matchLines); i++ {
+		for i := range matchLines {
 			fmt.Printf("Match %d: %s\n", i, matchLines[i])
 			fmt.Printf("Regex:")
 			for j:= range regexesPerLine[i] {
@@ -42,86 +38,58 @@ func main() {
 			}
 			fmt.Println()
 		}
-	}
-
-	if debugMode==true { 
 		fmt.Printf("\nI shall search for them in log file 'text.txt' that is %d chars long!\n\n",len(textFile))
 	}
-	//text := string(textFile)
-	//search(text, matchLines)
-}
-
-
-func separate(lines []string)(regexesPerLine map[int][]string, wordsPerLine map[int][]string) {
-	regexesPerLine = make(map[int][]string)
-	wordsPerLine = make(map[int][]string)
-	for i := range lines {
-	//pro kazdy radek
-		line := strings.Split(lines[i], " ")
-		//rozdelit na slova
-		for j := range line {
-			if line[j][0] == '<' {
-				currentRegexes := regexesPerLine[i]
-				currentRegexes = stringArrayCapUp(currentRegexes)
-				currentRegexes[len(currentRegexes)-1] = line[j]
-				regexesPerLine[i] = currentRegexes
-			}
-			if line[j][0] == '{' {
-				currentWords := wordsPerLine[i]
-				currentWords = stringArrayCapUp(currentWords)
-				currentWords[len(currentWords)-1] = getWord(1, len(line[j])-3, line[j])
-				wordsPerLine[i] = currentWords
-			}
-		}
-	}
-	return regexesPerLine, wordsPerLine
-}
-
-/**
-	Function performing the Basic Aho-Corasick alghoritm. 
-	Finds and prints occurences of each pattern. 
-	
-	@param t text to be searched in
-	@param p list of patterns to be serached for
-*/  
-func ahoCorasick(t string, p []string) {
+	t := string(textFile)
 	startTime := time.Now()
+	//
+	// SEARCHING
+	//
 	occurences := make(map[int][]int)
 	ac, f, s := buildAc(p)
 	if debugMode==true {
-		fmt.Printf("\n\nAC:\n\n")
+		fmt.Printf("\n\nLETS DO IT:\n\n")
 	}
-	current := 0
-	for pos := 0; pos < len(t); pos++ {
-		if debugMode==true {
-			fmt.Printf("Position: %d, we read: %c", pos, t[pos])
-        }
-		for getTransition(current, t[pos], ac) == -1 && s[current] != -1 {
-			current = s[current]
-		}
-		if getTransition(current, t[pos], ac) != -1 {
-			current = getTransition(current, t[pos], ac)
-			fmt.Printf(" (Continue) \n")
-		} else {
-			current = 0
+	textLines := strings.Split(t, "\n")
+
+	for line := range textLines { //prochazeni po radcich
+		t = textLines[line]
+		current := 0
+		for pos := 0; pos < len(t); pos++ {
 			if debugMode==true {
-				fmt.Printf(" (FAIL) \n")
+				fmt.Printf("Position: %d, we read: %c", pos, t[pos])
 			}
-		}
-		_, ok := f[current]
-		if ok {
-			for i := range f[current] {
-				if p[f[current][i]] == getWord(pos-len(p[f[current][i]])+1, pos, t) { //check for word match
-					if debugMode==true {
-						fmt.Printf("Occurence at position %d, %q = %q\n", pos-len(p[f[current][i]])+1, p[f[current][i]], p[f[current][i]])
+			for getTransition(current, t[pos], ac) == -1 && s[current] != -1 {
+				current = s[current]
+			}
+			if getTransition(current, t[pos], ac) != -1 {
+				current = getTransition(current, t[pos], ac)
+				if debugMode==true {
+					fmt.Printf(" (Continue) \n")
+				}
+			} else {
+				current = 0
+				if debugMode==true {
+					fmt.Printf(" (FAIL) \n")
+				}
+			}
+			_, ok := f[current]
+			if ok {
+				for i := range f[current] {
+					if p[f[current][i]] == getWord(pos-len(p[f[current][i]])+1, pos, t) { //check for word match
+						if debugMode==true {
+							fmt.Printf("Occurence at position %d, %q = %q\n", pos-len(p[f[current][i]])+1, p[f[current][i]], p[f[current][i]])
+						}
+						newOccurences := intArrayCapUp(occurences[f[current][i]])
+						occurences[f[current][i]] = newOccurences
+						occurences[f[current][i]][len(newOccurences)-1] = pos-len(p[f[current][i]])+1
 					}
-					newOccurences := intArrayCapUp(occurences[f[current][i]])
-					occurences[f[current][i]] = newOccurences
-					occurences[f[current][i]][len(newOccurences)-1] = pos-len(p[f[current][i]])+1
 				}
 			}
 		}
 	}
+	
+	//old output
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n\nElapsed %f secs\n", elapsed.Seconds())
 	for key, value := range occurences { //prints all occurences of each pattern (if there was at least one)
@@ -135,6 +103,35 @@ func ahoCorasick(t string, p []string) {
 		fmt.Printf(".")
 	}
 	return
+}
+
+/**
+	Takes lines of pattern's definitions and separates them into array's of words and regular expressions.
+	Also return's all words given in 'lines'.
+*/
+func separate(lines []string)(regexesPerLine map[int][]string, wordsPerLine map[int][]string, allWords []string) {
+	regexesPerLine = make(map[int][]string)
+	wordsPerLine = make(map[int][]string)
+	allWords = make([]string, 0)
+	for i := range lines {
+		line := strings.Split(lines[i], " ")
+		for j := range line {
+			if line[j][0] == '<' {
+				currentRegexes := regexesPerLine[i]
+				currentRegexes = stringArrayCapUp(currentRegexes)
+				currentRegexes[len(currentRegexes)-1] = line[j]
+				regexesPerLine[i] = currentRegexes
+			}
+			if line[j][0] == '{' {
+				currentWords := wordsPerLine[i]
+				currentWords = stringArrayCapUp(currentWords)
+				currentWords[len(currentWords)-1] = getWord(1, len(line[j])-3, line[j])
+				allWords = addWord(allWords, currentWords[len(currentWords)-1])
+				wordsPerLine[i] = currentWords
+			}
+		}
+	}
+	return regexesPerLine, wordsPerLine, allWords
 }
 
 /**
@@ -238,7 +235,7 @@ func constructTrie (p []string) (trie map[int]map[uint8]int, stateIsTerminal []b
 }
 
 /**
-	Returns 'true' if arry of int's 's' contains int 'e', 'false' otherwise.
+	Returns 'true' if array of int's 's' contains int 'e', 'false' otherwise.
 	
 	@author Mostafa http://stackoverflow.com/a/10485970
 */
@@ -252,6 +249,21 @@ func contains(s []int, e int) bool {
 }
 
 /*******************          String functions          *******************/
+/**
+	Check's if word 'w 'exist in array of strings 's', if not - add's it.
+	Returns 's' containing word 'w'.
+*/
+func addWord(s []string, w string) (output []string) {
+	for i := range s {
+		if s[i] == w {
+			return s
+		}
+	}
+	s = stringArrayCapUp(s)
+	s[len(s)-1] = w
+	return s
+}
+
 /**
 	Function that returns word found in text 't' at position range 'begin' to 'end'.
 */
