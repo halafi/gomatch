@@ -1,111 +1,69 @@
 package main
 import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; /*"regexp"*/)
 
-/** 
-	User defined.
-	
-	@true prints various extra stuff out, but slows down the execution
-	@false will be quick and quiet
-*/
 const debugMode bool = true
 
-/** udelat si pole array of matches a do nej ukladat pro kazdy radek match a nakonec vypsat
- 	THE BIG ONE.
-*/
 func main() {
-	patFile, err := ioutil.ReadFile("patterns.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	textFile, err := ioutil.ReadFile("text.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	matches := strings.Split(string(patFile), "\n") // match number + what needs to match
-	lineMatch := make(map[int]string) // line number + matches we found with repetitions i.g.: lineMathc[0] = "IP IP word word", which will get compared against all the matches
-	lineMatch = lineMatch
-	r, p := process(matches) //we get all regexes and all patterns
-	fmt.Printf("\nJSONIZER\n----------------------\n----------------------\n")
-	if debugMode==true { 
-		fmt.Printf("\nThere are %d matches defined in 'patterns.txt':\n",len(matches))
-		for i := range matches {
-			fmt.Printf("Match %d: %s\n", i, matches[i])
-		}
-		fmt.Printf("\nAll regular expressions: ")
-		for j:= range r {
-			fmt.Printf("%s ", r[j])
-		}
-		fmt.Printf("\nAll words to search for: ")
-		for j:= range r {
-			fmt.Printf("%s ", p[j])
-		}
-		fmt.Printf("\nI shall search for them in log file 'text.txt' that is %d chars long!\n\n",len(textFile))
-	}
+	patternsFile, textFile := loadFiles() //reads text files and converts them into string
+	matchDefs := strings.Split(patternsFile, "\n") // match number + what needs to match - definition
+	regex, word := process(matchDefs) //we get all regexes and all words
 	
-	t := string(textFile)
-	startTime := time.Now()
-	//
-	// SEARCHING
-	//
-	ac, f, s := buildAc(p)
-	if debugMode==true {
-		fmt.Printf("\n\nLETS DO IT:\n\n")
+	lineMatch := make(map[int]string) // line number + matches we found with repetitions i.g.: lineMathc[0] = "IP IP word word", which will get compared against all the matches
+	//lineMatch tbDeleted if not needed
+	fmt.Printf("\nJSONIZER\n--------\n")
+	if debugMode==true { 
+		fmt.Printf("\nThere are %d matches defined in 'patterns.txt':\n",len(matchDefs))
+		for i := range matchDefs {
+			fmt.Printf("Match %d: %s\n", i, matchDefs[i])
+		}
+		fmt.Printf("\n\nLETS DO SOME SEARCHING:\n\n")
 	}
-	textLines := strings.Split(t, "\n")
-
-	for line := range textLines { 
-	//prochazeni po radcich	
-		t = textLines[line]
-		
-		currentLine := strings.Split(textLines[line], " ") //rozdeleni radku na slova
-		for j:= range currentLine { //po slovech na soucasnem radku
-			current := 0 //state of automaton
-			for pos := 0; pos < len(currentLine[j]); pos++ {
-				//case1: hledame slova 
-				//fmt.Printf("Position: %d, we read: %c", pos, currentLine[j][pos])
-				for getTransition(current, currentLine[j][pos], ac) == -1 && s[current] != -1 {
-					current = s[current]
+	startTime := time.Now()
+	ahoCor, isFinalForWords, s := buildAc(word)
+	lines := strings.Split(textFile, "\n")
+	//SEARCHING
+	for n := range lines {
+		currentLine := strings.Split(lines[n], " ")
+		for w:= range currentLine {
+			currentState := 0 //state of automaton
+			//hledani slov
+			for wPos := range currentLine[w] {
+				for getTransition(currentState, currentLine[w][wPos], ahoCor) == -1 && s[currentState] != -1 {
+					currentState = s[currentState]
 				}
-				if getTransition(current,currentLine[j][pos], ac) != -1 {
-					current = getTransition(current, currentLine[j][pos], ac)
-					//fmt.Printf(" (Continue) \n")
-
+				if getTransition(currentState,currentLine[w][wPos], ahoCor) != -1 {
+					currentState = getTransition(currentState, currentLine[w][wPos], ahoCor)
 				} else {
-					current = 0
-					//fmt.Printf(" (FAIL) \n")
+					currentState = 0
 				}
-				_, ok := f[current]
-				if ok { //dosli jsme do finalniho stavu pro nejaka slova
-					for i := range f[current] { //slova pro tento radek nalezena
-						if p[f[current][i]] == getWord(pos-len(p[f[current][i]])+1, pos, currentLine[j]) { //check for word match
-							/*if debugMode==true {
-								fmt.Printf("Occurence at line %d, %s = %s\n", line, p[f[current][i]], p[f[current][i]])
-							}*/
-							lineMatch[line] = lineMatch[line] + " " + p[f[current][i]]
+				_, ok := isFinalForWords[currentState] 
+				if ok {
+					for i := range isFinalForWords[currentState] {
+						if word[isFinalForWords[currentState][i]] == getWord(wPos-len(word[isFinalForWords[currentState][i]])+1, wPos, currentLine[w]) {
+							//  word[isFinalForWords[currentState][i]] is MATCHED WORD
+							/*if debugMode==true {fmt.Printf("Occurence at line %d, %s = %s\n", line, word[isFinalForWords[currentState][i]], word[isFinalForWords[current][i]])}*/
+							lineMatch[n] = lineMatch[n] + " " + word[isFinalForWords[currentState][i]]
 						}
 					}
 				}
 			}
-			//case2: hledame regexy na tomto radku (vsechny mozne), pro kazde slovo zavolat match ...
-			for k := range currentLine[j] {
+			//hledani regexu
+			for k := range currentLine[w] { //pro kazdy regex check match
 				k=k
-				for l := range r {
-					if r[l] == currentLine[j] { //matched,err := regexp.MatchString((string(patFile)), "50")
-						//
+				for l := range regex {
+					if regex[l] == currentLine[w] { //matched,err := regexp.MatchString((string(patFile)), "50")
 						fmt.Printf("pmatch")
 					}
-					
 				}
 			}
 		}
 	}
 	
-	//old output
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n\nElapsed %f secs\n", elapsed.Seconds())
-	/*for i:=0; i<len(lineMatch); i++ {
+	for i:=0; i<len(lineMatch); i++ {
 		fmt.Printf("\n Line %d: %s", i, lineMatch[i])
-	}*/
+	}
 	return
 }
 
@@ -198,6 +156,23 @@ func constructTrie (p []string) (trie map[int]map[uint8]int, stateIsTerminal []b
 		}
 	}
 	return trie, stateIsTerminal, f
+}
+
+/**
+	Reads IO.
+*/
+func loadFiles() (pFileString, tFileString string){
+	pFile, err := ioutil.ReadFile("patterns.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	tFile, err := ioutil.ReadFile("text.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	pFileString = string(pFile)
+	tFileString = string(tFile)
+	return pFileString, tFileString
 }
 
 /**
