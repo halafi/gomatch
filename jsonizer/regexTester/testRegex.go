@@ -6,7 +6,7 @@ func main() {
 	PYTHON!, and other languages. More precisely, it is the syntax accepted by RE2 and described
 	at http://code.google.com/p/re2/wiki/Syntax, except for \C.*/
 	patFile,_ := ioutil.ReadFile("testedRegex.txt")
-	matched,err := regexp.MatchString((string(patFile)), "50")
+	matched,err := regexp.MatchString((string(patFile)), "64.242.88.10")
 	fmt.Println(matched, err)
 }
 	

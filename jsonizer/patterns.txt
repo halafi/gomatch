@@ -1,3 +1,1 @@
-<IP> {"GET}
-{"GET}
-<IP> <IP> <IP>
+<IP>
