@@ -1,5 +1,5 @@
 package main
-import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
+import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv"; "runtime")
 
 func main() {
 	startTime := time.Now()
@@ -12,16 +12,11 @@ func main() {
 	tokFile, err := ioutil.ReadFile("tokens.txt")
 	if err != nil { log.Fatal(err) }
 	tokenFile, patternsFile, textFile := string(tokFile),string(pFile),string(tFile)
-	//#2 - Parse tokens and patterns
-	tokenLines := strings.Split(tokenFile, "\n")
-	tokens := make(map[string]string)
-	for n := range tokenLines {
-		token := strings.Split(tokenLines[n], " ")
-		tokens["<"+token[0]+">"] = token[1]
-	}
 	word, matches := parsePatterns(strings.Split(patternsFile, "\n"))
 	//#3 - Print some stuff out
-	fmt.Printf("\nJSONIZER 2014\n-----------------------")
+	
+	fmt.Printf("\nJSONIZER 2014\n-----------------------\n")
+	println(runtime.Version())
 	for i,arrayOfS := range matches {
 		fmt.Printf("\nMatch %d: ", i+1)
 		for j := range arrayOfS {
@@ -36,7 +31,7 @@ func main() {
 		//wordOccurences := searchAC(word, textFile)
 	}
 	//#5 - matching of matches
-	linePos, wordPos := 0, 0 //used to know where we are in the text, since we are searching by lines and words
+	linePos, wordPos := 0, 0 //used to know where we are in the text
 	lines := strings.Split(textFile, "\n")
 	for n := range lines { 
 		currentLine := strings.Split(lines[n], " ")
@@ -44,33 +39,34 @@ func main() {
 			wordPos = 0
 			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ { //for match word_number
 				_, ok := outputText[n]
-				if !ok {
+				if !ok { //inicialize MATCH message if there is none
 					outputText[n] = stringArrayCapUp(outputText[n])
-					outputText[n][len(outputText[n])-1] = "MATCH + ["+strconv.Itoa(m+1)+", "
+					outputText[n][len(outputText[n])-1] = "MATCH + ["+strconv.Itoa(m+1)
 				}
-				
 				if matches[m][mW][0] == '<' { //regex needs to match
-					tokenToMatch := getWord(0, len(matches[m][mW])-1, matches[m][mW])
-					matched, _ := regexp.MatchString(tokens[tokenToMatch], currentLine[mW]) //musi brat primo ze souboru jinak nefunguje :(
-					if  !matched {
+					tokenToMatch := getWord(1, len(matches[m][mW])-3, matches[m][mW]) //not working?!
+					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
+					//fmt.Printf("%s", getToken(tokenFile, tokenToMatch))
+					if  regex.MatchString(currentLine[mW])/*matched==false*/ {
 						outputText[n][len(outputText[n])-1] = "NO_MATCH"
 						break
 					} else {
-						
-						outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "{" + tokens[tokenToMatch] + "=" + currentLine[mW] +"}"
+						outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + ",{" + tokenToMatch + "=" + currentLine[mW] +"}"
 					}
-				}	
-				if len(word) > 0 && matches[m][mW][0] == '{' { //word needs to match
+				} else if len(word) > 0 && matches[m][mW][0] == '{' { //word needs to match
 					wordToMatch := getWord(1, len(matches[m][mW])-3, matches[m][mW])
 					if !contains(wordOccurences[wordToMatch],linePos+wordPos) {
 						outputText[n][len(outputText[n])-1] = "NO_MATCH"
 						break
-					} else {
-					
 					}
+				} else if  matches[m][mW][0] == '_' { //ignore
+				} else {
+					outputText[n][len(outputText[n])-1] = "ERROR_MATCHING "+string(matches[m][mW][0])
+					break
 				}
 				if mW == len(matches[m]) -1 { //everything matched, we reached end of match
 					fmt.Printf("\nMATCH %d at line %d", m+1, n)
+					outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "]"
 				}
 				wordPos = wordPos + len(currentLine[mW]) +1
 			}
@@ -95,6 +91,19 @@ func main() {
 	elapsed := time.Since(startTime)
 	fmt.Printf("\n\nElapsed %f secs\n", elapsed.Seconds())
 	return
+}
+
+func getToken(tokenFile, wanted string) string {
+	tokenLines := strings.Split(tokenFile, "\n")
+	for n := range tokenLines {
+		token := strings.Split(tokenLines[n], " ")
+		if token[0] == wanted {
+			fmt.Printf("\nrequested token: %s", token[0])
+			return token[1]
+		}
+	}
+	log.Fatal("NO TOKEN DEFINITION in tokens.txt FOR: ", wanted)
+	return ""
 }
 
 /**
@@ -380,11 +389,21 @@ func computeMinLength(p []string) (lmin int){
 
 /*******************   Array size allocation functions  *******************/
 /**
+	Dynamically increases an array size of byte's by 1.
+*/
+func byteArrayCapUp (old []byte)(new []byte) {
+	new = make([]byte, cap(old)+1)
+	copy(new, old)  //copy(dst,src)
+	old = new
+	return new
+}
+
+/**
 	Dynamically increases an array size of int's by 1.
 */
 func intArrayCapUp (old []int)(new []int) {
 	new = make([]int, cap(old)+1)
-	copy(new, old)  //copy(dst,src)
+	copy(new, old) 
 	old = new
 	return new
 }
