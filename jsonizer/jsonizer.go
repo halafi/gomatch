@@ -30,12 +30,12 @@ func main() {
 	for i,arrayOfS := range matches {
 		fmt.Printf("Match %d: ", i+1)
 		for j := range arrayOfS {
-			fmt.Printf("%s ", arrayOfS[j])
+			fmt.Printf("%q ", arrayOfS[j])
 		}
 		fmt.Println()
 	}
 	//#4 - searching for matches
-	lines = strings.Split(textFile, "\n")
+	lines = strings.Split(textFile, "\r\n")
 	for n := range lines { 
 		currentLine := strings.Split(lines[n], " ")
 		for m := range matches {
@@ -72,7 +72,7 @@ func main() {
 				} else if matches[m][mW][0] == '{' { //WORD_MATCHING
 					if len(p) > 0 {
 						wordOccurences := searchSBOM(p, lines[n])
-						//wordOccurences := searchAC(p, lines[n]) //je rychlejsi pro mene kratkych patternu
+						//wordOccurences := searchAC(p, lines[n])
 						wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 						if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
 							outputText[n][len(outputText[n])-1] = ""
@@ -115,7 +115,7 @@ func main() {
 		noMatch := true
 		printedMatch := false
 		for j := range outputText[n] {
-			if outputText[n][j] != "" && !strings.Contains(outputText[n][j], "ERROR") {
+			if outputText[n][j] != "" /*&& !strings.Contains(outputText[n][j], "ERROR")*/ {
 				noMatch = false
 				if printedMatch == false {
 					_, err := file.WriteString("MATCH + ")
@@ -128,14 +128,14 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-			} else if strings.Contains(outputText[n][j], "ERROR") {
+			}/*else if strings.Contains(outputText[n][j], "ERROR") {
 				_, err := file.WriteString(outputText[n][j] + " LINE " + strconv.Itoa(n))
 				if err != nil {
 					log.Fatal(err)
 				}
 				noMatch = false
 				break
-			}
+			}*/
 		}
 		if noMatch == true { //all strings were empty, print NO_MATCH
 			_, err := file.WriteString("NO_MATCH\r\n")

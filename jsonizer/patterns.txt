@@ -1,2 +1,5 @@
-<IP> {5}
-asddd asd <IP>
+<WORD> <NUMBER> {-} {[07/Mar/2004:16:05:49} {-0800]} {"GET} {/twiki/bin/edit/Main/Double_bounce_sender?topicparent=Main.ConfigurationVariables} {HTTP/1.1"} <NUMBER> <NUMBER>
+<WORD> <NUMBER> _ {[07/Mar/2004:16:05:49} _ _ _ _ <NUMBER> <NUMBER>
+{fds}
+_ _ _ {[07/Mar/2004:16:52:35}
+<IP> _ _ _ _ {"GET} _ _ {200} <NUMBER>
