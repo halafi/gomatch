@@ -22,15 +22,14 @@ CONFIGURATION
 	o PATTERNS.TXT
 	Each line in patterns.txt corresponds to one match, that will be searched for.
 	You have three options when defining patterns, and you need to separate them with spaces:
-	#1 TOKEN (regular expression defined in tokens.txt) surrounded by <> (for example <IP>)
-	#2 SPECIFIC WORD surrounded by {} (for example {cr020r01-3.sac.overture.com})
-	#3 ANYTHING for that you can type _ without {} or [] and the search for that word will be skipped
-	Examples:<IP> _ _ <DATE> {"GET}(new_line){4.37.97.186} _ _ {[11/Mar/2004:13:12:54 -0800]}
+		TOKEN (regular expression defined in tokens.txt) surrounded by <> (e.g. <IP>)
+		SPECIFIC WORD surrounded by {} (e.g. {cr020r01-3.sac.overture.com})
+		ANYTHING for that you can type _ and search for that will match anything
+	Example line: <IP> _ _ <DATE> {"GET}
 
 	o TOKENS.TXT
 	Tokens in tokens.txt needs to be defined on separate lines like this:
-	NAME 'regular expression without quotes'	
-	Examples: WORD ^\w+$(new_line)NUMBER ^[0-9]+$
+		NAME regex
 	The syntax of the regular expressions accepted is the same general syntax used by
 	Perl, Python, and other languages. 
 	More precisely, it is the syntax accepted by RE2 and described at
