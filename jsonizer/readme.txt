@@ -31,8 +31,9 @@ CONFIGURATION
 	Tokens in tokens.txt needs to be defined on separate lines like this:
 	NAME 'regular expression without quotes'	
 	Examples: WORD ^\w+$(new_line)NUMBER ^[0-9]+$
-	The syntax of the regular expressions accepted is the same general syntax used by Perl, Python, and other languages. 
-	More precisely, it is the syntax accepted by RE2 and described at http://code.google.com/p/re2/wiki/Syntax,
-	except for \C.
+	The syntax of the regular expressions accepted is the same general syntax used by
+	Perl, Python, and other languages. 
+	More precisely, it is the syntax accepted by RE2 and described at
+	http://code.google.com/p/re2/wiki/Syntax, except for \C.
 
 	o Make sure that there are no extra spaces or endlines in these files and that they are ANSI encoded.
