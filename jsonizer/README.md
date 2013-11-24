@@ -1,19 +1,20 @@
-CONFIGURATION
---------------------
-	o PATTERNS.TXT
-	Each line in patterns.txt corresponds to one match, that will be searched for.
-	You have three options when defining patterns, and you need to separate them with spaces:
-		TOKEN (regular expression defined in tokens.txt) surrounded by <> (e.g. <IP>)
-		SPECIFIC WORD surrounded by {} (e.g. {cr020r01-3.sac.overture.com})
-		ANYTHING for that you can type _ and search for that will match anything
-	Example line: <IP> _ _ <DATE> {"GET}
+Configuration
+==================
+Make sure that there are no extra spaces or endlines in these files and that they are ANSI encoded.
 
-	o TOKENS.TXT
-	Tokens in tokens.txt needs to be defined on separate lines like this:
-		NAME regex
-	The syntax of the regular expressions accepted is the same general syntax used by
-	Perl, Python, and other languages. 
-	More precisely, it is the syntax accepted by RE2 and described at
-	http://code.google.com/p/re2/wiki/Syntax, except for \C.
+Patterns.txt
+-----------------------------
+* Each line in <b>patterns.txt</b> corresponds to one match, that will be searched for.
+* You have three options for one word when defining patterns:
+  1. <b>TOKEN</b> (regular expression defined in tokens.txt) surrounded by <code><></code>
+  2. <b>SPECIFIC WORD</b> surrounded by <code>{}</code>
+  3. <b>ANYTHING</b> for that you can type _ and search for that will match anything
+* Words on each line needs to be separated by spaces.
+* Example line: <code>&lt;IP&gt; _ _ &lt;DATE&gt; {&quot;GET}</code>
 
-	o Make sure that there are no extra spaces or endlines in these files and that they are ANSI encoded.
+Tokens.txt
+-----------------------------
+* One token definition per line like this: <code>NAME(single_space)regex</code>.
+* The syntax of the regular expressions accepted is the same general syntax used by
+Perl, Python, and other languages. 
+More precisely, it is the syntax accepted by RE2 and described at http://code.google.com/p/re2/wiki/Syntax, except for \C.
