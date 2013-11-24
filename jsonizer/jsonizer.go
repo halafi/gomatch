@@ -40,6 +40,7 @@ func main() {
 		currentLine := strings.Split(lines[n], " ")
 		for m := range matches {
 			firstSubmatch := true
+			isOpened := false
 			wordPos := 0
 			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
 				if mW == 0 { //set default output text for current line
@@ -57,6 +58,7 @@ func main() {
 					} else if mW < len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern got submatch
 						if firstSubmatch {
 							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]
+							isOpened = true
 							firstSubmatch = false
 						} else {
 							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1]+", "+tokenToMatch+"="+currentLine[mW]
@@ -83,17 +85,29 @@ func main() {
 							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
 							firstSubmatch = false
 						} else if mW == len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern: submatch at the end of match_def{
-							if firstSubmatch == false{
+							if firstSubmatch == false && isOpened == true{
 								outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
+								isOpened = false
 							}
 						}// otherwise no need to do anything
 					}
 				} else if matches[m][mW][0] == '_' { //ANY_MATCHING
-					if mW == len(matches[m])-1 {
+					if mW == 0 && len(matches[m]) == 1 { //one match containing one word ended
+						outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
+					} else if mW == len(matches[m])-1 && len(matches[m]) >  1{ //longer pattern: submatch at the end of match_def{
 						if firstSubmatch {
 							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
+							firstSubmatch = false
 						} else { //closes text if it needs to
-							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
+							if isOpened {
+								outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
+								isOpened = false
+							}
+						}
+					} else if mW < len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern got submatch
+						if firstSubmatch {
+							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
+							firstSubmatch = false
 						}
 					}
 				} else {
