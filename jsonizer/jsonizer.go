@@ -1,5 +1,5 @@
 package main
-import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv"; "runtime")
+import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
 	startTime := time.Now()
@@ -12,68 +12,99 @@ func main() {
 	tokFile, err := ioutil.ReadFile("tokens.txt")
 	if err != nil { log.Fatal(err) }
 	tokenFile, patternsFile, textFile := string(tokFile),string(pFile),string(tFile)
-	word, matches := parsePatterns(strings.Split(patternsFile, "\n"))
+	//#2 - Preprocessing
+	p := make([]string, 0)
+	matches := make(map[int][]string)
+	lines := strings.Split(patternsFile, "\r\n")
+	for i := range lines {
+		line := strings.Split(lines[i], " ")
+		for j := range line {
+			if line[j][0] == '{' {
+				p = addWord(p, getWord(1, len(line[j])-2, line[j]))
+			}
+		}
+		matches[i] = strings.Split(lines[i], " ")
+	}
 	//#3 - Print some stuff out
-	
-	fmt.Printf("\nJSONIZER 2014\n-----------------------\n")
-	println(runtime.Version())
+	fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
 	for i,arrayOfS := range matches {
-		fmt.Printf("\nMatch %d: ", i+1)
+		fmt.Printf("Match %d: ", i+1)
 		for j := range arrayOfS {
-			fmt.Printf("%s", arrayOfS[j])
+			fmt.Printf("%s ", arrayOfS[j])
 		}
 		fmt.Println()
 	}
-	//#4 - use some multi pattern matching alghoritm to search for words searchSBOM or searchAC
-	wordOccurences := make(map[string][]int)
-	if len(word) > 0 {
-		wordOccurences = searchSBOM(word, textFile)
-		//wordOccurences := searchAC(word, textFile)
-	}
-	//#5 - matching of matches
-	linePos, wordPos := 0, 0 //used to know where we are in the text
-	lines := strings.Split(textFile, "\n")
+	//#4 - searching for matches
+	lines = strings.Split(textFile, "\n")
 	for n := range lines { 
 		currentLine := strings.Split(lines[n], " ")
-		for m := range matches { //for each possible match
-			wordPos = 0
-			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ { //for match word_number
-				_, ok := outputText[n]
-				if !ok { //inicialize MATCH message if there is none
+		for m := range matches {
+			firstSubmatch := true
+			wordPos := 0
+			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
+				if mW == 0 { //set default output text for current line
 					outputText[n] = stringArrayCapUp(outputText[n])
-					outputText[n][len(outputText[n])-1] = "MATCH + ["+strconv.Itoa(m+1)
+					outputText[n][len(outputText[n])-1] = ""
 				}
-				if matches[m][mW][0] == '<' { //regex needs to match
-					tokenToMatch := getWord(1, len(matches[m][mW])-3, matches[m][mW]) //not working?!
+				if matches[m][mW][0] == '<' { //REGEX_MATCHING
+					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
-					//fmt.Printf("%s", getToken(tokenFile, tokenToMatch))
-					if  regex.MatchString(currentLine[mW])/*matched==false*/ {
-						outputText[n][len(outputText[n])-1] = "NO_MATCH"
+					if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
+						outputText[n][len(outputText[n])-1] = "" 
 						break
-					} else {
-						outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + ",{" + tokenToMatch + "=" + currentLine[mW] +"}"
+					} else if mW == 0 && len(matches[m]) == 1{ //one match containing one pattern ended
+						outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]+"}"
+					} else if mW < len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern got submatch
+						if firstSubmatch {
+							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]
+							firstSubmatch = false
+						} else {
+							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1]+", "+tokenToMatch+"="+currentLine[mW]
+						}
+					} else if mW == len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern: submatch at the end of match_def
+						if firstSubmatch {
+							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]+"}"
+							firstSubmatch = false
+						} else {
+							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1]+", "+tokenToMatch+"="+currentLine[mW]+"}"
+						}
 					}
-				} else if len(word) > 0 && matches[m][mW][0] == '{' { //word needs to match
-					wordToMatch := getWord(1, len(matches[m][mW])-3, matches[m][mW])
-					if !contains(wordOccurences[wordToMatch],linePos+wordPos) {
-						outputText[n][len(outputText[n])-1] = "NO_MATCH"
-						break
+				} else if matches[m][mW][0] == '{' { //WORD_MATCHING
+					if len(p) > 0 {
+						wordOccurences := searchSBOM(p, lines[n])
+						//wordOccurences := searchAC(p, lines[n]) //je rychlejsi pro mene kratkych patternu
+						wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
+						if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
+							outputText[n][len(outputText[n])-1] = ""
+							break
+						} else if mW == 0 && len(matches[m]) == 1 { //one match containing one word ended
+							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
+						} else if mW == 0 && len(matches[m]) > 1{ //match starts with word that we found
+							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
+							firstSubmatch = false
+						} else if mW == len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern: submatch at the end of match_def{
+							if firstSubmatch == false{
+								outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
+							}
+						}// otherwise no need to do anything
 					}
-				} else if  matches[m][mW][0] == '_' { //ignore
+				} else if matches[m][mW][0] == '_' { //ANY_MATCHING
+					if mW == len(matches[m])-1 {
+						if firstSubmatch {
+							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
+						} else { //closes text if it needs to
+							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
+						}
+					}
 				} else {
-					outputText[n][len(outputText[n])-1] = "ERROR_MATCHING "+string(matches[m][mW][0])
+					outputText[n][len(outputText[n])-1] = "ERROR_MATCHING: "+string(matches[m][mW])
 					break
-				}
-				if mW == len(matches[m]) -1 { //everything matched, we reached end of match
-					fmt.Printf("\nMATCH %d at line %d", m+1, n)
-					outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "]"
 				}
 				wordPos = wordPos + len(currentLine[mW]) +1
 			}
 		}
-		linePos = linePos + len(lines[n]) +1
 	}
-	//#6 - writing some output to a file output.txt
+	//#5 - writing output to a file output.txt
 	path := "output.txt"
 	file, err := os.Create(path)
 	if err != nil {
@@ -81,8 +112,38 @@ func main() {
 	}
 	defer file.Close()
 	for n := range lines {
-		for i := range outputText[n] {
-			_, err := file.WriteString(strings.TrimSpace(outputText[n][i])+"\n")
+		noMatch := true
+		printedMatch := false
+		for j := range outputText[n] {
+			if outputText[n][j] != "" && !strings.Contains(outputText[n][j], "ERROR") {
+				noMatch = false
+				if printedMatch == false {
+					_, err := file.WriteString("MATCH + ")
+					if err != nil {
+						log.Fatal(err)
+					}
+					printedMatch = true
+				}
+				_, err := file.WriteString("["+outputText[n][j]+"]")
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else if strings.Contains(outputText[n][j], "ERROR") {
+				_, err := file.WriteString(outputText[n][j] + " LINE " + strconv.Itoa(n))
+				if err != nil {
+					log.Fatal(err)
+				}
+				noMatch = false
+				break
+			}
+		}
+		if noMatch == true { //all strings were empty, print NO_MATCH
+			_, err := file.WriteString("NO_MATCH\r\n")
+			if err != nil {
+			log.Fatal(err)
+			}
+		} else {
+			_, err := file.WriteString("\r\n")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -93,40 +154,7 @@ func main() {
 	return
 }
 
-func getToken(tokenFile, wanted string) string {
-	tokenLines := strings.Split(tokenFile, "\n")
-	for n := range tokenLines {
-		token := strings.Split(tokenLines[n], " ")
-		if token[0] == wanted {
-			fmt.Printf("\nrequested token: %s", token[0])
-			return token[1]
-		}
-	}
-	log.Fatal("NO TOKEN DEFINITION in tokens.txt FOR: ", wanted)
-	return ""
-}
-
-/**
-	Takes pattern lines and return all words that needs to be searched for and all matches.
-*/
-func parsePatterns(lines []string)(allWords []string, matches map[int][]string) {
-	allWords = make([]string, 0)
-	matches = make(map[int][]string)
-	for i := range lines {
-		currentMatch :=  make([]string, 0)
-		line := strings.Split(lines[i], " ")
-		for j := range line {
-			currentMatch = stringArrayCapUp(currentMatch)
-			currentMatch[len(currentMatch)-1] = line[j]
-			if line[j][0] == '{' {
-				allWords = addWord(allWords, getWord(1, len(line[j])-3, line[j]))
-			}
-		}
-		matches[i] = currentMatch
-	}
-	return allWords, matches
-}
-
+/******************* Multiple string matching functions *******************/
 func searchAC(p []string, t string) map[string][]int {
 	occurences := make(map[string][]int)
 	ac, f, s := buildAc(p)
@@ -290,6 +318,21 @@ func contains(s []int, e int) bool {
 
 /*******************          String functions          *******************/
 /**
+	Returns regex for desired token in string 'tokenFile'.
+*/
+func getToken(tokenFile, wanted string) string {
+	tokenLines := strings.Split(tokenFile, "\r\n")
+	for n := range tokenLines {
+		token := strings.Split(tokenLines[n], " ")
+		if token[0] == wanted {
+			return token[1]
+		}
+	}
+	log.Fatal("NO TOKEN DEFINITION in tokens.txt FOR: ", wanted)
+	return ""
+}
+
+/**
         Returns a prefix size 'lmin' for one string 'p' of first index found in 'f'.
         It is not needed to compare all the strings from 'p' indexed in 'f',
         thanks to the konwledge of 'lmin'.
@@ -389,42 +432,31 @@ func computeMinLength(p []string) (lmin int){
 
 /*******************   Array size allocation functions  *******************/
 /**
-	Dynamically increases an array size of byte's by 1.
+	Functions 'type'ArrayCapUp dynamically increases an 'type's array 
+	maximum size by 1. (copy(dst,src))
 */
 func byteArrayCapUp (old []byte)(new []byte) {
 	new = make([]byte, cap(old)+1)
-	copy(new, old)  //copy(dst,src)
-	old = new
+	copy(new, old)  
 	return new
 }
 
-/**
-	Dynamically increases an array size of int's by 1.
-*/
 func intArrayCapUp (old []int)(new []int) {
 	new = make([]int, cap(old)+1)
 	copy(new, old) 
-	old = new
 	return new
 }
 
-/**
-	Dynamically increases an array size of bool's by 1.
-*/
+
 func boolArrayCapUp (old []bool)(new []bool) {
 	new = make([]bool, cap(old)+1)
 	copy(new, old)
-	old = new
 	return new
 }
 
-/**
-	Dynamically increases an array size of string's by 1.
-*/
 func stringArrayCapUp (old []string)(new []string) {
 	new = make([]string, cap(old)+1)
 	copy(new, old)  //copy(dst,src)
-	old = new
 	return new
 }
 
