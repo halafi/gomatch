@@ -1,22 +1,3 @@
-README.TXT for Jsonizer v.0.1
-=============================
-Thank you for choosing to read this readme.
-
-TABLE OF CONTENTS
------------------
-	MINIMUM REQUIREMENTS
-	INSTALLATION
-	CONFIGURATION
-
-MINIMUM REQUIREMENTS
---------------------
-	o For GO language system requirements go to: http://golang.org/doc/install#requirements
-	o If you are able to run GO, you should be fine.
-
-INSTALLATION
---------------------
-	o github readme.MD
-
 CONFIGURATION
 --------------------
 	o PATTERNS.TXT
