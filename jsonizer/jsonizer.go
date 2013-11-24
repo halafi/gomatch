@@ -129,7 +129,7 @@ func main() {
 		noMatch := true
 		printedMatch := false
 		for j := range outputText[n] {
-			if outputText[n][j] != "" /*&& !strings.Contains(outputText[n][j], "ERROR")*/ {
+			if outputText[n][j] != "" && !strings.Contains(outputText[n][j], "ERROR") {
 				noMatch = false
 				if printedMatch == false {
 					_, err := file.WriteString("MATCH + ")
@@ -142,14 +142,14 @@ func main() {
 				if err != nil {
 					log.Fatal(err)
 				}
-			}/*else if strings.Contains(outputText[n][j], "ERROR") {
+			}else if strings.Contains(outputText[n][j], "ERROR") {
 				_, err := file.WriteString(outputText[n][j] + " LINE " + strconv.Itoa(n))
 				if err != nil {
 					log.Fatal(err)
 				}
 				noMatch = false
 				break
-			}*/
+			}
 		}
 		if noMatch == true { //all strings were empty, print NO_MATCH
 			_, err := file.WriteString("NO_MATCH\r\n")
