@@ -8,7 +8,6 @@ Patterns.txt
 * You have three options for one word when defining patterns:
   1. <b>TOKEN</b> (regular expression defined in tokens.txt) surrounded by <code><></code>
   2. <b>SPECIFIC WORD</b> surrounded by <code>{}</code>
-  3. <b>ANYTHING</b> for that you can type _ and search for that will match anything
 * Words on each line needs to be separated by spaces.
 * Example line: <code>&lt;IP&gt; _ _ &lt;DATE&gt; {&quot;GET}</code>
 
