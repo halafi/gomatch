@@ -3,7 +3,8 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
 	startTime := time.Now()
-	outputText := make(map[int][]string) //line number + text
+	outputPerLine := make(map[int]map[int][]string) //line number + (match number & tokens)
+	empty := make([]string, 0)
 	//#1 - Reads Input files
 	pFile, err := ioutil.ReadFile("patterns.txt")
 	if err != nil { log.Fatal(err) }
@@ -37,39 +38,22 @@ func main() {
 	//#4 - searching for matches
 	lines = strings.Split(textFile, "\r\n")
 	for n := range lines { 
+		init := make(map[int][]string)
+		outputPerLine[n] = init
 		currentLine := strings.Split(lines[n], " ")
 		for m := range matches {
-			firstSubmatch := true
-			isOpened := false
 			wordPos := 0
 			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
-				if mW == 0 { //set default output text for current line
-					outputText[n] = stringArrayCapUp(outputText[n])
-					outputText[n][len(outputText[n])-1] = ""
-				}
 				if matches[m][mW][0] == '<' { //REGEX_MATCHING
 					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
 					if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
-						outputText[n][len(outputText[n])-1] = "" 
+						outputPerLine[n][m] = empty //current line current match set to empty
 						break
-					} else if mW == 0 && len(matches[m]) == 1{ //one match containing one pattern ended
-						outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]+"}"
-					} else if mW < len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern got submatch
-						if firstSubmatch {
-							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]
-							isOpened = true
-							firstSubmatch = false
-						} else {
-							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1]+", "+tokenToMatch+"="+currentLine[mW]
-						}
-					} else if mW == len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern: submatch at the end of match_def
-						if firstSubmatch {
-							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)+", {"+tokenToMatch+"="+currentLine[mW]+"}"
-							firstSubmatch = false
-						} else {
-							outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1]+", "+tokenToMatch+"="+currentLine[mW]+"}"
-						}
+					} else { //store match number: token + value
+						currentStrings := outputPerLine[n][m]
+						currentStrings = addWord(currentStrings, tokenToMatch+" = "+currentLine[mW])
+						outputPerLine[n][m] = currentStrings 
 					}
 				} else if matches[m][mW][0] == '{' { //WORD_MATCHING
 					if len(p) > 0 {
@@ -77,41 +61,19 @@ func main() {
 						//wordOccurences := searchAC(p, lines[n])
 						wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 						if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
-							outputText[n][len(outputText[n])-1] = ""
+							outputPerLine[n][m] = empty //if len == 0 printFile nothing
 							break
-						} else if mW == 0 && len(matches[m]) == 1 { //one match containing one word ended
-							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
-						} else if mW == 0 && len(matches[m]) > 1{ //match starts with word that we found
-							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
-							firstSubmatch = false
-						} else if mW == len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern: submatch at the end of match_def{
-							if firstSubmatch == false && isOpened == true{
-								outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
-								isOpened = false
+						} else if mW == len(matches[m])-1{
+							//store match number & nothing else
+							if len(outputPerLine[n][m]) < 1 {
+								currentStrings := outputPerLine[n][m]
+								currentStrings = addWord(currentStrings, "") //if len == 1 && [0]=="" printFile MATCH + [number]
+								outputPerLine[n][m] = currentStrings 
 							}
-						}// otherwise no need to do anything
-					}
-				} else if matches[m][mW][0] == '_' { //ANY_MATCHING
-					if mW == 0 && len(matches[m]) == 1 { //one match containing one word ended
-						outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
-					} else if mW == len(matches[m])-1 && len(matches[m]) >  1{ //longer pattern: submatch at the end of match_def{
-						if firstSubmatch {
-							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
-							firstSubmatch = false
-						} else { //closes text if it needs to
-							if isOpened {
-								outputText[n][len(outputText[n])-1] = outputText[n][len(outputText[n])-1] + "}"
-								isOpened = false
-							}
-						}
-					} else if mW < len(matches[m])-1 && len(matches[m]) > 1 { //longer pattern got submatch
-						if firstSubmatch {
-							outputText[n][len(outputText[n])-1] = strconv.Itoa(m+1)
-							firstSubmatch = false
 						}
 					}
 				} else {
-					outputText[n][len(outputText[n])-1] = "ERROR_MATCHING: "+string(matches[m][mW])
+					log.Fatal("Unknown expression in Match "+strconv.Itoa(m+1)+": '"+getWord(0, len(matches[m][mW])-1, matches[m][mW])+ "'")
 					break
 				}
 				wordPos = wordPos + len(currentLine[mW]) +1
@@ -125,39 +87,53 @@ func main() {
 		log.Fatal(err)
 	}
 	defer file.Close()
-	for n := range lines {
-		noMatch := true
-		printedMatch := false
-		for j := range outputText[n] {
-			if outputText[n][j] != "" && !strings.Contains(outputText[n][j], "ERROR") {
-				noMatch = false
-				if printedMatch == false {
-					_, err := file.WriteString("MATCH + ")
-					if err != nil {
-						log.Fatal(err)
+	for n := range lines { //for each line
+		isEmpty := true
+		out, newOut := "", ""
+		for matchNumber := range outputPerLine[n] {
+			strs := outputPerLine[n][matchNumber]
+			if len(strs) == 1 && strs[0] == "" { //one match with no tokens to print
+				isEmpty = false
+				if len(out) == 0 { //no ouptut match yet
+					out = strconv.Itoa(matchNumber+1)
+				} else { //old and current match are of the same length
+					oldMatchNumber, err := strconv.Atoi(out) //number of previous match found
+					if err == nil && len(matches[matchNumber]) > len(matches[oldMatchNumber-1]) {
+						out = strconv.Itoa(matchNumber+1)
 					}
-					printedMatch = true
 				}
-				_, err := file.WriteString("["+outputText[n][j]+"]")
-				if err != nil {
-					log.Fatal(err)
+			} else if len(strs) >= 1 { //match with tokens to print
+				isEmpty = false
+				if len(strs) > 1 {
+					newOut = strconv.Itoa(matchNumber+1) +", {"
+					for s := range strs {
+						if s == len(strs)-1 {
+							newOut = newOut+strs[s]+"}"
+						} else {
+							newOut = newOut+strs[s]+", "
+						}
+					}
+				} else{
+					newOut = strconv.Itoa(matchNumber+1) +", {"+strs[0]+"}"
 				}
-			}else if strings.Contains(outputText[n][j], "ERROR") {
-				_, err := file.WriteString(outputText[n][j] + " LINE " + strconv.Itoa(n))
-				if err != nil {
-					log.Fatal(err)
+				oldString := strings.Split(out, ",") //we will read first int from out - match number
+				if len(oldString) == 1 && oldString[0] != "" {
+					oldMatchNumber, err := strconv.Atoi(out)
+					if err == nil && len(matches[matchNumber]) > len(matches[oldMatchNumber-1]) {
+						out = newOut
+					}
+				} else if len(oldString) == 1 && oldString[0] == ""{ //there was no old match
+					out = newOut
 				}
-				noMatch = false
-				break
 			}
 		}
-		if noMatch == true { //all strings were empty, print NO_MATCH
+		if isEmpty {
 			_, err := file.WriteString("NO_MATCH\r\n")
 			if err != nil {
-			log.Fatal(err)
+				log.Fatal(err)
 			}
 		} else {
-			_, err := file.WriteString("\r\n")
+			_, err := file.WriteString("MATCH + ["+out+"]\r\n")
 			if err != nil {
 				log.Fatal(err)
 			}
