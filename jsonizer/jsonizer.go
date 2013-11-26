@@ -3,9 +3,7 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
 	startTime := time.Now()
-	outputPerLine := make(map[int]map[int][]string)
-	empty := make([]string, 0)
-	//#1 - Reads Input files
+	//Reads Input files
 	pFile, err := ioutil.ReadFile("patterns.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -19,12 +17,13 @@ func main() {
 		log.Fatal(err)
 	}
 	tokenFile, patternsFile, textFile := string(tokFile),string(pFile),string(tFile)
-	//#2 - Preprocessing
+	//Preprocessing
 	pOnMatchLine := make(map[int][]string)
 	matches := make(map[int][]string)
 	lines := strings.Split(patternsFile, "\r\n")
 	for i := range lines {
 		line := strings.Split(lines[i], " ")
+		pOnMatchLine[i] = make([]string, 0)
 		for j := range line {
 			if line[j][0] == '{' {
 				pOnMatchLine[i] = addWord(pOnMatchLine[i], getWord(1, len(line[j])-2, line[j]))
@@ -32,7 +31,7 @@ func main() {
 		}
 		matches[i] = strings.Split(lines[i], " ")
 	}
-	//#3 - Print some stuff out
+	//Print some stuff out
 	fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
 	for i,arrayOfS := range matches {
 		fmt.Printf("Match %d: ", i+1)
@@ -41,24 +40,23 @@ func main() {
 		}
 		fmt.Println()
 	}
-	//#4 - searching for matches
+	//searching for matches
+	outputPerLine := make(map[int]map[int][]string)
 	wordOccurences := make(map[string][]int)
 	lines = strings.Split(textFile, "\r\n")
 	for n := range lines { 
-		init := make(map[int][]string)
-		outputPerLine[n] = init
+		outputPerLine[n] = make(map[int][]string) //initialize
 		currentLine := strings.Split(lines[n], " ")
 		for m := range matches {
-			if len(pOnMatchLine[m]) > 0{
+			if len(pOnMatchLine[m]) > 0 { //if there are words in this match, search for them
 				wordOccurences = searchSBOM(pOnMatchLine[m], lines[n])
 			}
-			wordPos := 0
-			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
+			for wordPos, mW := 0, 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
 				if matches[m][mW][0] == '<' { //REGEX_MATCHING
 					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
 					if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
-						outputPerLine[n][m] = empty //current line current match set to empty
+						outputPerLine[n][m] = make([]string, 0) //current line current match set to empty
 						break
 					} else { //store match number: token + value
 						currentStrings := outputPerLine[n][m]
@@ -66,29 +64,26 @@ func main() {
 						outputPerLine[n][m] = currentStrings 
 					}
 				} else if matches[m][mW][0] == '{' { //WORD_MATCHING
-					if len(pOnMatchLine[m]) >= 1 {
-						wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
-						if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
-							outputPerLine[n][m] = empty //if len == 0 printFile nothing
-							break
-						} else if mW == len(matches[m])-1{
-							//store match number & nothing else
-							if len(outputPerLine[n][m]) < 1 {
-								currentStrings := outputPerLine[n][m]
-								currentStrings = addWord(currentStrings, "") //if len == 1 && [0]=="" printFile MATCH + [number]
-								outputPerLine[n][m] = currentStrings 
-							}
+					wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
+					if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
+						outputPerLine[n][m] = make([]string, 0) //if len == 0 printFile nothing
+						break
+					} else if mW == len(matches[m])-1{
+						//store match number & nothing else
+						if len(outputPerLine[n][m]) < 1 {
+							currentStrings := outputPerLine[n][m]
+							currentStrings = addWord(currentStrings, "") //if len == 1 && [0]=="" printFile MATCH + [number]
+							outputPerLine[n][m] = currentStrings 
 						}
 					}
 				} else {
 					log.Fatal("Unknown expression in Match "+strconv.Itoa(m+1)+": '"+getWord(0, len(matches[m][mW])-1, matches[m][mW])+ "'")
-					break
 				}
 				wordPos = wordPos + len(currentLine[mW]) +1
 			}
 		}
 	}
-	//#5 - writing output to a file output.txt
+	//writing output to a file output.txt
 	path := "output.txt"
 	file, err := os.Create(path)
 	if err != nil {
