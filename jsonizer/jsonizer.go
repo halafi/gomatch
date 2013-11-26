@@ -3,25 +3,31 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
 	startTime := time.Now()
-	outputPerLine := make(map[int]map[int][]string) //line number + (match number & tokens)
+	outputPerLine := make(map[int]map[int][]string)
 	empty := make([]string, 0)
 	//#1 - Reads Input files
 	pFile, err := ioutil.ReadFile("patterns.txt")
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	tFile, err := ioutil.ReadFile("text.txt")
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	tokFile, err := ioutil.ReadFile("tokens.txt")
-	if err != nil { log.Fatal(err) }
+	if err != nil {
+		log.Fatal(err)
+	}
 	tokenFile, patternsFile, textFile := string(tokFile),string(pFile),string(tFile)
 	//#2 - Preprocessing
-	p := make([]string, 0)
+	pOnMatchLine := make(map[int][]string)
 	matches := make(map[int][]string)
 	lines := strings.Split(patternsFile, "\r\n")
 	for i := range lines {
 		line := strings.Split(lines[i], " ")
 		for j := range line {
 			if line[j][0] == '{' {
-				p = addWord(p, getWord(1, len(line[j])-2, line[j]))
+				pOnMatchLine[i] = addWord(pOnMatchLine[i], getWord(1, len(line[j])-2, line[j]))
 			}
 		}
 		matches[i] = strings.Split(lines[i], " ")
@@ -36,12 +42,16 @@ func main() {
 		fmt.Println()
 	}
 	//#4 - searching for matches
+	wordOccurences := make(map[string][]int)
 	lines = strings.Split(textFile, "\r\n")
 	for n := range lines { 
 		init := make(map[int][]string)
 		outputPerLine[n] = init
 		currentLine := strings.Split(lines[n], " ")
 		for m := range matches {
+			if len(pOnMatchLine[m]) > 0{
+				wordOccurences = searchSBOM(pOnMatchLine[m], lines[n])
+			}
 			wordPos := 0
 			for mW := 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
 				if matches[m][mW][0] == '<' { //REGEX_MATCHING
@@ -56,9 +66,7 @@ func main() {
 						outputPerLine[n][m] = currentStrings 
 					}
 				} else if matches[m][mW][0] == '{' { //WORD_MATCHING
-					if len(p) > 0 {
-						wordOccurences := searchSBOM(p, lines[n])
-						//wordOccurences := searchAC(p, lines[n])
+					if len(pOnMatchLine[m]) >= 1 {
 						wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 						if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
 							outputPerLine[n][m] = empty //if len == 0 printFile nothing
@@ -144,37 +152,12 @@ func main() {
 	return
 }
 
-/******************* Multiple string matching functions *******************/
-func searchAC(p []string, t string) map[string][]int {
-	occurences := make(map[string][]int)
-	ac, f, s := buildAc(p)
-	current := 0
-	for pos := 0; pos < len(t); pos++ {
-		for getTransition(current, t[pos], ac) == -1 && s[current] != -1 {
-			current = s[current]
-		}
-		if getTransition(current, t[pos], ac) != -1 {
-			current = getTransition(current, t[pos], ac)
-		} else {
-			current = 0
-		}
-		_, ok := f[current]
-		if ok {
-			for i := range f[current] {
-				if p[f[current][i]] == getWord(pos-len(p[f[current][i]])+1, pos, t) {
-					occurences[p[f[current][i]]] = intArrayCapUp(occurences[p[f[current][i]]])
-					occurences[p[f[current][i]]][len(occurences[p[f[current][i]]])-1] = pos-len(p[f[current][i]])+1
-				}
-			}
-		}
-	}
-	return occurences
-}
+/*******************            SBOM functions          *******************/
 
 func searchSBOM(p []string, t string) map[string][]int {
-	occurences := make(map[string][]int)
 	lmin := computeMinLength(p)
 	or, f := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
+	occurences := make(map[string][]int)
 	pos := 0
 	for pos <= len(t) - lmin {
 			current := 0
@@ -224,34 +207,6 @@ func buildOracleMultiple (p []string) (orToReturn map[int]map[uint8]int, f map[i
 }
 
 /**
-	Functions that builds Aho Corasick automaton.
-*/
-func buildAc(p []string) (acToReturn map[int]map[uint8]int, f map[int][]int, s []int) {
-	acTrie, stateIsTerminal, f := constructTrie(p)
-	s = make([]int, len(stateIsTerminal))
-	i := 0
-	acToReturn = acTrie
-	s[i] = -1
-	for current := 1; current < len(stateIsTerminal); current++ {
-		o, parent := getParent(current, acTrie)
-		down := s[parent]
-		for stateExists(down, acToReturn) && getTransition(down, o, acToReturn) == -1 {
-			down = s[down]
-		}
-		if stateExists(down, acToReturn) {
-			s[current] = getTransition(down, o, acToReturn)
-			if stateIsTerminal[s[current]] == true {
-				stateIsTerminal[current] = true
-				f[current] = arrayUnion(f[current], f[s[current]]) //F(Current) <- F(Current) union F(S(Current))
-			}
-		} else {
-			s[current] = i
-		}
-	}
-	return acToReturn, f, s
-}
-
-/**
         Function that constructs Trie as an automaton for a set of reversed & trimmed strings.
         
         @return 'trie' built prefix tree
@@ -290,20 +245,6 @@ func constructTrie (p []string) (trie map[int]map[uint8]int, stateIsTerminal []b
                 }
         }
         return trie, stateIsTerminal, f
-}
-
-/**
-	Returns 'true' if array of int's 's' contains int 'e', 'false' otherwise.
-	
-	@author Mostafa http://stackoverflow.com/a/10485970
-*/
-func contains(s []int, e int) bool {
-    for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-    return false
 }
 
 /*******************          String functions          *******************/
@@ -420,7 +361,7 @@ func computeMinLength(p []string) (lmin int){
         return lmin
 }
 
-/*******************   Array size allocation functions  *******************/
+/*******************            Array functions            *******************/
 /**
 	Functions 'type'ArrayCapUp dynamically increases an 'type's array 
 	maximum size by 1. (copy(dst,src))
@@ -462,6 +403,20 @@ func arrayUnion (to, from []int) (concat []int) {
 		}
 	}
 	return concat
+}
+
+/**
+	Returns 'true' if array of int's 's' contains int 'e', 'false' otherwise.
+	
+	@author Mostafa http://stackoverflow.com/a/10485970
+*/
+func contains(s []int, e int) bool {
+    for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+    return false
 }
 
 /*******************          Automaton functions          *******************/
