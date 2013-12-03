@@ -1,5 +1,1 @@
-<IP:ipAdresa> <WORD> <IP> <WORD>
-<IP> <WORD> <IP> {drakula}
-<WORD> {1}
-<IP> {5} {-}
-<IP>
+<IP:sourceIP> <WORD> <IP:destIP> drakula
