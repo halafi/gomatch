@@ -25,21 +25,21 @@ func main() {
 		line := strings.Split(lines[i], " ")
 		pOnMatchLine[i] = make([]string, 0)
 		for j := range line {
-			if line[j][0] == '{' {
-				pOnMatchLine[i] = addWord(pOnMatchLine[i], getWord(1, len(line[j])-2, line[j]))
+			if line[j][0] != '<' && line[j][(len(line[j]))-1] != '>' {
+				pOnMatchLine[i] = addWord(pOnMatchLine[i], line[j])
 			}
 		}
 		matches[i] = strings.Split(lines[i], " ")
 	}
 	//Print some stuff out
-	fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
+	/*fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
 	for i,arrayOfS := range matches {
 		fmt.Printf("Match %d: ", i+1)
 		for j := range arrayOfS {
 			fmt.Printf("%q ", arrayOfS[j])
 		}
 		fmt.Println()
-	}
+	}*/
 	//searching for matches
 	outputPerLine := make(map[int]map[int][]string)
 	wordOccurences := make(map[string][]int)
@@ -52,7 +52,7 @@ func main() {
 				wordOccurences = searchSBOM(pOnMatchLine[m], lines[n])
 			}
 			for wordPos, mW := 0, 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
-				if matches[m][mW][0] == '<' { //REGEX_MATCHING
+				if matches[m][mW][0] == '<' && matches[m][mW][len(matches[m][mW])-1] == '>' { //REGEX_MATCHING
 					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
 					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
 					if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
@@ -63,8 +63,8 @@ func main() {
 						currentStrings = addWord(currentStrings, tokenToMatch+" = "+currentLine[mW])
 						outputPerLine[n][m] = currentStrings 
 					}
-				} else if matches[m][mW][0] == '{' { //WORD_MATCHING
-					wordToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
+				} else { //WORD_MATCHING
+					wordToMatch := matches[m][mW]
 					if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
 						outputPerLine[n][m] = make([]string, 0) //if len == 0 printFile nothing
 						break
@@ -76,8 +76,6 @@ func main() {
 							outputPerLine[n][m] = currentStrings 
 						}
 					}
-				} else {
-					log.Fatal("Unknown expression in Match "+strconv.Itoa(m+1)+": '"+getWord(0, len(matches[m][mW])-1, matches[m][mW])+ "'")
 				}
 				wordPos = wordPos + len(currentLine[mW]) +1
 			}

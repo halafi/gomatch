@@ -3,5 +3,9 @@ WORD ^\w+$
 NUMBER ^[0-9]+$
 USERNAME ^[a-zA-Z0-9_-]+$
 EMAIL ^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]
-DATE ^([0-9][0-9]?)/([0-9][0-9]?)/([0-9][0-9]([0-9][0-9])?)$
 URI ^([a-zA-Z][a-zA-Z0-9]*)://
+LEVEL (ERROR|DEBUG|INFO|TRACE|WARN)
+USER ^\w+$
+PORT ^\d+$
+CLASS [\.\w]+
+DATE ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
