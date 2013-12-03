@@ -5,11 +5,12 @@ Make sure that there are no extra spaces or endlines in these files and that the
 Patterns.txt
 -----------------------------
 * Each line in <b>patterns.txt</b> corresponds to one match, that will be searched for.
-* You have two options for one word when defining patterns:
+* You have three options for one word when defining patterns:
   1. <b>TOKEN</b> (regular expression defined in <b>tokens.txt</b> surrounded by <code><></code>
-  2. <b>SPECIFIC WORD</b>
+  2. <b>TOKEN:name</b> (same as in 1., but name will be in output instead of TOKEN)
+  3. <b>SPECIFIC WORD</b>
 * Words on each line needs to be separated by spaces.
-* Example line: <code>&lt;IP&gt; &lt;DATE&gt; user &lt;USER&gt;</code>
+* Example line: <code>&lt;IP:IPAdress&gt; &lt;DATE&gt; user &lt;USER&gt;</code>
 
 Tokens.txt
 -----------------------------

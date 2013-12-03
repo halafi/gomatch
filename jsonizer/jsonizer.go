@@ -32,14 +32,14 @@ func main() {
 		matches[i] = strings.Split(lines[i], " ")
 	}
 	//Print some stuff out
-	/*fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
+	fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
 	for i,arrayOfS := range matches {
 		fmt.Printf("Match %d: ", i+1)
 		for j := range arrayOfS {
 			fmt.Printf("%q ", arrayOfS[j])
 		}
 		fmt.Println()
-	}*/
+	}
 	//searching for matches
 	outputPerLine := make(map[int]map[int][]string)
 	wordOccurences := make(map[string][]int)
@@ -54,15 +54,31 @@ func main() {
 			for wordPos, mW := 0, 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
 				if matches[m][mW][0] == '<' && matches[m][mW][len(matches[m][mW])-1] == '>' { //REGEX_MATCHING
 					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
-					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
-					if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
-						outputPerLine[n][m] = make([]string, 0) //current line current match set to empty
-						break
-					} else { //store match number: token + value
-						currentStrings := outputPerLine[n][m]
-						currentStrings = addWord(currentStrings, tokenToMatch+" = "+currentLine[mW])
-						outputPerLine[n][m] = currentStrings 
+					token := strings.Split(tokenToMatch, ":")
+					if len(token) == 2 { //CASE 1: token defined as i.e. <IP:ipAdresa>, output ipAdresa = ...
+						regex := regexp.MustCompile(getToken(tokenFile, token[0]))
+						if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
+							outputPerLine[n][m] = make([]string, 0) //current line current match set to empty
+							break
+						} else { //store match number: token + value
+							currentStrings := outputPerLine[n][m]
+							currentStrings = addWord(currentStrings, token[1]+" = "+currentLine[mW])
+							outputPerLine[n][m] = currentStrings 
+						}
+					} else if len(token) == 1 { //CASE 2: token defined as token only, i.e.: <IP>, output IP = ...
+						regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
+						if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
+							outputPerLine[n][m] = make([]string, 0) //current line current match set to empty
+							break
+						} else { //store match number: token + value
+							currentStrings := outputPerLine[n][m]
+							currentStrings = addWord(currentStrings, tokenToMatch+" = "+currentLine[mW])
+							outputPerLine[n][m] = currentStrings 
+						}
+					} else {
+						log.Fatal("Problem in token definition: <"+tokenToMatch+"> use only <TOKEN> or <TOKEN:name>.")
 					}
+					
 				} else { //WORD_MATCHING
 					wordToMatch := matches[m][mW]
 					if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
@@ -248,7 +264,7 @@ func getToken(tokenFile, wanted string) string {
 	tokenLines := strings.Split(tokenFile, "\r\n")
 	for n := range tokenLines {
 		token := strings.Split(tokenLines[n], " ")
-		if token[0] == wanted {
+		if len(token) == 2 && token[0] == wanted {
 			return token[1]
 		}
 	}

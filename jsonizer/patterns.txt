@@ -1,4 +1,4 @@
-<IP> <WORD> <IP> <WORD>
+<IP:ipAdresa> <WORD> <IP> <WORD>
 <IP> <WORD> <IP> {drakula}
 <WORD> {1}
 <IP> {5} {-}
