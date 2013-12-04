@@ -3,7 +3,7 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
 	startTime := time.Now()
-	//Reads Input files
+	//READ IO
 	pFile, err := ioutil.ReadFile("patterns.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -18,81 +18,67 @@ func main() {
 	}
 	tokenFile, patternsFile, textFile := string(tokFile),string(pFile),string(tFile)
 	//Preprocessing
-	pOnMatchLine := make(map[int][]string)
-	matches := make(map[int][]string)
+	matchesPerLine := make(map[int][]string)
+	patterns := make([]string, 0) //patterns
 	lines := strings.Split(patternsFile, "\r\n")
 	for i := range lines {
-		line := strings.Split(lines[i], " ")
-		pOnMatchLine[i] = make([]string, 0)
-		for j := range line {
-			if line[j][0] != '<' && line[j][(len(line[j]))-1] != '>' {
-				pOnMatchLine[i] = addWord(pOnMatchLine[i], line[j])
-			}
+		if len(lines[i]) != 0 {
+			patterns = addWord(patterns, lines[i])
 		}
-		matches[i] = strings.Split(lines[i], " ")
 	}
 	//Print some stuff out
-	fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
-	for i,arrayOfS := range matches {
-		fmt.Printf("Match %d: ", i+1)
-		for j := range arrayOfS {
-			fmt.Printf("%q ", arrayOfS[j])
-		}
-		fmt.Println()
-	}
-	//searching for matches
-	outputPerLine := make(map[int]map[int][]string)
-	wordOccurences := make(map[string][]int)
+	fmt.Printf("\nJSONIZER v.0.2 \n-----------------------\n")
+	//Pattern matching
+	ac, f, s := buildAc(patterns)
 	lines = strings.Split(textFile, "\r\n")
-	for n := range lines { 
-		outputPerLine[n] = make(map[int][]string) //initialize
-		currentLine := strings.Split(lines[n], " ")
-		for m := range matches {
-			if len(pOnMatchLine[m]) > 0 { //if there are words in this match, search for them
-				wordOccurences = searchSBOM(pOnMatchLine[m], lines[n])
+	for n := range lines {
+		words := strings.Split(lines[n], " ")
+		current := 0
+		for wordIndex := range words { //for each word on a single line
+			for getTransition(current, words[wordIndex], ac) == -1 && len(getTransitionTokens(current, ac)) == 0 && s[current] != -1 {
+				current = s[current]
 			}
-			for wordPos, mW := 0, 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
-				if matches[m][mW][0] == '<' && matches[m][mW][len(matches[m][mW])-1] == '>' { //REGEX_MATCHING
-					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
-					token := strings.Split(tokenToMatch, ":")
-					if len(token) == 2 { //CASE 1: token defined as i.e. <IP:ipAdresa>, output ipAdresa = ...
-						regex := regexp.MustCompile(getToken(tokenFile, token[0]))
-						if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
-							outputPerLine[n][m] = make([]string, 0) //current line current match set to empty
-							break
-						} else { //store match number: token + value
-							currentStrings := outputPerLine[n][m]
-							currentStrings = addWord(currentStrings, token[1]+" = "+currentLine[mW])
-							outputPerLine[n][m] = currentStrings 
+			passableTokens := make([]string, 0)
+			if len(getTransitionTokens(current, ac)) > 0 { //we can move in 'ac' by some regex
+				tokens := getTransitionTokens(current, ac)
+				for r := range tokens {
+					tokenToMatch := getWord(1, len(tokens[r])-2, tokens[r])
+					tokenToMatchSplit := strings.Split(tokenToMatch, ":")
+					if len(tokenToMatchSplit) == 2 { //CASE 1: token defined as i.e. <IP:ipAdresa>, output ipAdresa = ...
+						regex := regexp.MustCompile(getToken(tokenFile, tokenToMatchSplit[0]))
+						if regex.MatchString(words[wordIndex]) { //we got one match
+							passableTokens = addWord(passableTokens, tokens[r])
 						}
-					} else if len(token) == 1 { //CASE 2: token defined as token only, i.e.: <IP>, output IP = ...
+					} else if len(tokenToMatchSplit) == 1 { //CASE 2: token defined as token only, i.e.: <IP>, output IP = ...
 						regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
-						if  !regex.MatchString(currentLine[mW]) { //NO_MATCH
-							outputPerLine[n][m] = make([]string, 0) //current line current match set to empty
-							break
-						} else { //store match number: token + value
-							currentStrings := outputPerLine[n][m]
-							currentStrings = addWord(currentStrings, tokenToMatch+" = "+currentLine[mW])
-							outputPerLine[n][m] = currentStrings 
+						if regex.MatchString(words[wordIndex]) { //we got one match
+							passableTokens = addWord(passableTokens, tokens[r])
 						}
 					} else {
 						log.Fatal("Problem in token definition: <"+tokenToMatch+"> use only <TOKEN> or <TOKEN:name>.")
-					}	
-				} else { //WORD_MATCHING
-					wordToMatch := matches[m][mW]
-					if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
-						outputPerLine[n][m] = make([]string, 0) //if len == 0 printFile nothing
-						break
-					} else if mW == len(matches[m])-1{
-						//store match number & nothing else
-						if len(outputPerLine[n][m]) < 1 {
-							currentStrings := outputPerLine[n][m]
-							currentStrings = addWord(currentStrings, "") //if len == 1 && [0]=="" printFile MATCH + [number]
-							outputPerLine[n][m] = currentStrings 
+					}
+				}
+				if len(passableTokens) > 1 {
+					log.Fatal("we can match multiple tokens for one word")
+				} else if len(passableTokens) == 1{
+					current = getTransition(current, passableTokens[0], ac)
+				}
+			}
+			if len(passableTokens) == 0 && getTransition(current, words[wordIndex], ac) != -1 { //move state by a specific word
+				current = getTransition(current, words[wordIndex], ac)
+			}
+			_, ok := f[current]
+			if ok { //if(one or more matches)
+				for i := range f[current] { // for each pattern that ends at 'current' state
+					if isMatch(lines[n], patterns[f[current][i]], tokenFile) { //if(current pattern[i] is match for current line)
+						currentMatchText := matchString(lines[n], patterns[f[current][i]], tokenFile)
+						if len(currentMatchText) > 1 { //CASE of regex matches (needs to print tokens)
+							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)+", {"+currentMatchText+"}") 
+						} else { //CASE of only word matches
+							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)) 
 						}
 					}
 				}
-				wordPos = wordPos + len(currentLine[mW]) +1
 			}
 		}
 	}
@@ -103,53 +89,28 @@ func main() {
 		log.Fatal(err)
 	}
 	defer file.Close()
-	for n := range lines { //for each line
-		isEmpty := true
-		out, newOut := "", ""
-		for matchNumber := range outputPerLine[n] {
-			strs := outputPerLine[n][matchNumber]
-			if len(strs) == 1 && strs[0] == "" { //one match with no tokens to print
-				isEmpty = false
-				if len(out) == 0 { //no ouptut match yet
-					out = strconv.Itoa(matchNumber+1)
-				} else { //old and current match are of the same length
-					oldMatchNumber, err := strconv.Atoi(out) //number of previous match found
-					if err == nil && len(matches[matchNumber]) > len(matches[oldMatchNumber-1]) {
-						out = strconv.Itoa(matchNumber+1)
-					}
-				}
-			} else if len(strs) >= 1 { //match with tokens to print
-				isEmpty = false
-				if len(strs) > 1 {
-					newOut = strconv.Itoa(matchNumber+1) +", {"
-					for s := range strs {
-						if s == len(strs)-1 {
-							newOut = newOut+strs[s]+"}"
-						} else {
-							newOut = newOut+strs[s]+", "
-						}
-					}
-				} else{
-					newOut = strconv.Itoa(matchNumber+1) +", {"+strs[0]+"}"
-				}
-				oldString := strings.Split(out, ",") //we will read first int from out - match number
-				if len(oldString) == 1 && oldString[0] != "" {
-					oldMatchNumber, err := strconv.Atoi(out)
-					if err == nil && len(matches[matchNumber]) > len(matches[oldMatchNumber-1]) {
-						out = newOut
-					}
-				} else if len(oldString) == 1 && oldString[0] == ""{ //there was no old match
-					out = newOut
-				}
-			}
-		}
-		if isEmpty {
+	for n := range lines { 
+		if len(matchesPerLine[n]) == 0 {
 			_, err := file.WriteString("NO_MATCH\r\n")
 			if err != nil {
 				log.Fatal(err)
 			}
-		} else {
-			_, err := file.WriteString("MATCH + ["+out+"]\r\n")
+		} else if len(matchesPerLine[n]) == 1 { //one match found
+			_, err := file.WriteString("MATCH + ["+matchesPerLine[n][0]+"]\r\n")
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else { //multiple matches found
+			longest := 0
+			longestOutput := ""
+			for j := range matchesPerLine[n] {
+				currentMatch := strings.Split(matchesPerLine[n][j], ",")
+				if len(currentMatch) > longest {
+					longest = len(currentMatch)
+					longestOutput = matchesPerLine[n][j]
+				}
+			}
+			_, err := file.WriteString("MATCH + ["+longestOutput+"]\r\n")
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -160,58 +121,100 @@ func main() {
 	return
 }
 
-/*******************            SBOM functions          *******************/
-
-func searchSBOM(p []string, t string) map[string][]int {
-	lmin := computeMinLength(p)
-	or, f := buildOracleMultiple(reverseAll(trimToLength(p, lmin)))
-	occurences := make(map[string][]int)
-	pos := 0
-	for pos <= len(t) - lmin {
-			current := 0
-			j := lmin
-			for j >= 1 && stateExists(current, or) {
-					current = getTransition(current, t[pos+j-1], or)
-					j--
-			}
-			word := getWord(pos, pos+lmin-1, t)
-			if stateExists(current, or) && j == 0 && strings.HasPrefix(word, getCommonPrefix(p, f[current], lmin)) {
-					for i := range f[current] {
-							if p[f[current][i]] == getWord(pos, pos-1+len(p[f[current][i]]), t) {
-									occurences[p[f[current][i]]] = intArrayCapUp(occurences[p[f[current][i]]])
-									occurences[p[f[current][i]]][len(occurences[p[f[current][i]]])-1] = pos
-							}
+/**
+	Deep assert for pattern and a text line
+*/
+func isMatch(logLine string, pattern string, tokenFile string) bool {
+	logLineWords := strings.Split(logLine, " ")
+	patternWords := strings.Split(pattern, " ")
+	if len(logLineWords) != len(patternWords) {
+		return false
+	} else {
+		for i := range logLineWords {
+			if logLineWords[i] != patternWords[i] {
+				tokenToMatch := getWord(1, len(patternWords[i])-2, patternWords[i])
+				tokenToMatchSplit := strings.Split(tokenToMatch, ":")
+				if len(tokenToMatchSplit) == 2 { 
+					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatchSplit[0]))
+					if !regex.MatchString(logLineWords[i]) {
+						return false
 					}
-					j = 0
+				} else if len(tokenToMatchSplit) == 1 {
+					regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
+					if !regex.MatchString(logLineWords[i]) {
+						return false
+					}
+				}
 			}
-			pos = pos + j + 1
+		}
 	}
-	return occurences
+	return true
 }
 
 /**
-        Function that builds factor oracle used by sbom.
+	Returns match string for output writing.
 */
-func buildOracleMultiple (p []string) (orToReturn map[int]map[uint8]int, f map[int][]int) {
-        orTrie, stateIsTerminal, f := constructTrie(p)
-        s := make([]int, len(stateIsTerminal)) //supply function
-        i := 0 //root of trie
-        orToReturn = orTrie
+func matchString(logLine string, pattern string, tokenFile string) string {
+	logLineWords := strings.Split(logLine, " ")
+	patternWords := strings.Split(pattern, " ")
+	output := ""
+	tokens := false
+	for i := range logLineWords {
+		if logLineWords[i] != patternWords[i] {
+			tokenToMatch := getWord(1, len(patternWords[i])-2, patternWords[i])
+			tokenToMatchSplit := strings.Split(tokenToMatch, ":")
+			if len(tokenToMatchSplit) == 2 { 
+				regex := regexp.MustCompile(getToken(tokenFile, tokenToMatchSplit[0]))
+				if regex.MatchString(logLineWords[i]) {
+					if tokens {
+						output = output + ", "
+					}
+					output = output + tokenToMatch +" = "+logLineWords[i]
+					tokens = true
+				}
+			} else if len(tokenToMatchSplit) == 1 {
+				regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
+				if regex.MatchString(logLineWords[i]) {
+					if tokens {
+						output = output + ", "
+					}
+					output = output + tokenToMatch +" = "+logLineWords[i]
+					tokens = true
+				}
+			}
+		}
+	}
+	return output
+}
+
+/*******************            AC functions          *******************/
+/**
+        Functions that builds the Aho Corasick automaton.
+*/
+func buildAc(p []string) (acToReturn map[int]map[string]int, f map[int][]int, s []int) {
+        acTrie, stateIsTerminal, f := constructTrie(p)
+		fmt.Println()
+        s = make([]int, len(stateIsTerminal))
+        i := 0
+        acToReturn = acTrie
         s[i] = -1
         for current := 1; current < len(stateIsTerminal); current++ {
-                o, parent := getParent(current, orTrie)
+                o, parent := getParent(current, acTrie)
                 down := s[parent]
-                for stateExists(down, orToReturn) && getTransition(down, o, orToReturn) == -1 {
-                        createTransition(down, o, current, orToReturn)
+                for stateExists(down, acToReturn) && getTransition(down, o, acToReturn) == -1 {
                         down = s[down]
                 }
-                if stateExists(down, orToReturn) {
-                        s[current] = getTransition(down, o, orToReturn)
+                if stateExists(down, acToReturn) {
+                        s[current] = getTransition(down, o, acToReturn)
+                        if stateIsTerminal[s[current]] == true {
+                                stateIsTerminal[current] = true
+                                f[current] = arrayUnion(f[current], f[s[current]]) //F(Current) <- F(Current) union F(S(Current))
+                        }
                 } else {
                         s[current] = i
                 }
         }
-        return orToReturn, f
+        return acToReturn, f, s
 }
 
 /**
@@ -221,24 +224,25 @@ func buildOracleMultiple (p []string) (orToReturn map[int]map[uint8]int, f map[i
         @return 'stateIsTerminal' array of all states and boolean values of their terminality
         @return 'f' map with keys of pattern indexes and values - arrays of p[i] terminal states
 */
-func constructTrie (p []string) (trie map[int]map[uint8]int, stateIsTerminal []bool, f map[int][]int) {
-        trie = make(map[int]map[uint8]int)
+func constructTrie (p []string) (trie map[int]map[string]int, stateIsTerminal []bool, f map[int][]int) {
+        trie = make(map[int]map[string]int)
         stateIsTerminal = make([]bool, 1)
         f = make(map[int][]int) 
         state := 1
         createNewState(0, trie)
-        for i:=0; i<len(p); i++ {
+        for i := range p {
+				words := strings.Split(p[i], " ")
                 current := 0
-                j := 0
-                for j < len(p[i]) && getTransition(current, p[i][j], trie) != -1 {
-                        current = getTransition(current, p[i][j], trie)
+                j := 0 //word index
+                for j < len(words) && getTransition(current, words[j], trie) != -1 {
+                        current = getTransition(current, words[j], trie)
                         j++
                 }
-                for j < len(p[i]) {
+                for j < len(words) {
                         stateIsTerminal = boolArrayCapUp(stateIsTerminal)
                         createNewState(state, trie)
                         stateIsTerminal[state] = false
-                        createTransition(current, p[i][j], state, trie)
+                        createTransition(current, words[j], state, trie)
                         current = state
                         j++
                         state++
@@ -250,6 +254,7 @@ func constructTrie (p []string) (trie map[int]map[uint8]int, stateIsTerminal []b
                 } else {
                         stateIsTerminal[current] = true
                         f[current] = []int {i}
+						//fmt.Printf("%d is terminal for pattern number %d\n", current, i) 
                 }
         }
         return trie, stateIsTerminal, f
@@ -269,37 +274,6 @@ func getToken(tokenFile, wanted string) string {
 	}
 	log.Fatal("NO TOKEN DEFINITION in tokens.txt FOR: ", wanted)
 	return ""
-}
-
-/**
-        Returns a prefix size 'lmin' for one string 'p' of first index found in 'f'.
-        It is not needed to compare all the strings from 'p' indexed in 'f',
-        thanks to the konwledge of 'lmin'.
-*/
-func getCommonPrefix(p []string, f []int, lmin int) string {
-        r := []rune(p[f[0]])
-        newR := make([]rune, lmin)
-        for j := 0; j < lmin; j++ {
-                newR[j] = r[j]
-        }
-        return string(newR)
-}
-
-/**
-        Function that takes a set of strings 'p' and their wanted 'length'
-        and then trims each string in that set to have desired 'length'.
-*/
-func trimToLength(p []string, length int) (trimmedP []string) {
-        trimmedP = make([]string, len(p))
-        for i := range p {
-                r := []rune(p[i])
-                newR := make([]rune, length)
-                for j := 0; j < length; j++ {
-                        newR[j] = r[j]
-                }
-                trimmedP[i]=string(newR)
-        }
-        return trimmedP
 }
 
 /**        
@@ -430,10 +404,10 @@ func contains(s []int, e int) bool {
 /*******************          Automaton functions          *******************/
 /**
 	Function that finds the first previous state of a state and returns it. 
-	Used for trie where there is only one parent.
+	Used for trie where there is only one parent, otherwise won't work.
 	@param 'at' automaton
 */
-func getParent(state int, at map[int]map[uint8]int) (uint8, int) {
+func getParent(state int, at map[int]map[string]int) (string, int) {
 	for beginState, transitions := range at {
 		for c, endState := range transitions {
 			if endState == state {
@@ -441,34 +415,50 @@ func getParent(state int, at map[int]map[uint8]int) (uint8, int) {
 			}
 		}
 	}
-	return 0, 0 //unreachable
+	return " ", 0 //unreachable
+}
+
+/**
+	Returns all transitioning tokens for a state 'state'.
+	@param 'at' automaton
+*/
+func getTransitionTokens(state int, at map[int]map[string]int) ([]string) {
+	toReturn := make([]string, 0)
+	for s, _ := range at[state] {
+		if s[0] == '<' && s[len(s)-1] == '>' {
+			toReturn = addWord(toReturn, s)
+		}
+	}
+	return toReturn
 }
 
 /**
 	Automaton function for creating a new state 'state'.
 	@param 'at' automaton
 */
-func createNewState(state int, at map[int]map[uint8]int) {
-	at[state] = make(map[uint8]int)
+func createNewState(state int, at map[int]map[string]int) {
+	at[state] = make(map[string]int)
+	//fmt.Printf("State %d created.\n", state)
 }
 
 /**
- 	Creates a transition for function σ(state,letter) = end.
+ 	Creates a transition for function σ(state,string) = end.
 	@param 'at' automaton
 */
-func createTransition(fromState int, overChar uint8, toState int, at map[int]map[uint8]int) {
-	at[fromState][overChar]= toState
+func createTransition(fromState int, overString string, toState int, at map[int]map[string]int) {
+	at[fromState][overString]= toState
+	//fmt.Printf("σ(%d,%s) = %d\n", fromState, overString, toState)
 }
 
 /**
-	Returns ending state for transition σ(fromState,overChar), '-1' if there is none.
+	Returns ending state for transition σ(fromState,overString), '-1' if there is none.
 	@param 'at' automaton
 */
-func getTransition(fromState int, overChar uint8, at map[int]map[uint8]int)(toState int) {
+func getTransition(fromState int, overString string, at map[int]map[string]int)(toState int) {
 	if (!stateExists(fromState, at)) {
 		return -1
 	}
-	toState, ok := at[fromState][overChar]
+	toState, ok := at[fromState][overString]
 	if (ok == false) {
 		return -1	
 	}
@@ -479,7 +469,7 @@ func getTransition(fromState int, overChar uint8, at map[int]map[uint8]int)(toSt
 	Checks if state 'state' exists. Returns 'true' if it does, 'false' otherwise.
 	@param 'at' automaton
 */
-func stateExists(state int, at map[int]map[uint8]int)bool {
+func stateExists(state int, at map[int]map[string]int)bool {
 	_, ok := at[state]
 	if (!ok || state == -1 || at[state] == nil) {
 		return false
