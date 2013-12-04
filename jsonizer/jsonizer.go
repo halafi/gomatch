@@ -169,7 +169,7 @@ func matchString(logLine string, pattern string, tokenFile string) string {
 					if tokens {
 						output = output + ", "
 					}
-					output = output + tokenToMatch +" = "+logLineWords[i]
+					output = output + tokenToMatchSplit[1] +" = "+logLineWords[i]
 					tokens = true
 				}
 			} else if len(tokenToMatchSplit) == 1 {
