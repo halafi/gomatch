@@ -77,8 +77,7 @@ func main() {
 						}
 					} else {
 						log.Fatal("Problem in token definition: <"+tokenToMatch+"> use only <TOKEN> or <TOKEN:name>.")
-					}
-					
+					}	
 				} else { //WORD_MATCHING
 					wordToMatch := matches[m][mW]
 					if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
