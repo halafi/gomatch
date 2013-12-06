@@ -3,38 +3,35 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
 	startTime := time.Now()
-	//READ IO
-	pFile, err := ioutil.ReadFile("patterns.txt")
+	//Preprocessing, reading input files, printing some stuff out
+	tokensFile, err := ioutil.ReadFile("tokens.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-	tFile, err := ioutil.ReadFile("text.txt")
+	patternsFile, err := ioutil.ReadFile("patterns.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-	tokFile, err := ioutil.ReadFile("tokens.txt")
+	logFile, err := ioutil.ReadFile("text.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
-	tokenFile, patternsFile, textFile := string(tokFile),string(pFile),string(tFile)
-	//Preprocessing
+	tokensString, patternsString, logString := string(tokensFile), string(patternsFile), string(logFile)
 	matchesPerLine := make(map[int][]string)
 	patterns := make([]string, 0) //patterns
-	lines := strings.Split(patternsFile, "\r\n")
+	lines := strings.Split(patternsString, "\r\n")
 	for i := range lines {
 		if len(lines[i]) != 0 {
 			patterns = addWord(patterns, lines[i])
 		}
 	}
-	//Print some stuff out
 	fmt.Printf("\nJSONIZER v.0.2 \n-----------------------\n")
-	//Pattern matching
+	//searching
 	ac, f, s := buildAc(patterns)
-	lines = strings.Split(textFile, "\r\n")
+	lines = strings.Split(logString, "\r\n")
 	for n := range lines {
-		words := strings.Split(lines[n], " ")
-		current := 0
-		for wordIndex := range words { //for each word on a single line
+		words, current := strings.Split(lines[n], " "), 0
+		for wordIndex := range words {
 			for getTransition(current, words[wordIndex], ac) == -1 && len(getTransitionTokens(current, ac)) == 0 && s[current] != -1 {
 				current = s[current]
 			}
@@ -45,12 +42,12 @@ func main() {
 					tokenToMatch := getWord(1, len(tokens[r])-2, tokens[r])
 					tokenToMatchSplit := strings.Split(tokenToMatch, ":")
 					if len(tokenToMatchSplit) == 2 { //CASE 1: token defined as i.e. <IP:ipAdresa>, output ipAdresa = ...
-						regex := regexp.MustCompile(getToken(tokenFile, tokenToMatchSplit[0]))
+						regex := regexp.MustCompile(getToken(tokensString, tokenToMatchSplit[0]))
 						if regex.MatchString(words[wordIndex]) { //we got one match
 							passableTokens = addWord(passableTokens, tokens[r])
 						}
 					} else if len(tokenToMatchSplit) == 1 { //CASE 2: token defined as token only, i.e.: <IP>, output IP = ...
-						regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
+						regex := regexp.MustCompile(getToken(tokensString, tokenToMatch))
 						if regex.MatchString(words[wordIndex]) { //we got one match
 							passableTokens = addWord(passableTokens, tokens[r])
 						}
@@ -59,7 +56,7 @@ func main() {
 					}
 				}
 				if len(passableTokens) > 1 {
-					log.Fatal("we can match multiple tokens for one word")
+					log.Fatal("We can match multiple tokens for one word. This shouldn't happen.")
 				} else if len(passableTokens) == 1{
 					current = getTransition(current, passableTokens[0], ac)
 				}
@@ -70,8 +67,8 @@ func main() {
 			_, ok := f[current]
 			if ok { //if(one or more matches)
 				for i := range f[current] { // for each pattern that ends at 'current' state
-					if isMatch(lines[n], patterns[f[current][i]], tokenFile) { //if(current pattern[i] is match for current line)
-						currentMatchText := matchString(lines[n], patterns[f[current][i]], tokenFile)
+					if isMatch(lines[n], patterns[f[current][i]], tokensString) { //if(current pattern[i] is match for current line)
+						currentMatchText := matchString(lines[n], patterns[f[current][i]], tokensString)
 						if len(currentMatchText) > 1 { //CASE of regex matches (needs to print tokens)
 							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)+", {"+currentMatchText+"}") 
 						} else { //CASE of only word matches
@@ -82,7 +79,7 @@ func main() {
 			}
 		}
 	}
-	//writing output to a file output.txt
+	//Output printing
 	path := "output.txt"
 	file, err := os.Create(path)
 	if err != nil {
@@ -276,31 +273,6 @@ func getToken(tokenFile, wanted string) string {
 	return ""
 }
 
-/**        
-        Function that takes an array of strings and reverses it.
-*/
-func reverseAll(s []string) (reversed []string) {
-        reversed = make([]string, len(s))
-        for i := 0; i < len(s); i++ {
-                reversed[i] = reverse(s[i])
-        }
-        return reversed
-}
-
-/**        
-        Function that takes a single string and reverses it.
-        @author 'Walter' http://stackoverflow.com/a/10043083
-*/
-func reverse(s string) string {
-    l := len(s)
-    m := make([]rune, l)
-    for _, c := range s {
-        l--
-        m[l] = c
-    }
-    return string(m)
-}
-
 /**
 	Check's if word 'w 'exist in array of strings 's', if not - add's it.
 	Returns 's' containing word 'w'.
@@ -330,43 +302,25 @@ func getWord(begin, end int, t string) string {
 	return string(d)
 }
 
-/**
-        Function that computes minimal length string in a set of strings.
-*/
-func computeMinLength(p []string) (lmin int){
-        lmin = len(p[0])
-        for i:=1; i<len(p); i++ {
-                if (len(p[i])<lmin) {
-                        lmin = len(p[i])
-                }
-        }
-        return lmin
-}
-
 /*******************            Array functions            *******************/
 /**
-	Functions 'type'ArrayCapUp dynamically increases an 'type's array 
-	maximum size by 1. (copy(dst,src))
+	Functions 'type'ArrayCapUp increases an array of 'type's maximum size by 1.
 */
 func byteArrayCapUp (old []byte)(new []byte) {
 	new = make([]byte, cap(old)+1)
 	copy(new, old)  
 	return new
 }
-
 func intArrayCapUp (old []int)(new []int) {
 	new = make([]int, cap(old)+1)
 	copy(new, old) 
 	return new
 }
-
-
 func boolArrayCapUp (old []bool)(new []bool) {
 	new = make([]bool, cap(old)+1)
 	copy(new, old)
 	return new
 }
-
 func stringArrayCapUp (old []string)(new []string) {
 	new = make([]string, cap(old)+1)
 	copy(new, old)  //copy(dst,src)
@@ -374,7 +328,7 @@ func stringArrayCapUp (old []string)(new []string) {
 }
 
 /**
-	Concats two arrays of int's into one.
+	Concats two arrays of types int into one.
 */
 func arrayUnion (to, from []int) (concat []int) {
 	concat = to
@@ -389,7 +343,6 @@ func arrayUnion (to, from []int) (concat []int) {
 
 /**
 	Returns 'true' if array of int's 's' contains int 'e', 'false' otherwise.
-	
 	@author Mostafa http://stackoverflow.com/a/10485970
 */
 func contains(s []int, e int) bool {
@@ -419,8 +372,7 @@ func getParent(state int, at map[int]map[string]int) (string, int) {
 }
 
 /**
-	Returns all transitioning tokens for a state 'state'.
-	@param 'at' automaton
+	Returns all transitioning tokens for a state 'state' in automaton 'at'.
 */
 func getTransitionTokens(state int, at map[int]map[string]int) ([]string) {
 	toReturn := make([]string, 0)
@@ -433,26 +385,22 @@ func getTransitionTokens(state int, at map[int]map[string]int) ([]string) {
 }
 
 /**
-	Automaton function for creating a new state 'state'.
-	@param 'at' automaton
+	Automaton function for creating a new state 'state' in automaton 'at'.
 */
 func createNewState(state int, at map[int]map[string]int) {
 	at[state] = make(map[string]int)
-	//fmt.Printf("State %d created.\n", state)
 }
 
 /**
- 	Creates a transition for function σ(state,string) = end.
-	@param 'at' automaton
+ 	Creates a transition for function 'σ(fromState,overString) = toState' in automaton 'at'.
 */
 func createTransition(fromState int, overString string, toState int, at map[int]map[string]int) {
 	at[fromState][overString]= toState
-	//fmt.Printf("σ(%d,%s) = %d\n", fromState, overString, toState)
 }
 
 /**
-	Returns ending state for transition σ(fromState,overString), '-1' if there is none.
-	@param 'at' automaton
+	Returns ending state - 'toState' for transition 'σ(fromState,overString)' in automaton 'at'.
+	State -1 is returned if there is none.
 */
 func getTransition(fromState int, overString string, at map[int]map[string]int)(toState int) {
 	if (!stateExists(fromState, at)) {
@@ -466,8 +414,8 @@ func getTransition(fromState int, overString string, at map[int]map[string]int)(
 }
 
 /**
-	Checks if state 'state' exists. Returns 'true' if it does, 'false' otherwise.
-	@param 'at' automaton
+	Checks if state 'state' exists in automaton 'at'.
+	Returns 'true' if it does, 'false' otherwise.
 */
 func stateExists(state int, at map[int]map[string]int)bool {
 	_, ok := at[state]

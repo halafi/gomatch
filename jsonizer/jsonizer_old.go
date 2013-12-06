@@ -33,24 +33,24 @@ func main() {
 	}
 	//Print some stuff out
 	fmt.Printf("\nJSONIZER\n-----------------------\nPatterns.txt\n")
-	for i,arrayOfS := range matches {
+	/*for i,arrayOfS := range matches {
 		fmt.Printf("Match %d: ", i+1)
 		for j := range arrayOfS {
 			fmt.Printf("%q ", arrayOfS[j])
 		}
 		fmt.Println()
-	}
+	}*/
 	//searching for matches
 	outputPerLine := make(map[int]map[int][]string)
-	wordOccurences := make(map[string][]int)
+	//wordOccurences := make(map[string][]int)
 	lines = strings.Split(textFile, "\r\n")
 	for n := range lines { 
 		outputPerLine[n] = make(map[int][]string) //initialize
 		currentLine := strings.Split(lines[n], " ")
 		for m := range matches {
-			if len(pOnMatchLine[m]) > 0 { //if there are words in this match, search for them
+			/*if len(pOnMatchLine[m]) > 0 { //if there are words in this match, search for them
 				wordOccurences = searchSBOM(pOnMatchLine[m], lines[n])
-			}
+			}*/
 			for wordPos, mW := 0, 0; mW < len(matches[m]) && mW < len(currentLine); mW++ {
 				if matches[m][mW][0] == '<' && matches[m][mW][len(matches[m][mW])-1] == '>' { //REGEX_MATCHING
 					tokenToMatch := getWord(1, len(matches[m][mW])-2, matches[m][mW])
@@ -80,7 +80,7 @@ func main() {
 					}	
 				} else { //WORD_MATCHING
 					wordToMatch := matches[m][mW]
-					if !contains(wordOccurences[wordToMatch],wordPos) { //NO_MATCH
+					if wordToMatch != currentLine[mW] { //NO_MATCH
 						outputPerLine[n][m] = make([]string, 0) //if len == 0 printFile nothing
 						break
 					} else if mW == len(matches[m])-1{
