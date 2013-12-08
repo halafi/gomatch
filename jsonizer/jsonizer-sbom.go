@@ -39,11 +39,9 @@ func main() {
 		wordIndex := 0
 		or, f, tokensString, current, wordIndex = or, f, tokensString, current, wordIndex
 		for wordIndex <= len(words) - lmin {
-			fmt.Println("once")
 			current := 0
 			j := lmin	
 			for j >= 1 && stateExists(current, or) {
-				moved := false
 				passableTokens := make([]string, 0)
 				if len(getTransitionTokens(current, or)) > 0 { //we can move by some regex
 					tokens := getTransitionTokens(current, or)
@@ -54,13 +52,13 @@ func main() {
 							regex := regexp.MustCompile(getToken(tokensString, tokenToMatchSplit[0]))
 							if regex.MatchString(words[wordIndex]) { //we got one match
 								passableTokens = addWord(passableTokens, tokens[r])
-								fmt.Printf("%s matches %s\n", tokens[r], words[wordIndex])
+								//fmt.Printf("%s matches %s\n", tokens[r], words[wordIndex])
 							}
 						} else if len(tokenToMatchSplit) == 1 { //CASE 2: token defined as token only, i.e.: <IP>, output IP = ...
 							regex := regexp.MustCompile(getToken(tokensString, tokenToMatch))
 							if regex.MatchString(words[wordIndex]) { //we got one match
 								passableTokens = addWord(passableTokens, tokens[r])
-								fmt.Printf("%s matches %s\n", tokens[r], words[wordIndex])
+								//fmt.Printf("%s matches %s\n", tokens[r], words[wordIndex])
 							}
 						} else {
 							log.Fatal("Problem in token definition: <"+tokenToMatch+"> use only <TOKEN> or <TOKEN:name>.")
@@ -70,25 +68,21 @@ func main() {
 						log.Fatal("We can match multiple tokens for one word. This shouldn't happen.")	
 					} else if len(passableTokens) == 1 {
 						current = getTransition(current, passableTokens[0], or)
-						fmt.Println(current)
 						j--
-						moved = true
 					}
 				} 
-				if len(passableTokens) == 0 && moved == false  { // move by some word
+				if len(passableTokens) == 0 { // move by some word
 					current = getTransition(current, words[wordIndex+j-1], or)
-					fmt.Printf("moved by a word to %d, j = %d\n", current, j)
 					j--
 				}
 			}
 			
 			word := buildWord(wordIndex, wordIndex+lmin, words) //buildWord(from,to)
-			fmt.Println(strings.HasPrefix(word, getCommonPrefix(patterns, f[current], lmin)))
-			if stateExists(current, or) && j == 0 && strings.HasPrefix(word, getCommonPrefix(patterns, f[current], lmin)) {
-				fmt.Println("possible occurence\n")
+			
+			if stateExists(current, or) && j == 0 && /*strings.HasPrefix(word, getCommonPrefix(patterns, f[current], lmin))*/ isMatch(word, getCommonPrefix(patterns, f[current], lmin), tokensString) {
 				for i := range f[current] { //some occurence, verify all possible against the text
-					if patterns[f[current][i]] == lines[n] {
-						fmt.Println("occurence")
+					if isMatch(lines[n], patterns[f[current][i]], tokensString) {
+						//fmt.Println("occurence")
 						currentMatchText := matchString(lines[n], patterns[f[current][i]], tokensString)
 						if len(currentMatchText) > 1 { //CASE of regex matches (needs to print tokens)
 							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)+", {"+currentMatchText+"}") 
@@ -332,7 +326,7 @@ func computeMinLength(p []string) (lmin int){
 			lmin = len(pSplit)
 		}
 	}
-	return lmin
+	return 1
 }
 
 /**
@@ -375,7 +369,7 @@ func getToken(tokenFile, wanted string) string {
 			return token[1]
 		}
 	}
-	log.Fatal("NO TOKEN DEFINITION in tokens.txt FOR: ", wanted)
+	//log.Fatal("NO TOKEN DEFINITION in tokens.txt FOR: ", wanted)
 	return ""
 }
 
