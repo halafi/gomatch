@@ -56,7 +56,7 @@ func main() {
 					}
 				}
 				if len(passableTokens) > 1 { //we got i.e. string "user" that matches both <WORD> and i.e. <USERNAME>...
-					log.Fatal("We can match multiple tokens for one word. This shouldn't happen.")	
+					log.Fatal("We can match multiple regular expressions for one word at log position: "+strconv.Itoa(wordIndex)+".")	
 				} else if len(passableTokens) == 1{
 					current = getTransition(current, passableTokens[0], ac)
 				}
