@@ -26,7 +26,8 @@ func main() {
 	matchesPerLine := make(map[int][]string)
 	
 	fmt.Printf("\n JSONIZER v.0.3 \n -----------------------\n")
-	ac, f, s := buildAc(patterns)
+	//ac, f, _:= buildAc(patterns)
+	ac, _, f := constructTrie(patterns)
 	lines := strings.Split(logString, lineBreak)
 	fmt.Println(" Step 1: Processing file: "+logFilePath+".")
 	
@@ -34,11 +35,11 @@ func main() {
 	for n := range lines { //for each log line
 		words, current := strings.Split(lines[n], " "), 0
 		for w := range words { //for each word
-			for getTransition(current, words[w], ac) == -1 && len(getTransitionTokens(current, ac)) == 0 && s[current] != -1 {
-				current = s[current] //move down the supply path if unable to move
+			transitionTokens := getTransitionTokens(current, ac)
+			if getTransition(current, words[w], ac) == -1 && len(transitionTokens) == 0 { //we cannot move
+				break
 			}
 			validTokens := make([]string, 0)
-			transitionTokens := getTransitionTokens(current, ac)
 			if len(transitionTokens) > 0 { //we can move by some regex
 				for t := range transitionTokens { //for each token leading from 'current' state
 					tokenWithoutBrackets := getWord(1, len(transitionTokens[t])-2, transitionTokens[t])
@@ -197,11 +198,10 @@ func matchString(logLine string, pattern string, tokenFile string) string {
 	return output
 }
 
-/*******************            AC functions          *******************/
 /**
         Functions that builds the Aho Corasick automaton.
 */
-func buildAc(p []string) (acToReturn map[int]map[string]int, f map[int][]int, s []int) {
+/*func buildAc(p []string) (acToReturn map[int]map[string]int, f map[int][]int, s []int) {
         acTrie, stateIsTerminal, f := constructTrie(p)
 		fmt.Println()
         s = make([]int, len(stateIsTerminal))
@@ -225,7 +225,7 @@ func buildAc(p []string) (acToReturn map[int]map[string]int, f map[int][]int, s 
                 }
         }
         return acToReturn, f, s
-}
+}*/
 
 /**
         Function that constructs Trie as an automaton for a set of reversed & trimmed strings.
