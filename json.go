@@ -2,75 +2,79 @@ package main
 import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv")
 
 func main() {
-	startTime := time.Now()
-	//Preprocessing, reading input files, printing some stuff out
-	tokensFile, err := ioutil.ReadFile("tokens.txt")
+	lineBreak := "\r\n"
+	logFilePath := "text.txt"
+	outputPath := "output.json"
+	tokensPath := "tokens.txt"
+	patternsPath := "patterns.txt"
+	
+	tokensFile, err := ioutil.ReadFile(tokensPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	patternsFile, err := ioutil.ReadFile("patterns.txt")
+	patternsFile, err := ioutil.ReadFile(patternsPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	logFile, err := ioutil.ReadFile("text.txt")
+	logFile, err := ioutil.ReadFile(logFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	tokensString, patternsString, logString := string(tokensFile), string(patternsFile), string(logFile)
+	
+	tokenDefinitions, patternsString, logString := string(tokensFile), string(patternsFile), string(logFile)
+	patterns := strings.Split(patternsString, lineBreak)
 	matchesPerLine := make(map[int][]string)
-	patterns := make([]string, 0) //patterns
-	lines := strings.Split(patternsString, "\r\n")
-	for i := range lines {
-		if len(lines[i]) != 0 {
-			patterns = addWord(patterns, lines[i])
-		}
-	}
-	fmt.Printf("\nJSONIZER v.0.2 \n-----------------------\n")
-	//searching
+	
+	fmt.Printf("\n JSONIZER v.0.3 \n -----------------------\n")
 	ac, f, s := buildAc(patterns)
-	lines = strings.Split(logString, "\r\n")
-	for n := range lines {
+	lines := strings.Split(logString, lineBreak)
+	fmt.Println(" Step 1: Processing file: "+logFilePath+".")
+	
+	startTime := time.Now()
+	for n := range lines { //for each log line
 		words, current := strings.Split(lines[n], " "), 0
-		for wordIndex := range words {
-			for getTransition(current, words[wordIndex], ac) == -1 && len(getTransitionTokens(current, ac)) == 0 && s[current] != -1 {
-				current = s[current]
+		for w := range words { //for each word
+			for getTransition(current, words[w], ac) == -1 && len(getTransitionTokens(current, ac)) == 0 && s[current] != -1 {
+				current = s[current] //move down the supply path if unable to move
 			}
-			passableTokens := make([]string, 0)
-			if len(getTransitionTokens(current, ac)) > 0 { //we can move in 'ac' by some regex
-				tokens := getTransitionTokens(current, ac)
-				for r := range tokens {
-					tokenToMatch := getWord(1, len(tokens[r])-2, tokens[r])
-					tokenToMatchSplit := strings.Split(tokenToMatch, ":")
-					if len(tokenToMatchSplit) == 2 { //CASE 1: token defined as i.e. <IP:ipAdresa>, output ipAdresa = ...
-						regex := regexp.MustCompile(getToken(tokensString, tokenToMatchSplit[0]))
-						if regex.MatchString(words[wordIndex]) { //we got one match
-							passableTokens = addWord(passableTokens, tokens[r])
+			validTokens := make([]string, 0)
+			transitionTokens := getTransitionTokens(current, ac)
+			if len(transitionTokens) > 0 { //we can move by some regex
+				for t := range transitionTokens { //for each token leading from 'current' state
+					tokenWithoutBrackets := getWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+					switch len(tokenWithoutBracketsSplit) {
+						case 2: { //token defined as i.e. IP:ipAdresa
+							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBracketsSplit[0]))
+							if regex.MatchString(words[w]) {
+								validTokens = addWord(validTokens, transitionTokens[t])
+							}
 						}
-					} else if len(tokenToMatchSplit) == 1 { //CASE 2: token defined as token only, i.e.: <IP>, output IP = ...
-						regex := regexp.MustCompile(getToken(tokensString, tokenToMatch))
-						if regex.MatchString(words[wordIndex]) { //we got one match
-							passableTokens = addWord(passableTokens, tokens[r])
+						case 1: { //token defined as token only, i.e.: IP
+							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBrackets))
+							if regex.MatchString(words[w]) {
+								validTokens = addWord(validTokens, transitionTokens[t])
+							}
 						}
-					} else {
-						log.Fatal("Problem in token definition: <"+tokenToMatch+"> use only <TOKEN> or <TOKEN:name>.")
+						default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
 					}
 				}
-				if len(passableTokens) > 1 { //we got i.e. string "user" that matches both <WORD> and i.e. <USERNAME>...
-					log.Fatal("We can match multiple regular expressions for one word at log position: "+strconv.Itoa(wordIndex)+".")	
-				} else if len(passableTokens) == 1{
-					current = getTransition(current, passableTokens[0], ac)
+				if len(validTokens) > 1 { //we got i.e. string "user" that matches both <WORD> and i.e. <USERNAME>...
+					log.Fatal("Multiple acceptable tokens for one word at log line: "+strconv.Itoa(n+1)+", position: "+strconv.Itoa(w+1)+".")	
+				} else if len(validTokens) == 1 { //we can move exactly by one regex/token
+					current = getTransition(current, validTokens[0], ac)
 				}
 			}
-			if len(passableTokens) == 0 && getTransition(current, words[wordIndex], ac) != -1 { //move state by a specific word
-				current = getTransition(current, words[wordIndex], ac)
+			if len(validTokens) == 0 && getTransition(current, words[w], ac) != -1 { //we can move by a word: 'words[w]'
+				current = getTransition(current, words[w], ac)
 			}
-			_, ok := f[current]
-			if ok { //if(one or more matches)
+			_, isCurrentFinalState := f[current]
+			if isCurrentFinalState {
 				for i := range f[current] { // for each pattern that ends at 'current' state
-					if isMatch(lines[n], patterns[f[current][i]], tokensString) { //if(current pattern[i] is match for current line)
-						currentMatchText := matchString(lines[n], patterns[f[current][i]], tokensString)
-						if len(currentMatchText) > 1 { //CASE of regex matches (needs to print tokens)
-							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)+", {"+currentMatchText+"}") 
+					if isMatch(lines[n], patterns[f[current][i]], tokenDefinitions) {
+						outputText := matchString(lines[n], patterns[f[current][i]], tokenDefinitions)
+						if len(outputText) > 1 { //CASE of regex matches (needs to print tokens)
+							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)+", {"+outputText+"}") 
 						} else { //CASE of only word matches
 							matchesPerLine[n] = addWord(matchesPerLine[n], strconv.Itoa(f[current][i]+1)) 
 						}
@@ -79,42 +83,51 @@ func main() {
 			}
 		}
 	}
-	//Output printing
-	path := "output.txt"
-	file, err := os.Create(path)
+	elapsedMatch := time.Since(startTime)
+	fmt.Printf("         Elapsed %f secs\n\n", elapsedMatch.Seconds())
+	
+	startTime = time.Now()
+	
+	file, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(" Step 2: Writing output to file: "+outputPath)
 	defer file.Close()
 	for n := range lines { 
-		if len(matchesPerLine[n]) == 0 {
-			_, err := file.WriteString("NO_MATCH\r\n")
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else if len(matchesPerLine[n]) == 1 { //one match found
-			_, err := file.WriteString("MATCH + ["+matchesPerLine[n][0]+"]\r\n")
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else { //multiple matches found
-			longest := 0
-			longestOutput := ""
-			for j := range matchesPerLine[n] {
-				currentMatch := strings.Split(matchesPerLine[n][j], ",")
-				if len(currentMatch) > longest {
-					longest = len(currentMatch)
-					longestOutput = matchesPerLine[n][j]
+		switch len(matchesPerLine[n]) {
+			case 0: { //no match for current line
+				_, err := file.WriteString("NO_MATCH"+lineBreak)
+				if err != nil {
+					log.Fatal(err)
 				}
 			}
-			_, err := file.WriteString("MATCH + ["+longestOutput+"]\r\n")
-			if err != nil {
-				log.Fatal(err)
+			case 1: { //one match for current line
+				_, err := file.WriteString("MATCH + ["+matchesPerLine[n][0]+"]"+lineBreak)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			default: { //multiple matches for current line
+				longest := 0
+				longestOutput := ""
+				for j := range matchesPerLine[n] {
+					currentMatch := strings.Split(matchesPerLine[n][j], ",")
+					if len(currentMatch) > longest {
+						longest = len(currentMatch)
+						longestOutput = matchesPerLine[n][j]
+					}
+				}
+				_, err := file.WriteString("MATCH + ["+longestOutput+"]"+lineBreak)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}
-	elapsed := time.Since(startTime)
-	fmt.Printf("\n\nElapsed %f secs\n", elapsed.Seconds())
+	elapsedOut := time.Since(startTime)
+	fmt.Printf("         Elapsed %f secs\n\n", elapsedOut.Seconds())
+	fmt.Println("\n All Done.")
 	return
 }
 
@@ -304,23 +317,35 @@ func getWord(begin, end int, t string) string {
 
 /*******************            Array functions            *******************/
 /**
-	Functions 'type'ArrayCapUp increases an array of 'type's maximum size by 1.
+	Increases an array of byte's maximum size by 1.
 */
 func byteArrayCapUp (old []byte)(new []byte) {
 	new = make([]byte, cap(old)+1)
 	copy(new, old)  
 	return new
 }
+
+/**
+	Increases an array of int's maximum size by 1.
+*/
 func intArrayCapUp (old []int)(new []int) {
 	new = make([]int, cap(old)+1)
 	copy(new, old) 
 	return new
 }
+
+/**
+	Increases an array of bool's maximum size by 1.
+*/
 func boolArrayCapUp (old []bool)(new []bool) {
 	new = make([]bool, cap(old)+1)
 	copy(new, old)
 	return new
 }
+
+/**
+	Increases an array of string's maximum size by 1.
+*/
 func stringArrayCapUp (old []string)(new []string) {
 	new = make([]string, cap(old)+1)
 	copy(new, old)  //copy(dst,src)
