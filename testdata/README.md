@@ -1,22 +1,14 @@
 TEST RESULTS 
 ==================
-p = number of patterns, t = lines of text
-4.12.2013-17:20 jsonizer2.go
+* Test results for match function only.
+* p = number of patterns
+* t = lines of text
+
+9.12.2013-14:00
 -----------------------------
-
-* 50 p, 50 t: 0.035 secs
-* 100 p, 100 t: 0.068 secs
-* 150 p, 150 t: 0.104 secs
-* 200 p, 200 t: 0.136 secs
-* 250 p, 250 t: 0.183 secs
-* 300 p, 300 t: 0.206 secs
-
-3.12.2013-15:00 jsonizer.go
------------------------------
-
-* 50 p, 50 t: 0.763045 secs
-* 100 p, 100 t: 2.967244 secs
-* 150 p, 150 t: 6.775390 secs
-* 200 p, 200 t: 12.139696 secs
-* 250 p, 250 t: 18.785074 secs
-* 300 p, 300 t: 27.797666 secs
+* 50p, 50t : 0.032
+* 100p, 100t : 0.078
+* 150p, 150t : 0.095
+* 200p, 200t : 0.135
+* 250p, 250t : 0.160
+* 300p, 300t : 0.191
