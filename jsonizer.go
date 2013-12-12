@@ -25,9 +25,8 @@ func main() {
 	patterns := strings.Split(patternsString, lineBreak)
 	matchesPerLine := make(map[int][]string)
 	
-	fmt.Printf("\n JSONIZER v.0.3 \n -----------------------\n")
-	//ac, f, _:= buildAc(patterns)
-	ac, _, f := constructTrie(patterns)
+	fmt.Printf("\n JSONIZER v.0.31 \n -----------------------\n")
+	ac, f := constructTrie(patterns)
 	lines := strings.Split(logString, lineBreak)
 	fmt.Println(" Step 1: Processing file: "+logFilePath+".")
 	
@@ -199,51 +198,22 @@ func matchString(logLine string, pattern string, tokenFile string) string {
 }
 
 /**
-        Functions that builds the Aho Corasick automaton.
-*/
-/*func buildAc(p []string) (acToReturn map[int]map[string]int, f map[int][]int, s []int) {
-        acTrie, stateIsTerminal, f := constructTrie(p)
-		fmt.Println()
-        s = make([]int, len(stateIsTerminal))
-        i := 0
-        acToReturn = acTrie
-        s[i] = -1
-        for current := 1; current < len(stateIsTerminal); current++ {
-                o, parent := getParent(current, acTrie)
-                down := s[parent]
-                for stateExists(down, acToReturn) && getTransition(down, o, acToReturn) == -1 {
-                        down = s[down]
-                }
-                if stateExists(down, acToReturn) {
-                        s[current] = getTransition(down, o, acToReturn)
-                        if stateIsTerminal[s[current]] == true {
-                                stateIsTerminal[current] = true
-                                f[current] = arrayUnion(f[current], f[s[current]]) //F(Current) <- F(Current) union F(S(Current))
-                        }
-                } else {
-                        s[current] = i
-                }
-        }
-        return acToReturn, f, s
-}*/
-
-/**
         Function that constructs Trie as an automaton for a set of reversed & trimmed strings.
         
         @return 'trie' built prefix tree
         @return 'stateIsTerminal' array of all states and boolean values of their terminality
         @return 'f' map with keys of pattern indexes and values - arrays of p[i] terminal states
 */
-func constructTrie (p []string) (trie map[int]map[string]int, stateIsTerminal []bool, f map[int][]int) {
+func constructTrie (p []string) (trie map[int]map[string]int, f map[int][]int) {
         trie = make(map[int]map[string]int)
-        stateIsTerminal = make([]bool, 1)
+        stateIsTerminal := make([]bool, 1)
         f = make(map[int][]int) 
         state := 1
         createNewState(0, trie)
         for i := range p {
 				words := strings.Split(p[i], " ")
                 current := 0
-                j := 0 //word index
+                j := 0
                 for j < len(words) && getTransition(current, words[j], trie) != -1 {
                         current = getTransition(current, words[j], trie)
                         j++
@@ -258,16 +228,14 @@ func constructTrie (p []string) (trie map[int]map[string]int, stateIsTerminal []
                         state++
                 }
                 if stateIsTerminal[current] {
-                        newArray := intArrayCapUp(f[current])
-                        newArray[len(newArray)-1] = i
-                        f[current] = newArray
+                        f[current] = intArrayCapUp(f[current])
+                        f[current][len(f[current])-1] = i
                 } else {
                         stateIsTerminal[current] = true
                         f[current] = []int {i}
-						//fmt.Printf("%d is terminal for pattern number %d\n", current, i) 
                 }
         }
-        return trie, stateIsTerminal, f
+        return trie, f
 }
 
 /*******************          String functions          *******************/
