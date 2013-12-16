@@ -1,50 +1,50 @@
-MATCH + [1, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [2, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [3, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [4, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [5, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [6, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [7, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [8, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [9, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [10, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [11, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [12, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [13, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [14, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [15, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [16, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [17, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [18, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [19, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [20, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [21, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [22, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [23, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [24, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [25, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [26, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [27, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [28, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [29, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [30, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [31, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [32, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [33, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [34, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [35, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [36, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [37, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [38, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [39, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [40, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [41, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [42, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [43, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [44, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [45, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [46, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [47, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [48, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [49, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
-MATCH + [50, {DATE = 2013-02-26T12:24:05.425+00:00, LEVEL = WARN, CLASS = org.ssh.ServerImpl, USER = xtovarn, IP = 147.251.49.42, PORT = 46177}]
+{"Type":"sshLog","Body":{"ANYTHING":"#1#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#2#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#3#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#4#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#5#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#6#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#7#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#8#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#9#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#10#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#11#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#12#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#13#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#14#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#15#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#16#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#17#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#18#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#19#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#20#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#21#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#22#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#23#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#24#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#25#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#26#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#27#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#28#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#29#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#30#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#31#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#32#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#33#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#34#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#35#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#36#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#37#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#38#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#39#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#40#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#41#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#42#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#43#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#44#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#45#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#46#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#47#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#48#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#49#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
+{"Type":"sshLog","Body":{"ANYTHING":"#50#","IP":"147.251.49.42","PORT":"46177","datum":"2013-02-26T12:24:05.425+00:00","trida":"org.ssh.ServerImpl","uroven":"WARN","userName":"xtovarn"}}
