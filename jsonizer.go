@@ -17,12 +17,12 @@ func main() {
 	tokenDefinitions, patternsString, logString := parseFile(tokensFilePath), parseFile(patternsFilePath), parseFile(logFilePath)
 	logLines, patterns := splitFileString(logString), splitFileString(patternsString)
 	
-	trie, f := constructTrie(tokenDefinitions, patterns)
-	fmt.Println("Step 2: Matching: "+logFilePath+".")
-	startTime := time.Now()
-	
 	matchPerLine := make([]Match, len(logLines))
 	
+	fmt.Println("Step 2: Matching: "+logFilePath+".")
+	startTime := time.Now()
+	trie, f := constructTrie(tokenDefinitions, patterns)
+
 	for n := range logLines { //for each log line
 		words, current := strings.Split(logLines[n], wordSeparator), 0
 		for w := range words { //for each word
@@ -60,12 +60,18 @@ func main() {
 			}
 			_, isCurrentFinalState := f[current]
 			if isCurrentFinalState {
-				patternSplit := strings.Split(patterns[f[current]], "##")
+				/*patternSplit := strings.Split(patterns[f[current]], "##")
 				body := matchString(logLines[n], patternSplit[1], tokenDefinitions)
 				if len(body) > 1 { //CASE of regex matches (needs to print tokens)
 					matchPerLine[n] = Match{patternSplit[0], body}
 				} else { //CASE of only word matches
 					matchPerLine[n] = Match{patternSplit[0], body}
+				}*/
+				body := matchString(logLines[n], patterns[f[current]], tokenDefinitions)
+				if len(body) > 1 { //CASE of regex matches (needs to print tokens)
+					matchPerLine[n] = Match{"missing_name", body}
+				} else { //CASE of only word matches
+					matchPerLine[n] = Match{"missing_name", body}
 				}
 			}
 		}
@@ -80,19 +86,31 @@ func main() {
 		log.Fatal(err)
 	}
 	defer file.Close()
+	_, err = file.WriteString("{")
+		if err != nil {
+			log.Fatal(err)
+		}
 	for n := range matchPerLine {
-		b, err := json.Marshal(matchPerLine[n])
-		if err != nil {
-			log.Fatal(err)
+		if matchPerLine[n].Type	!= "" {
+			b, err := json.MarshalIndent(matchPerLine[n], "\t", "\t")
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = file.WriteString("\r\n\t\"Event\": " + string(b))
+			if err != nil {
+				log.Fatal(err)
+			}
+			if n != len(matchPerLine)-1{
+				_, err = file.WriteString(", ")
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
-		_, err = file.Write(b)
-		if err != nil {
-			log.Fatal(err)
-		}
-		_, err = file.WriteString("\r\n")
-		if err != nil {
-			log.Fatal(err)
-		}
+	}
+	_, err = file.WriteString("\r\n}")
+	if err != nil {
+		log.Fatal(err)
 	}
 	fmt.Println("\n\nAll Done.")
 	return
@@ -107,18 +125,20 @@ func matchString(logLine string, pattern string, tokenFile string) map[string]st
 	output := make(map[string]string)
 	for i := range logLineWords {
 		if logLineWords[i] != patternWords[i] {
-			tokenToMatch := getWord(1, len(patternWords[i])-2, patternWords[i])
-			tokenToMatchSplit := strings.Split(tokenToMatch, ":")
-			if len(tokenToMatchSplit) == 2 { 
-				regex := regexp.MustCompile(getToken(tokenFile, tokenToMatchSplit[0]))
+			tokenWithoutBrackets := getWord(1, len(patternWords[i])-2, patternWords[i])
+			tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+			if len(tokenWithoutBracketsSplit) == 2 {
+				regex := regexp.MustCompile(getToken(tokenFile, tokenWithoutBracketsSplit[0]))
 				if regex.MatchString(logLineWords[i]) {
-					output[tokenToMatchSplit[1]] = logLineWords[i]
+					output[tokenWithoutBracketsSplit[1]] = logLineWords[i]
 				}
-			} else if len(tokenToMatchSplit) == 1 {
-				regex := regexp.MustCompile(getToken(tokenFile, tokenToMatch))
+			} else if len(tokenWithoutBracketsSplit) == 1 {
+				regex := regexp.MustCompile(getToken(tokenFile, tokenWithoutBrackets))
 				if regex.MatchString(logLineWords[i]) {
-					output[tokenToMatch] = logLineWords[i]
+					output[tokenWithoutBrackets] = logLineWords[i]
 				}
+			} else {
+				log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
 			}
 		}
 	}
@@ -139,8 +159,9 @@ func constructTrie (tokenDefinitions string, p []string) (trie map[int]map[strin
         state := 1
         createNewState(0, trie)
         for i := range p {
-				patternsNameSplit := strings.Split(p[i], "##")
-				words := strings.Split(patternsNameSplit[1], wordSeparator)
+				/*patternsNameSplit := strings.Split(p[i], "##")
+				words := strings.Split(patternsNameSplit[1], wordSeparator)*/
+				words := strings.Split(p[i], wordSeparator)
 				
                 current := 0
                 j := 0

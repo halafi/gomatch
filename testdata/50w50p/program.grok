@@ -1,0 +1,55 @@
+program {
+	load-patterns: "patterns/base"
+	file "text.txt"
+
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #1#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #2#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #3#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #4#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #5#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #6#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #7#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #8#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #9#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #10#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #11#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #12#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #13#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #14#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #15#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #16#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #17#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #18#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #19#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #20#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #21#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #22#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #23#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #24#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #25#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #26#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #27#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #28#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #29#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #30#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #31#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #32#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #33#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #34#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #35#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #36#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #37#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #38#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #39#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #40#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #41#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #42#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #43#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #44#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #45#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #46#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #47#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #48#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #49#"}
+	match {pattern: "<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> #50#"}
+}
