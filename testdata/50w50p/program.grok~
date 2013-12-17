@@ -29,7 +29,7 @@ program {
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #25#" reaction: none}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #26#" reaction: none}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #27#" reaction: none}
-	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #28#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #28#" reaction: "test"}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #29#" reaction: none}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #30#" reaction: none}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #31#" reaction: none}

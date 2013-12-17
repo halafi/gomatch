@@ -52,4 +52,54 @@ program {
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #48#" reaction: none}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #49#" reaction: none}
 	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #50#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #51#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #52#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #53#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #54#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #55#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #56#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #57#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #58#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #59#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #60#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #61#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #62#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #63#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #64#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #65#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #66#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #67#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #68#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #69#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #70#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #71#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #72#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #73#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #74#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #75#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #76#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #77#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #78#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #79#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #80#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #81#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #82#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #83#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #84#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #85#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #86#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #87#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #88#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #89#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #90#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #91#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #92#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #93#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #94#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #95#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #96#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #97#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #98#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #99#" reaction: none}
+	match {pattern: "%{TIMESTAMP_ISO8601} %{LEVEL} %{CLASS} - Failed password for %{USER} from %{IP} port %{PORT} #100#" reaction: none}
 }
