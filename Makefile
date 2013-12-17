@@ -8,7 +8,7 @@ all: getGolang build #clean
 
 getGolang:
 	sudo apt-get install golang-go
-	export PATH=$PATH:/usr/local/go/bin
+	#export PATH=$PATH:/usr/local/go/bin
 build:
 	go build jsonizer.go
 clean:

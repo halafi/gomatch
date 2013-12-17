@@ -11,7 +11,6 @@ type Match struct {
 
 func main() {
 	fmt.Printf("\nJSONIZER v.0.4 \n-----------------------\n")
-	
 	fmt.Println("Step 1: Processing input.\n")
 	logFilePath, outputPath, tokensFilePath, patternsFilePath := "text.txt", "output.json", "tokens.txt", "patterns.txt"
 	tokenDefinitions, patternsString, logString := parseFile(tokensFilePath), parseFile(patternsFilePath), parseFile(logFilePath)
@@ -22,6 +21,7 @@ func main() {
 	fmt.Println("Step 2: Matching: "+logFilePath+".")
 	startTime := time.Now()
 	trie, f := constructTrie(tokenDefinitions, patterns)
+	
 
 	for n := range logLines { //for each log line
 		words, current := strings.Split(logLines[n], wordSeparator), 0
@@ -112,7 +112,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("\n\nAll Done.")
+		fmt.Println("\n\nAll Done.")
 	return
 }
 
