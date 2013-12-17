@@ -1,9 +1,0 @@
-{"Event":{
-	"type": "nazev_patternu",
-	"_":[
-		{
-		"ip":4648,
-		"date":"3df23c7"
-		}
-	]
-}}
