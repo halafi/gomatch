@@ -6,7 +6,7 @@ const wordSeparator = " "
 
 type Match struct {
 	Type string //Match name
-    Body map[string]string //map of token and value
+	Body map[string]string //map of token and value
 }
 
 func main() {
@@ -267,9 +267,9 @@ func splitFileString(fileString string) []string {
 	Returns regex for desired token in string 'tokenFile'.
 */
 func getToken(tokenFile, wanted string) string {
-	tokenLines := strings.Split(tokenFile, "\r\n")
+	tokenLines := splitFileString(tokenFile)
 	for n := range tokenLines {
-		token := strings.Split(tokenLines[n], wordSeparator)
+		token := strings.Split(tokenLines[n], " ")
 		if len(token) == 2 && token[0] == wanted {
 			return token[1]
 		}
