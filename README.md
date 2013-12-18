@@ -18,8 +18,7 @@ Setting it up on Windows
 2. Check that environmental variables are set correctly - try executing: <code>go</code> in your command line.
  * In case of failure (or when using ZIP archive) you might need to set them manually:
     * navigate to <code>Control Panel - System - Advanced (tab) - Environment Variables - System variables</code>
-    * <code>GOROOT</code> should be set to something like <code>C:\Program Files\Go</code>,
-    * <code>GOPATH</code> should be set to <code>$GOROOT\bin</code>.
+    * append to variable <code>Path</code>your Go installation location: <code>d:\Program Files\Go\bin;</code>
 4. After that you can either create a standalone executable (compile) or run this tool.
  * Open a command-line and navigate to the root of this tool directory.
     * For <b>running</b> it once use: <code>go run jsonizer.go</code>.
