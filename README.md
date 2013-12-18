@@ -1,8 +1,10 @@
 Multi-pattern string matching in Go
 ==================
-Tool used for searching multiple patterns in a single Log file (single line Logs only) and printing results in JSON file.
+Tool used for searching multiple patterns in a single Log file (single line Logs only) and printing results in JSON file. 
 
-By <a href="mailto:xgam33@gmail.com">Filip Halas</a>.
+See the project <a href="https://github.com/halafi/String-matching-Go/wiki">wiki</a> for help with configuration and some examples of usage.
+
+
 
 Setting it up on Linux
 -----------------------
@@ -23,3 +25,5 @@ Setting it up on Windows
  * Open a command-line and navigate to the root of this tool directory.
     * For <b>running</b> it once use: <code>go run jsonizer.go</code>.
     * For <b>compiling</b> it to Windows executable use: <code>go build jsonizer.go</code>.
+
+By <a href="mailto:xgam33@gmail.com">Filip Halas</a>.
