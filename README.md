@@ -23,26 +23,3 @@ Setting it up on Windows
  * Open a command-line and navigate to the root of this tool directory.
     * For <b>running</b> it once use: <code>go run jsonizer.go</code>.
     * For <b>compiling</b> it to Windows executable use: <code>go build jsonizer.go</code>.
-
-Configuration
-==================
-Make sure that there are no extra spaces or endlines in these files and that they are ANSI encoded.
-
-Patterns.txt
------------------------------
-* Each line in <b>patterns.txt</b> corresponds to one match, that will be searched for.
-* Each pattern line starts with a name separated by <code>##</code>
-* Pattern might consist of:
- * <code>&lt;TOKEN&gt;</code> - regular expression defined in <b>tokens.txt</b>.
- * <code>&lt;TOKEN:name&gt;</code> - regular expression defined in <b>tokens.txt</b> and a name that will be in output.
- * <code>specific_word</code> - simple word that will need to match.
-* Words on each line needs to be separated by spaces.
-* Sample pattern: <code>match 1##&lt;IP:sourceIPs&gt; &lt;DATE:date&gt; user &lt;USER:username&gt;</code>
-
-Tokens.txt
------------------------------
-* One token definition per line like this: <code>token_name(space)regular_expression</code>.
-* The syntax of the regular expressions accepted is the same general syntax used by
-Perl, Python, and other languages. 
-More precisely, it is the syntax accepted by RE2 and described at http://code.google.com/p/re2/wiki/Syntax, except for \C.
-* Comments are allowed on different lines than the ones containing token definitions <code>#comment</code>.
