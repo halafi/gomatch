@@ -8,5 +8,7 @@ LEVEL (ERROR|DEBUG|INFO|TRACE|WARN)
 USER ^\w+$
 PORT ^\d+$
 CLASS [\.\w]+
-DATE ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
+TIMESTAMP_ISO8601 ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
 ANYTHING .*
+TIME \d{1,2}:\d{1,2}:\d{1,2}
+YEAR \d{4}

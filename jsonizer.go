@@ -10,6 +10,12 @@ type Match struct { //struct used for storing found matches
 }
 
 func main() {
+	/*args := os.Args
+	if (len(args) < 2 || len(args) > 2) {
+		log.Fatal("Wrong ammount of arguments. \nTwo arguments required:  'inputLogPath patternsFilePath'.")
+	}
+	pattern := args[1]
+	s := args[2]*/
 	logFilePath, outputPath, tokensFilePath, patternsFilePath := "text.txt", "output.json", "Tokens", "patterns.txt"
 	tokenDefinitions, patternsString, logString := parseFile(tokensFilePath), parseFile(patternsFilePath), parseFile(logFilePath)
 	logLines, patterns := splitFileString(logString), splitFileString(patternsString)
@@ -19,9 +25,9 @@ func main() {
 	trie, f := constructTrie(tokenDefinitions, patterns)
 	matchPerLine := make([]Match, len(logLines))
 	
-	for n := range logLines { //for each log line
+	for n := range logLines {
 		words, current := strings.Split(logLines[n], wordSeparator), 0
-		for w := range words { //for each word
+		for w := range words {
 			transitionTokens := getTransitionTokens(current, trie)
 			validTokens := make([]string, 0)
 			if getTransition(current, words[w], trie) != -1 { //we can move by a word: 'words[w]'
@@ -56,27 +62,20 @@ func main() {
 			}
 			_, isCurrentFinalState := f[current]
 			if isCurrentFinalState {
-				/*patternSplit := strings.Split(patterns[f[current]], "##")
+				patternSplit := strings.Split(patterns[f[current]], "##")
 				body := matchString(logLines[n], patternSplit[1], tokenDefinitions)
 				if len(body) > 1 { //CASE of regex matches (needs to print tokens)
 					matchPerLine[n] = Match{patternSplit[0], body}
 				} else { //CASE of only word matches
 					matchPerLine[n] = Match{patternSplit[0], body}
-				}*/
-				body := matchString(logLines[n], patterns[f[current]], tokenDefinitions)
-				if len(body) > 1 { //CASE of regex matches (needs to print tokens)
-					matchPerLine[n] = Match{"missing_name", body}
-				} else { //CASE of only word matches
-					matchPerLine[n] = Match{"missing_name", body}
 				}
 			}
 		}
 	}
 	elapsedMatch := time.Since(startTime)
 	fmt.Printf(", Elapsed: %fs", elapsedMatch.Seconds())
-	
 	//JSON Output
-	indent := "  " //u can use anything like "   " or "\t" ..., nothing else should need to be changed
+	indent := "  " //u can use anything like "   " or "\t" ..., nothing else should need to be changed (determines how is the output printed)
 	file, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatal(err)
@@ -86,8 +85,18 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+	first := true
 	for n := range matchPerLine {
 		if matchPerLine[n].Type	!= "" {
+			if !first {
+				_, err = file.WriteString(",")
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			if first {
+				first = false
+			}
 			b, err := json.MarshalIndent(matchPerLine[n], indent+indent, indent)
 			if err != nil {
 				log.Fatal(err)
@@ -96,12 +105,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			if n != len(matchPerLine)-1{
-				_, err = file.WriteString(",")
-				if err != nil {
-					log.Fatal(err)
-				}
-			}
+			
 		}
 	}
 	_, err = file.WriteString("\r\n]")
@@ -154,9 +158,15 @@ func constructTrie (tokenDefinitions string, p []string) (trie map[int]map[strin
         state := 1
         createNewState(0, trie)
         for i := range p {
-				/*patternsNameSplit := strings.Split(p[i], "##")
-				words := strings.Split(patternsNameSplit[1], wordSeparator)*/
-				words := strings.Split(p[i], wordSeparator)
+				patternsNameSplit := strings.Split(p[i], "##")
+				if len(patternsNameSplit) != 2 {
+					log.Fatal("Error with pattern number ",i+1," name, use [NAME##<token> word ...]. Name cannot be empty.")
+				}
+				if len(patternsNameSplit[0]) == 0 {
+					log.Fatal("Error with pattern number ",i+1,": name cannot be empty.")
+				}
+				
+				words := strings.Split(patternsNameSplit[1], wordSeparator)
 				
                 current := 0
                 j := 0
