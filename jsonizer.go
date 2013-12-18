@@ -4,25 +4,21 @@ import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv";
 //EXPERIMENTAL: change this, if you wish to search in a file that has words separated by something different than spaces
 const wordSeparator = " "
 
-type Match struct {
+type Match struct { //struct used for storing found matches
 	Type string //Match name
-	Body map[string]string //map of token and value
+	Body map[string]string //Body[token] = token value
 }
 
 func main() {
-	fmt.Printf("\nJSONIZER v.0.4 \n-----------------------\n")
-	fmt.Println("Step 1: Processing input.\n")
-	logFilePath, outputPath, tokensFilePath, patternsFilePath := "text.txt", "output.json", "tokens.txt", "patterns.txt"
+	logFilePath, outputPath, tokensFilePath, patternsFilePath := "text.txt", "output.json", "Tokens", "patterns.txt"
 	tokenDefinitions, patternsString, logString := parseFile(tokensFilePath), parseFile(patternsFilePath), parseFile(logFilePath)
 	logLines, patterns := splitFileString(logString), splitFileString(patternsString)
 	
-	matchPerLine := make([]Match, len(logLines))
-	
-	fmt.Println("Step 2: Matching: "+logFilePath+".")
+	fmt.Printf("\nMatching...")
 	startTime := time.Now()
 	trie, f := constructTrie(tokenDefinitions, patterns)
+	matchPerLine := make([]Match, len(logLines))
 	
-
 	for n := range logLines { //for each log line
 		words, current := strings.Split(logLines[n], wordSeparator), 0
 		for w := range words { //for each word
@@ -76,43 +72,42 @@ func main() {
 			}
 		}
 	}
-	
 	elapsedMatch := time.Since(startTime)
-	fmt.Printf("        Elapsed %f secs\n\n", elapsedMatch.Seconds())
+	fmt.Printf(", Elapsed: %fs", elapsedMatch.Seconds())
 	
-	fmt.Println("Step 3: Writing output to file: "+outputPath)
+	//JSON Output
+	indent := "  " //u can use anything like "   " or "\t" ..., nothing else should need to be changed
 	file, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer file.Close()
-	_, err = file.WriteString("{")
+	_, err = file.WriteString("[")
 		if err != nil {
 			log.Fatal(err)
 		}
 	for n := range matchPerLine {
 		if matchPerLine[n].Type	!= "" {
-			b, err := json.MarshalIndent(matchPerLine[n], "\t", "\t")
+			b, err := json.MarshalIndent(matchPerLine[n], indent+indent, indent)
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = file.WriteString("\r\n\t\"Event\": " + string(b))
+			_, err = file.WriteString("\r\n"+indent+"{\r\n"+indent+indent+"\"Event\": " + string(b)+"\r\n"+indent+"}")
 			if err != nil {
 				log.Fatal(err)
 			}
 			if n != len(matchPerLine)-1{
-				_, err = file.WriteString(", ")
+				_, err = file.WriteString(",")
 				if err != nil {
 					log.Fatal(err)
 				}
 			}
 		}
 	}
-	_, err = file.WriteString("\r\n}")
+	_, err = file.WriteString("\r\n]")
 	if err != nil {
 		log.Fatal(err)
 	}
-		fmt.Println("\n\nAll Done.")
 	return
 }
 
@@ -235,7 +230,7 @@ func constructTrie (tokenDefinitions string, p []string) (trie map[int]map[strin
 
 /*******************          File functions           *******************/
 /**
-	Simple file reader that return string content of the file.
+	Simple file reader that returns string content of the file.
 */
 func parseFile(filePath string) string {
 	file, err := ioutil.ReadFile(filePath)
@@ -247,7 +242,7 @@ func parseFile(filePath string) string {
 }
 
 /**
-	Function that parses file into single lines (array of strings).
+	Function that parses string file into single lines (array of strings).
 */
 func splitFileString(fileString string) []string {
 	splitFile := make([]string, 1) 
@@ -345,7 +340,7 @@ func stringArrayCapUp (old []string)(new []string) {
 }
 
 /**
-	Concats two arrays of types int into one.
+	Concats two arrays of type int into one.
 */
 func arrayUnion (to, from []int) []int {
 	concat := to
@@ -359,7 +354,7 @@ func arrayUnion (to, from []int) []int {
 }
 
 /**
-	Returns 'true' if array of int's 's' contains int 'e', 'false' otherwise.
+	Returns 'true' if an array of int's 's' contains int 'e', 'false' otherwise.
 	@author Mostafa http://stackoverflow.com/a/10485970
 */
 func contains(s []int, e int) bool {
@@ -373,8 +368,8 @@ func contains(s []int, e int) bool {
 
 /*******************          Automaton functions          *******************/
 /**
-	Function that finds the previous state of a state and returns it. 
-	Used for trie where there is only one parent, otherwise won't work.
+	Function that finds the previous state (parent) of a state and returns it. 
+	Works only in automaton/tree with single parents.
 */
 func getParent(state int, at map[int]map[string]int) (string, int) {
 	for beginState, transitions := range at {
@@ -388,7 +383,7 @@ func getParent(state int, at map[int]map[string]int) (string, int) {
 }
 
 /**
-	Returns all transitioning tokens for a state 'state' in automaton 'at'.
+	Returns all transitioning tokens (without words) for a state 'state' in automaton 'at'.
 */
 func getTransitionTokens(state int, at map[int]map[string]int) []string {
 	transitionTokens := make([]string, 0)
@@ -401,7 +396,7 @@ func getTransitionTokens(state int, at map[int]map[string]int) []string {
 }
 
 /**
-	Returns all transitioning words for a state 'state' in automaton 'at'.
+	Returns all transitioning words (without tokens) for a state 'state' in automaton 'at'.
 */
 func getTransitionWords(state int, at map[int]map[string]int) []string {
 	transitions := make([]string, 0)
@@ -414,23 +409,22 @@ func getTransitionWords(state int, at map[int]map[string]int) []string {
 }
 
 /**
-	Automaton function for creating a new state 'state' in automaton 'at'.
+	Creates a new state 'state' in automaton 'at'.
 */
 func createNewState(state int, at map[int]map[string]int) {
 	at[state] = make(map[string]int)
 }
 
 /**
- 	Creates a transition for function 'σ(fromState,overString) = toState' in automaton 'at'.
+ 	Creates a transition 'σ(fromState,overString) = toState' in automaton 'at'.
 */
 func createTransition(fromState int, overString string, toState int, at map[int]map[string]int) {
 	at[fromState][overString]= toState
-	//fmt.Printf("σ(%d,%s) = %d\n", fromState, overString, toState)
 }
 
 /**
 	Returns ending state - 'toState' for transition 'σ(fromState,overString)' in automaton 'at'.
-	State -1 is returned if there is none.
+	State -1 is returned if there is no transition.
 */
 func getTransition(fromState int, overString string, at map[int]map[string]int)(toState int) {
 	if (!stateExists(fromState, at)) {
