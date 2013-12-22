@@ -4,15 +4,16 @@
 # After everything is done use "./jsonizer" to run the tool.
 # Tested on Ubuntu 13.10.
 #
+
 GOPATH := ~/go/bin
-GOROOT := ~/go
 
-all: get_dependencies build
+all: build clean
 
-get_dependencies:
+dependencies:
 	sudo apt-get install golang-go
 	sudo apt-get install bzr
-
 build:
-	GOPATH=$(GOPATH) go get labix.org/v2/pipe
+	GOPATH=$(GOPATH) go get code.google.com/p/go.crypto/ssh/terminal
 	GOPATH=$(GOPATH) go build jsonizer.go
+clean:
+	rm -r -f $(GOPATH)

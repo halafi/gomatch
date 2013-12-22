@@ -1,22 +1,20 @@
 package main
 import (
-			"fmt";
-			"log";
-			"strings";
-			"io/ioutil";
-			"time";
-			"regexp";
-			"os";
-			"strconv";
-			"encoding/json"; //json conversion
-			"bytes";
-			"labix.org/v2/pipe"; //unix piping
-		)
+	"code.google.com/p/go.crypto/ssh/terminal"
+	"fmt";
+	"log";
+	"strings";
+	"io/ioutil";
+	"regexp";
+	"os";
+	"strconv";
+	"encoding/json"; //json conversion
+)
 
-const 	(
-			indent = "   " //determines JSON output indent (formatting), you can use anything like three spaces(default) or "\t"...
-			wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
-		) 
+const (
+	indent = "   " //determines JSON output indent (formatting), you can use anything like three spaces(default) or "\t"...
+	wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
+) 
 
 type Match struct {
 	Type string
@@ -27,29 +25,26 @@ type Match struct {
 	Function main performs reading input files, matching of Log file and printing JSON output.
 */
 func main() {
-	b := &bytes.Buffer{}
-	p := pipe.Line(
-		pipe.Exec("df"),
-		pipe.Filter(func(line []byte) bool {
-			return bytes.HasSuffix(line, []byte(" /boot"))
-		}),
-		pipe.Tee(b),
-		pipe.WriteFile("boot.txt", 0644),
-	)
-	err := pipe.Run(p)
-	if err != nil {
-		fmt.Printf("%v\n", err)
+	var logLines []string
+	if ! terminal.IsTerminal(0) { //Stdin not empty
+		bytes, err := ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatal(err)
+		}
+		logLines = lineSplit(string(bytes))
+	} else {
+		logFilePath := "text.txt"
+		logString := fileToString(logFilePath)
+		logLines = lineSplit(logString)
 	}
-	fmt.Print(b.String())
-
+    
 	patternsFilePath := "Patterns"
 	
-	logFilePath, outputPath, tokensFilePath := "text.txt", "output.json", "Tokens"
-	tokenDefinitions, patternsString, logString := fileToString(tokensFilePath), fileToString(patternsFilePath), fileToString(logFilePath)
-	logLines, patterns := lineSplit(logString), lineSplit(patternsString)
-	
-	fmt.Printf("\nMatching...")
-	startTime := time.Now()
+	//outputPath := "output.json"
+	tokensFilePath := "Tokens"
+	tokenDefinitions, patternsString := fileToString(tokensFilePath), fileToString(patternsFilePath)
+	patterns := lineSplit(patternsString)
+
 	trie, finalFor, stateIsTerminal := constructPrefixTree(tokenDefinitions, patterns)
 	matchPerLine := make([]Match, len(logLines))
 	
@@ -99,19 +94,8 @@ func main() {
 			}
 		}
 	}
-	elapsedMatch := time.Since(startTime)
-	fmt.Printf("\nElapsed: %fs\n", elapsedMatch.Seconds())
 	//Output
-	out := getJSON(matchPerLine)
-	file, err := os.Create(outputPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-	_, err = file.WriteString(out)
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Printf("%s", getJSON(matchPerLine))
 	return
 }
 
@@ -130,9 +114,8 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 	finalFor = make([]int, 1) 
 	state := 1
 	for i := range p {
-		if p[i]=="" {
-			log.Printf("Empty pattern number %d (or extra line break). Skipping.", i+1)
-			continue
+		if p[i]=="" { //EOF, extra line break
+			break
 		}
 		patternsNameSplit := strings.Split(p[i], "##") //separate pattern name from its definition
 		if len(patternsNameSplit) != 2 {
