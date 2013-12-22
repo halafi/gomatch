@@ -1,0 +1,1 @@
+match##<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> <ANYTHING:hash>

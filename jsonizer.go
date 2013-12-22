@@ -1,8 +1,22 @@
 package main
-import ("fmt"; "log"; "strings"; "io/ioutil"; "time"; "regexp"; "os"; "strconv"; "encoding/json")
+import (
+			"fmt";
+			"log";
+			"strings";
+			"io/ioutil";
+			"time";
+			"regexp";
+			"os";
+			"strconv";
+			"encoding/json"; //json conversion
+			"bytes";
+			"labix.org/v2/pipe"; //unix piping
+		)
 
-const indent = "   "  //determines JSON output indent (formatting), you can use anything like three spaces(default) or "\t"...
-const wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
+const 	(
+			indent = "   " //determines JSON output indent (formatting), you can use anything like three spaces(default) or "\t"...
+			wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
+		) 
 
 type Match struct {
 	Type string
@@ -13,13 +27,24 @@ type Match struct {
 	Function main performs reading input files, matching of Log file and printing JSON output.
 */
 func main() {
-	/*args := os.Args
-	if (len(args) < 2 || len(args) > 2) {
-		log.Fatal("Wrong ammount of arguments. \nTwo arguments required:  'inputLogPath patternsFilePath'.")
+	b := &bytes.Buffer{}
+	p := pipe.Line(
+		pipe.Exec("df"),
+		pipe.Filter(func(line []byte) bool {
+			return bytes.HasSuffix(line, []byte(" /boot"))
+		}),
+		pipe.Tee(b),
+		pipe.WriteFile("boot.txt", 0644),
+	)
+	err := pipe.Run(p)
+	if err != nil {
+		fmt.Printf("%v\n", err)
 	}
-	pattern := args[1]
-	s := args[2]*/
-	logFilePath, outputPath, tokensFilePath, patternsFilePath := "text.txt", "output.json", "Tokens", "patterns.txt"
+	fmt.Print(b.String())
+
+	patternsFilePath := "Patterns"
+	
+	logFilePath, outputPath, tokensFilePath := "text.txt", "output.json", "Tokens"
 	tokenDefinitions, patternsString, logString := fileToString(tokensFilePath), fileToString(patternsFilePath), fileToString(logFilePath)
 	logLines, patterns := lineSplit(logString), lineSplit(patternsString)
 	
@@ -75,7 +100,7 @@ func main() {
 		}
 	}
 	elapsedMatch := time.Since(startTime)
-	fmt.Printf(", Elapsed: %fs", elapsedMatch.Seconds())
+	fmt.Printf("\nElapsed: %fs\n", elapsedMatch.Seconds())
 	//Output
 	out := getJSON(matchPerLine)
 	file, err := os.Create(outputPath)
@@ -105,6 +130,10 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 	finalFor = make([]int, 1) 
 	state := 1
 	for i := range p {
+		if p[i]=="" {
+			log.Printf("Empty pattern number %d (or extra line break). Skipping.", i+1)
+			continue
+		}
 		patternsNameSplit := strings.Split(p[i], "##") //separate pattern name from its definition
 		if len(patternsNameSplit) != 2 {
 			log.Fatal("Error with pattern number ",i+1," name, use [NAME##<token> word ...].")
@@ -134,13 +163,13 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 						case 2: {
 							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBracketsSplit[0]))
 							if regex.MatchString(transitionWords[w]) {
-								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w])	
+								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
 							}
 						}
 						case 1: {
 							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBrackets))
 							if regex.MatchString(transitionWords[w]) {
-								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w])	
+								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
 							}
 						}
 						default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
@@ -155,13 +184,13 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 						case 2: {
 							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBracketsSplit[0]))
 							if regex.MatchString(words[j]) {
-								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionTokens[t])	
+								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
 							}
 						}
 						case 1: {
 							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBrackets))
 							if regex.MatchString(words[j]) {
-								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j])	
+								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
 							}
 						}
 						default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
