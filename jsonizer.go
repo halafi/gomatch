@@ -1,6 +1,6 @@
 package main
 import (
-	//"code.google.com/p/go.crypto/ssh/terminal"
+	"code.google.com/p/go.crypto/ssh/terminal"
 	"fmt";
 	"log";
 	"strings";
@@ -14,6 +14,8 @@ import (
 const (
 	indent = "   " //determines JSON output indent (formatting), you can use anything like three spaces(default) or "\t"...
 	wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
+	patternsFilePath = "Patterns" //location of Pattern definitions
+	tokensFilePath = "Tokens" //location of Token definitions
 ) 
 
 //Structure used for storing matches
@@ -27,23 +29,16 @@ type Match struct {
 */
 func main() {
 	var logLines []string
-	//if ! terminal.IsTerminal(0) { //Stdin not empty
+	if ! terminal.IsTerminal(0) {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
 		logLines = lineSplit(string(bytes))
-	/*} else {
-		logFilePath := "text.txt"
-		logString := fileToString(logFilePath)
-		logLines = lineSplit(logString)
-	}*/
-    
-	patternsFilePath := "Patterns"
-	patternsString := fileToString(patternsFilePath)
-	patterns := lineSplit(patternsString)
-	
-	tokensFilePath := "Tokens"
+	} else {
+		log.Fatal("Invalid program usage: no standard input given.")
+	}
+	patterns := lineSplit(fileToString(patternsFilePath))
 	tokenDefinitions := fileToString(tokensFilePath)
 	
 	trie, finalFor, stateIsTerminal := constructPrefixTree(tokenDefinitions, patterns)
@@ -96,7 +91,10 @@ func main() {
 		}
 	}
 	//Output
-	fmt.Printf("%s", getJSON(matchPerLine))
+	output := getJSON(matchPerLine)
+	if output != "[\r\n]" {
+		fmt.Printf("%s", getJSON(matchPerLine))
+	}
 	return
 }
 
