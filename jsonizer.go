@@ -1,14 +1,14 @@
 package main
 import (
-	"code.google.com/p/go.crypto/ssh/terminal"
-	"fmt";
-	"log";
-	"strings";
-	"io/ioutil";
-	"regexp";
-	"os";
-	"strconv";
-	"encoding/json"; //json conversion
+	"fmt"; //formatted I/O
+	"log"; //logging package
+	"strings"; //functions to manipulate strings
+	"io/ioutil"; //some I/O utility functions
+	"regexp"; //regular expression search
+	"os"; //platform-independent interface to operating system functionality
+	"strconv"; //conversions to and from string representations of basic data types
+	"encoding/json"; //encoding and decoding of JSON objects as defined in RFC 4627
+	"code.google.com/p/go.crypto/ssh/terminal" //provides support functions for dealing with terminals
 )
 
 const (
@@ -401,7 +401,7 @@ func stringArrayCapUp (old []string)(new []string) {
 	for a state 'state' in an automaton 'at' as an array of strings.
 	
 	@param 'state' state that the transition tokens will be returned for
-	@param 'at' automaton where the state is
+	@param 'at' map with stored states and their transitions
 	@return an array of strings containing all the possible token transitions
 */
 func getTransitionTokens(state int, at map[int]map[string]int) []string {
@@ -419,7 +419,7 @@ func getTransitionTokens(state int, at map[int]map[string]int) []string {
 	for a state 'state' in an automaton 'at' as an array of strings.
 	
 	@param 'state' state that the transition words will be returned for
-	@param 'at' automaton where the state is
+	@param 'at' map with stored states and their transitions
 	@return an array of strings containing all the possible word transitions
 */
 func getTransitionWords(state int, at map[int]map[string]int) []string {
@@ -439,7 +439,7 @@ func getTransitionWords(state int, at map[int]map[string]int) []string {
 	@param 'fromState' beginning state of the transition
 	@param 'overString' transitioning word
 	@param 'toState' ending state of the transition
-	@param 'at' automaton where the transition will be created at
+	@param 'at' map with stored states and their transitions
 */
 func createTransition(fromState int, overString string, toState int, at map[int]map[string]int) {
 	if stateExists(fromState, at) {
@@ -455,7 +455,7 @@ func createTransition(fromState int, overString string, toState int, at map[int]
 	
 	@param 'fromState' state where the transition begins
 	@param 'overString' transitioning word 
-	@param 'at' automaton where the transition will be returned from
+	@param 'at' map with stored states and their transitions
 	@return -1 if there is no transition
 	@return ending state number if there is a transition
 */
@@ -474,7 +474,7 @@ func getTransition(fromState int, overString string, at map[int]map[string]int) 
 	Checks if a state 'state' exists in an automaton 'at'.
 	
 	@param 'state' state to check existence for
-	@param 'at' automaton where the state should be checked at
+	@param 'at' map with stored states and their transitions
 	@return true if it does exist
 	@return false otherwise
 */
