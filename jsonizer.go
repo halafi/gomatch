@@ -1,6 +1,6 @@
 package main
 import (
-	"code.google.com/p/go.crypto/ssh/terminal"
+	//"code.google.com/p/go.crypto/ssh/terminal"
 	"fmt";
 	"log";
 	"strings";
@@ -16,6 +16,7 @@ const (
 	wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
 ) 
 
+//Structure used for storing matches
 type Match struct {
 	Type string
 	Body map[string]string
@@ -26,25 +27,25 @@ type Match struct {
 */
 func main() {
 	var logLines []string
-	if ! terminal.IsTerminal(0) { //Stdin not empty
+	//if ! terminal.IsTerminal(0) { //Stdin not empty
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
 		logLines = lineSplit(string(bytes))
-	} else {
+	/*} else {
 		logFilePath := "text.txt"
 		logString := fileToString(logFilePath)
 		logLines = lineSplit(logString)
-	}
+	}*/
     
 	patternsFilePath := "Patterns"
-	
-	//outputPath := "output.json"
-	tokensFilePath := "Tokens"
-	tokenDefinitions, patternsString := fileToString(tokensFilePath), fileToString(patternsFilePath)
+	patternsString := fileToString(patternsFilePath)
 	patterns := lineSplit(patternsString)
-
+	
+	tokensFilePath := "Tokens"
+	tokenDefinitions := fileToString(tokensFilePath)
+	
 	trie, finalFor, stateIsTerminal := constructPrefixTree(tokenDefinitions, patterns)
 	matchPerLine := make([]Match, len(logLines))
 	
