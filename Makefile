@@ -1,16 +1,13 @@
-#
-# Multi-pattern searching in a single logfile.
-#
-# After everything is done use "jsonizer" to run the tool.
-# Tested on Ubuntu 13.10.
+# installs the tool under "jsonizer" command
 
 GOROOT := ~/go/
 GOPATH := ~/go/bin
 INSTALLPATH := /usr/local/bin/jsonizer
 
 all: build clean
+#all: install_dependencies build clean remove_dependencies
 
-dependencies:
+install_dependencies:
 	sudo apt-get install golang-go
 	sudo apt-get install bzr
 build:
@@ -20,5 +17,6 @@ build:
 clean:
 	rm -r -f $(GOROOT)
 	rm ./jsonizer
-uninstall:
+
+remove_dependencies:
 	sudo rm ./jsonizer /usr/local/bin/jsonizer
