@@ -1,5 +1,5 @@
 package main
-import (
+import ( //GO PACKAGES
 	"fmt"; //formatted I/O
 	"log"; //logging package
 	"strings"; //functions to manipulate strings
@@ -11,39 +11,47 @@ import (
 	"code.google.com/p/go.crypto/ssh/terminal" //provides support functions for dealing with terminals
 )
 
-const (
+const ( //USER DEFINED constants
 	indent = "   " //determines JSON output indent (formatting), you can use anything like three spaces(default) or "\t"...
 	wordSeparator = " " //change this, if you wish to search in a file that has words separated by something different than spaces
 	patternsFilePath = "Patterns" //location of Pattern definitions
-	tokensFilePath = "Tokens" //location of Token definitions
-) 
+	tokensFilePath = "Tokens" //location of Token definitions 
+)
 
-//Structure used for storing matches
-type Match struct {
+type Match struct { //structure used for storing matches
 	Type string
 	Body map[string]string
 }
 
-/**
-	Function main performs reading input files, matching of Log file and printing JSON output.
-*/
 func main() {
+	//initial declaration
 	var logLines []string
-	if ! terminal.IsTerminal(0) {
+	patterns := lineSplit(fileToString(patternsFilePath))
+	tokenDefinitions := fileToString(tokensFilePath)
+	
+	//reading of input log
+	if ! terminal.IsTerminal(0) { //if there is standard input, read it
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
 		logLines = lineSplit(string(bytes))
-	} else {
-		log.Fatal("Invalid program usage: no standard input given.")
+	} else { //otherwise check for single filepath argument or fail
+		if len(os.Args) == 2 { 
+			logFile, err := ioutil.ReadFile(os.Args[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+			logLines = lineSplit(string(logFile))
+		} else {
+			log.Fatal("Invalid program usage: no standard input or filepath argument given. \nSample usage: \n\"cat /var/log/kern.log | jsonizer > output.json\"\n\"jsonizer /var/log/kern.log\"")
+		}
 	}
-	patterns := lineSplit(fileToString(patternsFilePath))
-	tokenDefinitions := fileToString(tokensFilePath)
 	
-	trie, finalFor, stateIsTerminal := constructPrefixTree(tokenDefinitions, patterns)
 	matchPerLine := make([]Match, len(logLines))
+	trie, finalFor, stateIsTerminal := constructPrefixTree(tokenDefinitions, patterns) //construction of prefix tree
 	
+	//reading log line by line checking for matches
 	for n := range logLines {
 		words, current := strings.Split(logLines[n], wordSeparator), 0
 		for w := range words {
@@ -56,15 +64,13 @@ func main() {
 					tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 					switch len(tokenWithoutBracketsSplit) {
-						case 2: { //token defined as i.e. IP:ipAdresa
-							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBracketsSplit[0]))
-							if regex.MatchString(words[w]) {
+						case 2: { //token + name, i.e. <IP:ipAddress>
+							if matchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], words[w]) {
 								validTokens = addWord(validTokens, transitionTokens[t])
 							}
 						}
-						case 1: { //token defined as token only, i.e.: IP
-							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBrackets))
-							if regex.MatchString(words[w]) {
+						case 1: { //token only, i.e.: <IP>
+							if matchToken(tokenDefinitions, tokenWithoutBrackets, words[w]) {
 								validTokens = addWord(validTokens, transitionTokens[t])
 							}
 						}
@@ -79,42 +85,46 @@ func main() {
 			} else {
 				break
 			}
-			if stateIsTerminal[current] {
+			if stateIsTerminal[current] { //we have reached leaf node in prefix tree - got match
 				patternSplit := strings.Split(patterns[finalFor[current]], "##")
 				body := getMatchBody(logLines[n], patternSplit[1], tokenDefinitions)
-				if len(body) > 1 { //CASE of regex matches (needs to print tokens)
+				
+				if len(body) > 1 { //body with some tokens
 					matchPerLine[n] = Match{patternSplit[0], body}
-				} else { //CASE of only word matches
-					matchPerLine[n] = Match{patternSplit[0], body}
+				} else { //empty body
+					matchPerLine[n] = Match{patternSplit[0], nil}
 				}
 			}
 		}
 	}
-	//Output
+	
+	//printing results to standard output
 	output := getJSON(matchPerLine)
 	if output != "[\r\n]" {
-		fmt.Printf("%s", getJSON(matchPerLine))
+		fmt.Printf("%s\r\n", getJSON(matchPerLine))
 	}
 	return
 }
 
 /**
-	Function that constructs prefix tree/automaton for a set strings.
-	
-	@param 'p' an array of patterns with words/tokens separated by single spaces each
-	@param 'tokenDefinitions' string of text lines with "token_name(space)regex"
-	@return 'trie' built prefix tree
-	@return 'finalFor' an array of int's, for each final state it is equal to one pattern number
-	@return 'stateIsTerminal' an array of boolean values for each state representing if its terminal
-*/
+ *	Function that constructs prefix tree/automaton for a set strings.
+ *	
+ *	@param 'p' an array of patterns with words/tokens separated by single spaces each
+ *	@param 'tokenDefinitions' string of text lines with "token_name(space)regex"
+ *	@return 'trie' built prefix tree
+ *	@return 'finalFor' an array of int's, for each final state it is equal to one pattern number
+ *	@return 'stateIsTerminal' an array of boolean values for each state representing if its terminal
+ */
 func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) {
 	trie = make(map[int]map[string]int)
 	stateIsTerminal = make([]bool, 1)
 	finalFor = make([]int, 1) 
 	state := 1
 	for i := range p {
-		if p[i]=="" { //EOF, extra line break
-			break
+		if p[i]== "" { //EOF, extra line break
+			if i == len(p)-1 {
+				break
+			}
 		}
 		patternsNameSplit := strings.Split(p[i], "##") //separate pattern name from its definition
 		if len(patternsNameSplit) != 2 {
@@ -143,14 +153,12 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 					switch len(tokenWithoutBracketsSplit) {
 						case 2: {
-							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBracketsSplit[0]))
-							if regex.MatchString(transitionWords[w]) {
+							if matchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], transitionWords[w]) {
 								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
 							}
 						}
 						case 1: {
-							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBrackets))
-							if regex.MatchString(transitionWords[w]) {
+							if matchToken(tokenDefinitions, tokenWithoutBrackets, transitionWords[w]) {
 								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
 							}
 						}
@@ -164,14 +172,12 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 					switch len(tokenWithoutBracketsSplit) {
 						case 2: {
-							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBracketsSplit[0]))
-							if regex.MatchString(words[j]) {
+							if matchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], words[j]) {
 								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
 							}
 						}
 						case 1: {
-							regex := regexp.MustCompile(getToken(tokenDefinitions, tokenWithoutBrackets))
-							if regex.MatchString(words[j]) {
+							if matchToken(tokenDefinitions, tokenWithoutBrackets, words[j]) {
 								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
 							}
 						}
@@ -194,15 +200,51 @@ func constructPrefixTree (tokenDefinitions string, p []string) (trie map[int]map
 	return trie, finalFor, stateIsTerminal
 }
 
+/**
+ *	Simple matching function, that takes a single token and a word that should match.
+ *	
+ *	@param 'tokenDefinitions' string of single lines "<TOKEN>(space)regex"
+ *	@param 'token' token to match
+ *	@param 'word' word to match
+ *	@return true if token matches, false otherwise
+ */
+func matchToken (tokenDefinitions, token, word string) bool {
+	regex := regexp.MustCompile(getToken(tokenDefinitions, token))
+	if regex.MatchString(word) {
+		return true
+	} else {
+		return false
+	}
+}
+
+/**
+ *	Returns a regular expression for a single token in string that contains it.
+ *	
+ *	@param 'tokensFileString' string of single lines "<TOKEN>(space)regex"
+ *	@param 'token' string of wanted regular expression name
+ *	@return string containing the regular expression for 'token'
+ */
+func getToken(tokensFileString, token string) string {
+	tokenFileLines := lineSplit(tokensFileString)
+	for n := range tokenFileLines {
+		lineSplit := strings.Split(tokenFileLines[n], " ")
+		if len(lineSplit) == 2 && lineSplit[0] == token {
+			return lineSplit[1]
+		}
+	}
+	log.Fatal("No token definition for: ", token,".")
+	return "" //unreachable
+}
+
 /*****************************************************************************/
 /*********************          File functions           *********************/
 
 /**
-	Simple file reader that returns a string content of the file.
-	
-	@param 'filePath' path to the given file
-	@return string with contents of file at 'filePath'
-*/
+ *	Simple file reader that returns a string content of the file.
+ *	
+ *  @param 'filePath' path to the given file
+ *	@return string with contents of file at 'filePath'
+ */
 func fileToString(filePath string) string {
 	file, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -212,11 +254,11 @@ func fileToString(filePath string) string {
 }
 
 /**
-	Function that parses a mutli-line string into single lines (array of strings).
-	
-	@param 'input' string to be splitted
-	@return 'inputSplit' an array of single 'input' lines
-*/
+ *	Function that parses a mutli-line string into single lines (array of strings).
+ *	
+ *	@param 'input' string to be splitted
+ *	@return 'inputSplit' an array of single 'input' lines
+ */
 func lineSplit(input string) []string {
 	inputSplit := make([]string, 1) 
 	inputSplit[0] = input //default single pattern, no line break
@@ -234,13 +276,13 @@ func lineSplit(input string) []string {
 /*********************          String functions          ********************/
 
 /**
-	For a set of matches this function returns a string containing JSON data.
-	If you wish to change how the output looks you can set custom value for
-	constant 'indent'.
-	
-	@param 'matchPerLine' an array of type Match representing for each log line found match
-	@return string JSON formatted output
-*/
+ *	For a set of matches this function returns a string containing JSON data.
+ *	If you wish to change how the output looks you can set custom value for
+ *	constant 'indent'.
+ *	
+ *	@param 'matchPerLine' an array of type Match representing for each log line found match
+ *	@return string JSON formatted output
+ */
 func getJSON(matchPerLine []Match) string {
 	output := "["
 	first := true
@@ -262,13 +304,13 @@ func getJSON(matchPerLine []Match) string {
 }
 
 /**
-	Returns a Match body - string containing found tokens and their given values.
-	
-	@param 'logLine' logLine is used to get token values
-	@param 'pattern' pattern is used to get token names
-	@param 'tokenFileString' required token definitions
-	@return map of key: string, value: string, where key="token name", value="token value"
-*/
+ *	Returns a Match body - string containing found tokens and their given values.
+ *	
+ *	@param 'logLine' logLine is used to get token values
+ *	@param 'pattern' pattern is used to get token names
+ *	@param 'tokenFileString' required token definitions
+ *	@return map of key: string, value: string, where key="token name", value="token value"
+ */
 func getMatchBody(logLine string, pattern string, tokenFileString string) map[string]string {
 	logLineWords := strings.Split(logLine, wordSeparator)
 	patternWords := strings.Split(pattern, wordSeparator)
@@ -279,14 +321,12 @@ func getMatchBody(logLine string, pattern string, tokenFileString string) map[st
 			tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 			switch len(tokenWithoutBracketsSplit) {
 				case 2: {
-					regex := regexp.MustCompile(getToken(tokenFileString, tokenWithoutBracketsSplit[0]))
-					if regex.MatchString(logLineWords[i]) {
+					if matchToken(tokenFileString, tokenWithoutBracketsSplit[0], logLineWords[i]) {
 						output[tokenWithoutBracketsSplit[1]] = logLineWords[i]
 					}
 				}
 				case 1: {
-					regex := regexp.MustCompile(getToken(tokenFileString, tokenWithoutBrackets))
-					if regex.MatchString(logLineWords[i]) {
+					if matchToken(tokenFileString, tokenWithoutBrackets, logLineWords[i]) {
 						output[tokenWithoutBrackets] = logLineWords[i]
 					}
 				} 
@@ -298,31 +338,12 @@ func getMatchBody(logLine string, pattern string, tokenFileString string) map[st
 }
 
 /**
-	Returns a regular expression for a single token in string that contains it.
-	
-	@param 'tokensFileString' string of single lines "<TOKEN>(space)regex"
-	@param 'token' string of wanted regular expression name
-	@return string containing the regular expression for 'token'
-*/
-func getToken(tokensFileString, token string) string {
-	tokenFileLines := lineSplit(tokensFileString)
-	for n := range tokenFileLines {
-		lineSplit := strings.Split(tokenFileLines[n], " ")
-		if len(lineSplit) == 2 && lineSplit[0] == token {
-			return lineSplit[1]
-		}
-	}
-	log.Fatal("No token definition for: ", token,".")
-	return "" //unreachable
-}
-
-/**
-	Function checks if a word 'word 'exist in an array of strings, if not - it is added.
-	
-	@param 's' an array of strings
-	@param 'word' word to be added
-	@return array of strings containing word 'word' and all of the old values
-*/
+ *  Function checks if a word 'word 'exist in an array of strings, if not - it is added.
+ *	
+ *	@param 's' an array of strings
+ *	@param 'word' word to be added
+ *	@return array of strings containing word 'word' and all of the old values
+ */
 func addWord(s []string, word string) []string {
 	for i := range s {
 		if s[i] == word {
@@ -335,14 +356,14 @@ func addWord(s []string, word string) []string {
 }
 
 /**
-	Function that for a given word performs a cut so that the new words starts at 'begin' position
-	of the old word and ends at 'end' position of the old word.
-	
-	@param 'begin' begin position
-	@param 'end' end position
-	@param 'word' word to be cut
-	@return string containing some characters from 'word'
-*/
+ *	Function that for a given word performs a cut so that the new words starts at 'begin' position
+ *	of the old word and ends at 'end' position of the old word.
+ * 
+ *	@param 'begin' begin position
+ *	@param 'end' end position
+ *	@param 'word' word to be cut
+ *	@return string containing some characters from 'word'
+ */
 func cutWord(begin, end int, word string) string {
 	if end >= len(word) {
 		return ""
@@ -358,11 +379,11 @@ func cutWord(begin, end int, word string) string {
 /*******************            Array functions            *******************/
 
 /**
-	Increases an array of int's size by 1.
-	
-	@param old old array
-	@return new new, bigger array with old values
-*/
+ *	Increases an array of int's size by 1.
+ *	
+ *	@param old old array
+ *	@return new new, bigger array with old values
+ */
 func intArrayCapUp (old []int)(new []int) {
 	new = make([]int, cap(old)+1)
 	copy(new, old) 
@@ -370,11 +391,11 @@ func intArrayCapUp (old []int)(new []int) {
 }
 
 /**
-	Increases an array of bool's size by 1.
-	
-	@param old old array
-	@return new new, bigger array with old values
-*/
+ *	Increases an array of bool's size by 1.
+ *	
+ *	@param old old array
+ *	@return new new, bigger array with old values
+ */
 func boolArrayCapUp (old []bool)(new []bool) {
 	new = make([]bool, cap(old)+1)
 	copy(new, old)
@@ -382,11 +403,11 @@ func boolArrayCapUp (old []bool)(new []bool) {
 }
 
 /**
-	Increases an array of string's size by 1.
-	
-	@param old old array
-	@return new new, bigger array with old values
-*/
+ *	Increases an array of string's size by 1.
+ *	
+ *	@param old old array
+ *	@return new new, bigger array with old values
+ */
 func stringArrayCapUp (old []string)(new []string) {
 	new = make([]string, cap(old)+1)
 	copy(new, old)
@@ -397,13 +418,13 @@ func stringArrayCapUp (old []string)(new []string) {
 /*******************          Automaton functions          *******************/
 
 /**
-	Returns all transitioning tokens (without words): only <IP>, <DATE:date> etc.
-	for a state 'state' in an automaton 'at' as an array of strings.
-	
-	@param 'state' state that the transition tokens will be returned for
-	@param 'at' map with stored states and their transitions
-	@return an array of strings containing all the possible token transitions
-*/
+ *	Returns all transitioning tokens (without words): only <IP>, <DATE:date> etc.
+ *	for a state 'state' in an automaton 'at' as an array of strings.
+ *	
+ *  @param 'state' state that the transition tokens will be returned for
+ *	@param 'at' map with stored states and their transitions
+ *	@return an array of strings containing all the possible token transitions
+ */
 func getTransitionTokens(state int, at map[int]map[string]int) []string {
 	transitionTokens := make([]string, 0)
 	for s, _ := range at[state] {
@@ -415,13 +436,13 @@ func getTransitionTokens(state int, at map[int]map[string]int) []string {
 }
 
 /**
-	Returns all transitioning words (without tokens): only "user", "date:" etc.
-	for a state 'state' in an automaton 'at' as an array of strings.
-	
-	@param 'state' state that the transition words will be returned for
-	@param 'at' map with stored states and their transitions
-	@return an array of strings containing all the possible word transitions
-*/
+ *	Returns all transitioning words (without tokens): only "user", "date:" etc.
+ *	for a state 'state' in an automaton 'at' as an array of strings.
+ *	
+ *	@param 'state' state that the transition words will be returned for
+ *	@param 'at' map with stored states and their transitions
+ *	@return an array of strings containing all the possible word transitions
+ */
 func getTransitionWords(state int, at map[int]map[string]int) []string {
 	transitionWords := make([]string, 0)
 	for s, _ := range at[state] {
@@ -433,14 +454,14 @@ func getTransitionWords(state int, at map[int]map[string]int) []string {
 }
 
 /**
-	If there is no state 'fromState', this function creates it, 
-	after that transitionion 'σ(fromState,overString) = toState' is created in an automaton 'at'.
-	
-	@param 'fromState' beginning state of the transition
-	@param 'overString' transitioning word
-	@param 'toState' ending state of the transition
-	@param 'at' map with stored states and their transitions
-*/
+ *	If there is no state 'fromState', this function creates it, 
+ *	after that transitionion 'σ(fromState,overString) = toState' is created in an automaton 'at'.
+ *	
+ *	@param 'fromState' beginning state of the transition
+ *	@param 'overString' transitioning word
+ *	@param 'toState' ending state of the transition
+ *	@param 'at' map with stored states and their transitions
+ */
 func createTransition(fromState int, overString string, toState int, at map[int]map[string]int) {
 	if stateExists(fromState, at) {
 		at[fromState][overString]= toState
@@ -451,14 +472,14 @@ func createTransition(fromState int, overString string, toState int, at map[int]
 }
 
 /**
-	Returns an ending state for transition 'σ(fromState,overString)' in automaton 'at'.
-	
-	@param 'fromState' state where the transition begins
-	@param 'overString' transitioning word 
-	@param 'at' map with stored states and their transitions
-	@return -1 if there is no transition
-	@return ending state number if there is a transition
-*/
+ *	Returns an ending state for transition 'σ(fromState,overString)' in automaton 'at'.
+ *	
+ *	@param 'fromState' state where the transition begins
+ *	@param 'overString' transitioning word 
+ *	@param 'at' map with stored states and their transitions
+ *	@return -1 if there is no transition
+ *	@return ending state number if there is a transition
+ */
 func getTransition(fromState int, overString string, at map[int]map[string]int) int {
 	if (!stateExists(fromState, at)) {
 		return -1
@@ -471,13 +492,13 @@ func getTransition(fromState int, overString string, at map[int]map[string]int) 
 }
 
 /**
-	Checks if a state 'state' exists in an automaton 'at'.
-	
-	@param 'state' state to check existence for
-	@param 'at' map with stored states and their transitions
-	@return true if it does exist
-	@return false otherwise
-*/
+ *	Checks if a state 'state' exists in an automaton 'at'.
+ *	
+ *	@param 'state' state to check existence for
+ *	@param 'at' map with stored states and their transitions
+ *	@return true if it does exist
+ *	@return false otherwise
+ */
 func stateExists(state int, at map[int]map[string]int) bool {
 	_, ok := at[state]
 	if (!ok || state == -1 || at[state] == nil) {
