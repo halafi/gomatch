@@ -10,6 +10,6 @@ Installation
 2. Open a command-line and navigate to the root of this tool directory.
 3. Review Makefile if you wish. Choose whether you wish to install/uninstall dependecies.
 4. Use <code>make</code> to build the tool.
-5. After that you can use: <code>jsonizer</code> to run it.
+5. After that you can use: <code>./jsonizer</code> to run it.
 
 By <a href="mailto:xgam33@gmail.com">Filip Halas</a>.
