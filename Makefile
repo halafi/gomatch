@@ -1,5 +1,3 @@
-# installs the tool under "jsonizer" command
-
 GOROOT := ~/go/
 GOPATH := ~/go/bin
 INSTALLPATH := /usr/local/bin/jsonizer

@@ -1,1 +1,1 @@
-match##<DATE> <LEVEL> <CLASS> - Failed password for <USER> from <IP> port <PORT> <ANYTHING:hash>
+sample event##<DATE> <LEVEL> <CLASS> - Failed password for <USER:Username> from <IP:sourceIP> port <PORT> #5#

@@ -8,7 +8,7 @@ import ( //imported Go packages
 	"os"; //platform-independent interface to operating system functionality
 	"strconv"; //conversions to and from string representations of basic data types
 	"encoding/json"; //encoding and decoding of JSON objects as defined in RFC 4627
-	"runtime"; //operations that interact with Go's runtime system
+	"code.google.com/p/go.crypto/ssh/terminal" //provides support functions for dealing with terminals
 )
 
 const ( //USER DEFINED constants
@@ -30,7 +30,7 @@ func main() {
 	tokenDefinitions := fileToString(tokensFilePath)
 
 	//reading of input log
-	if runtime.GOOS != "windows" { //if we are not on windows, read Stdin
+	if ! terminal.IsTerminal(0) { //if there is standard input, read it
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
@@ -85,7 +85,7 @@ func main() {
 			} else {
 				break
 			}
-			if stateIsTerminal[current] { //we have reached leaf node in prefix tree - got match
+			if stateIsTerminal[current] && w == len(words)-1 { //we have reached leaf node in prefix tree AND end of log line - got match
 				patternSplit := strings.Split(patterns[finalFor[current]], "##")
 				body := getMatchBody(logLines[n], patternSplit[1], tokenDefinitions)
 				
@@ -315,7 +315,7 @@ func getMatchBody(logLine string, pattern string, tokenFileString string) map[st
 	logLineWords := strings.Split(logLine, wordSeparator)
 	patternWords := strings.Split(pattern, wordSeparator)
 	output := make(map[string]string)
-	for i := range logLineWords {
+	for i := range patternWords {
 		if logLineWords[i] != patternWords[i] {
 			tokenWithoutBrackets := cutWord(1, len(patternWords[i])-2, patternWords[i])
 			tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
