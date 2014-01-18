@@ -1,9 +1,9 @@
 GOROOT := ~/go/
 GOPATH := ~/go/bin
-INSTALLPATH := /usr/local/bin/jsonizer
+#INSTALLPATH := /usr/local/bin/jsonizer
 
-#all: build clean
-all: install_dependencies build clean
+all: build clean
+#all: install_dependencies build clean
 #all: install_dependencies build clean uninstall
 
 install_dependencies:
@@ -13,12 +13,10 @@ install_dependencies:
 build:
 	GOPATH=$(GOPATH) go get code.google.com/p/go.crypto/ssh/terminal
 	GOPATH=$(GOPATH) go build jsonizer.go
-	sudo cp ./jsonizer $(INSTALLPATH)
 
 clean:
 	rm -r -f $(GOROOT)
-	rm ./jsonizer
 
 uninstall:
-	sudo rm /usr/local/bin/jsonizer
+	rm ./jsonizer
 	sudo apt-get remove golang-go
