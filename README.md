@@ -4,8 +4,6 @@ Tool used to search for multiple patterns in log records (single line Logs only)
 
 See the project <a href="https://github.com/halafi/String-matching-Go/wiki">wiki</a> for help with configuration and some examples of usage.
 
-převod logovacích záznamů do JSON notace
-
 Linux installation
 -----------------------
 1. Download this repository, <code>git clone https://github.com/halafi/String-matching-Go.git</code> in your command-line should do.
