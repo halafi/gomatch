@@ -1,5 +1,5 @@
 package main
-import ( //GO PACKAGES
+import ( //imported Go packages
 	"fmt"; //formatted I/O
 	"log"; //logging package
 	"strings"; //functions to manipulate strings
@@ -8,7 +8,7 @@ import ( //GO PACKAGES
 	"os"; //platform-independent interface to operating system functionality
 	"strconv"; //conversions to and from string representations of basic data types
 	"encoding/json"; //encoding and decoding of JSON objects as defined in RFC 4627
-	"code.google.com/p/go.crypto/ssh/terminal" //provides support functions for dealing with terminals
+	"runtime"; //operations that interact with Go's runtime system
 )
 
 const ( //USER DEFINED constants
@@ -28,9 +28,9 @@ func main() {
 	var logLines []string
 	patterns := lineSplit(fileToString(patternsFilePath))
 	tokenDefinitions := fileToString(tokensFilePath)
-	
+
 	//reading of input log
-	if ! terminal.IsTerminal(0) { //if there is standard input, read it
+	if runtime.GOOS != "windows" { //if we are not on windows, read Stdin
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
