@@ -1,8 +1,8 @@
 package main
 
-import "input"
-import "output"
-import "match"
+import "./lib/input"
+import "./lib/output"
+import "./lib/match"
 
 // Function main() works in a few steps: reading of input, construction
 // of prefix tree (trie), matching and priting output to STDOUT.
