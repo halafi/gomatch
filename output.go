@@ -5,7 +5,7 @@ package output
 import "encoding/json"
 import "fmt"
 import "log"
-import "github.com/halafi/String-matching-Go/match"
+import "match"
 
 // Determines JSON output indent (formatting), you can use anything like
 // three spaces(default) or "\t".

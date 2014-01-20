@@ -12,6 +12,7 @@ install_dependencies:
 
 build:
 	GOPATH=$(GOPATH) go get code.google.com/p/go.crypto/ssh/terminal
+	GOPATH=$(GOPATH) go get github.com/halafi/String-matching-Go
 	GOPATH=$(GOPATH) go build jsonizer.go
 
 clean:
