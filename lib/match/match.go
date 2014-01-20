@@ -6,6 +6,7 @@ import "log"
 import "strings"
 import "regexp"
 import "strconv"
+import "./util"
 
 // Structure used for storing a single match. Type = event type, Body =
 // map of matched token(s) and their matched values (1 to 1 relation).
@@ -14,12 +15,11 @@ type Match struct {
 	Body map[string]string
 }
 
-// GetPatternsLogMatches performs the matching function in a given log
-// lines against given patterns (pattern lines). It goes through each
-// log line. 
+// GetMatches performs the matching function in a given log lines 
+// against given patterns (pattern lines).
 // It takes prefix tree 'trie' with it's supporting arrays.
 // Returns matches for each log line in an array of 'Match'.
-func GetPatternsLogMatches(logLines, tokenDefinitions, patterns []string, trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) (matchPerLine []Match) {
+func GetMatches (logLines, tokenDefinitions, patterns []string, trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) (matchPerLine []Match) {
 	matchPerLine = make([]Match, len(logLines))
 	for n := range logLines {
 		words, current := strings.Split(logLines[n], " "), 0
@@ -30,17 +30,17 @@ func GetPatternsLogMatches(logLines, tokenDefinitions, patterns []string, trie m
 				current = getTransition(current, words[w], trie)
 			} else if len(transitionTokens) > 0 { //we can move by some regex
 				for t := range transitionTokens { //for each token leading from 'current' state
-					tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+					tokenWithoutBrackets := util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 					switch len(tokenWithoutBracketsSplit) {
 						case 2: { //token + name, i.e. <IP:ipAddress>
 							if MatchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], words[w]) {
-								validTokens = addWord(validTokens, transitionTokens[t])
+								validTokens = util.AddWord(validTokens, transitionTokens[t])
 							}
 						}
 						case 1: { //token only, i.e.: <IP>
 							if MatchToken(tokenDefinitions, tokenWithoutBrackets, words[w]) {
-								validTokens = addWord(validTokens, transitionTokens[t])
+								validTokens = util.AddWord(validTokens, transitionTokens[t])
 							}
 						}
 						default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
@@ -77,7 +77,7 @@ func GetMatchBody (logLine, pattern string, tokens []string) (output map[string]
 	output = make(map[string]string)
 	for i := range patternWords {
 		if logLineWords[i] != patternWords[i] {
-			tokenWithoutBrackets := cutWord(1, len(patternWords[i])-2, patternWords[i])
+			tokenWithoutBrackets := util.CutWord(1, len(patternWords[i])-2, patternWords[i])
 			tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 			switch len(tokenWithoutBracketsSplit) {
 				case 2: {
@@ -129,13 +129,19 @@ func ConstructPrefixTree (tokenDefinitions, p []string) (trie map[int]map[string
 			j++
 		}
 		for j < len(words) {
-			stateIsTerminal = boolArrayCapUp(stateIsTerminal)
-			finalFor = intArrayCapUp(finalFor)
+			newStateIsTerminal := make([]bool, cap(stateIsTerminal)+1)
+			copy(newStateIsTerminal, stateIsTerminal)
+			stateIsTerminal = newStateIsTerminal
+			
+			newFinalFor := make([]int, cap(finalFor)+1)
+			copy(newFinalFor, finalFor) 
+			finalFor = newFinalFor
+			
 			stateIsTerminal[state] = false
 			if len(getTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { //conflict check when adding regex transition
 				transitionWords := getTransitionWords(current, trie)
 				for w := range transitionWords {
-					tokenWithoutBrackets := cutWord(1, len(words[j])-2, words[j])
+					tokenWithoutBrackets := util.CutWord(1, len(words[j])-2, words[j])
 					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 					switch len(tokenWithoutBracketsSplit) {
 						case 2: {
@@ -154,7 +160,7 @@ func ConstructPrefixTree (tokenDefinitions, p []string) (trie map[int]map[string
 			} else if len(getTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word
 				transitionTokens := getTransitionTokens(current, trie)
 				for t := range transitionTokens {
-					tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+					tokenWithoutBrackets := util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 					switch len(tokenWithoutBracketsSplit) {
 						case 2: {
@@ -186,76 +192,23 @@ func ConstructPrefixTree (tokenDefinitions, p []string) (trie map[int]map[string
 	return trie, finalFor, stateIsTerminal
 }
 
-// MatchToken takes a single token and a single word that should match,
-// returns true if token matches, false otherwise.
+// MatchToken first finds a corresponding regex for a given token,
+// then attempts to match the token against given word.
+// Returns true if token matches, false otherwise.
 func MatchToken (tokens []string, token, word string) bool {
-	regex := regexp.MustCompile(getToken(tokens, token))
-	if regex.MatchString(word) {
-		return true
-	} else {
-		return false
-	}
-}
-
-// Function getToken returns a regular expression for a given token.
-func getToken(tokens []string, token string) string {
 	for n := range tokens {
 		lineSplit := strings.Split(tokens[n], " ")
 		if len(lineSplit) == 2 && lineSplit[0] == token {
-			return lineSplit[1]
+			regex := regexp.MustCompile(lineSplit[1])
+			if regex.MatchString(word) {
+				return true
+			} else {
+				return false
+			}
 		}
 	}
 	log.Fatal("No token definition for: ", token,".")
-	return "" //unreachable
-}
-
-// Function checks if a word 'word 'exist in an array of strings, if not
-// then it is added. Returns an array of strings containing 'word' and
-// all of the old values
-func addWord(s []string, word string) []string {
-	for i := range s {
-		if s[i] == word {
-			return s
-		}
-	}
-	s = stringArrayCapUp(s)
-	s[len(s)-1] = word
-	return s
-}
-
-// Function cutWord for a given 'word' performs a cut, so that the new
-// word (returned) starts at 'begin' position of the old word, and ends
-// at 'end' position of the old word.
-func cutWord(begin, end int, word string) string {
-	if end >= len(word) {
-		return ""
-	}
-	d := make([]uint8, end-begin+1)
-	for j, i := 0, begin; i <= end; i, j = i+1, j+1 {
-		d[j] = word[i]
-	}
-	return string(d)
-}
-
-// Increases an array of int's maximum size by 1.
-func intArrayCapUp (old []int)(new []int) {
-	new = make([]int, cap(old)+1)
-	copy(new, old) 
-	return new
-}
-
-// Increases an array of bool's maximum size by 1.
-func boolArrayCapUp (old []bool)(new []bool) {
-	new = make([]bool, cap(old)+1)
-	copy(new, old)
-	return new
-}
-
-// Increases an array of string's maximum size by 1.
-func stringArrayCapUp (old []string)(new []string) {
-	new = make([]string, cap(old)+1)
-	copy(new, old)
-	return new
+	return false
 }
 
 // If there is no state 'fromState', this function creates it, after
@@ -303,7 +256,7 @@ func getTransitionTokens(state int, at map[int]map[string]int) []string {
 	transitionTokens := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] == '<' && s[len(s)-1] == '>' {
-			transitionTokens = addWord(transitionTokens, s)
+			transitionTokens = util.AddWord(transitionTokens, s)
 		}
 	}
 	return transitionTokens
@@ -316,7 +269,7 @@ func getTransitionWords(state int, at map[int]map[string]int) []string {
 	transitionWords := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] != '<' && s[len(s)-1] != '>' {
-			transitionWords = addWord(transitionWords, s)
+			transitionWords = util.AddWord(transitionWords, s)
 		}
 	}
 	return transitionWords
