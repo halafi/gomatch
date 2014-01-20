@@ -1,8 +1,8 @@
 package main
 
-import "./lib/input"
-import "./lib/output"
-import "./lib/match"
+import "github.com/halafi/String-matching-Go/input"
+import "github.com/halafi/String-matching-Go/output"
+import "github.com/halafi/String-matching-Go/match"
 
 // Function main() works in a few steps: reading of input, construction
 // of prefix tree (trie), matching and priting output to STDOUT.
