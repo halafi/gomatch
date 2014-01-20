@@ -1,4 +1,4 @@
-GOROOT := ~/go/
+GOROOT := ~/go
 GOPATH := ~/go/bin
 #INSTALLPATH := /usr/local/bin/jsonizer
 
