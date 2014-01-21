@@ -34,8 +34,30 @@ func ReadLog() (logLines []string) {
 
 // ReadPatterns reads a single file of patterns located at
 // 'filePath' argument location.
-func ReadPatterns(filePath string) ([]string) {
-	return lineSplit(fileToString(filePath))
+func ReadPatterns(filePath string) (output []string) {
+	patterns := lineSplit(fileToString(filePath))
+	output = make([]string, 0)
+	for i := range patterns {
+		if patterns[i] == "" || patterns[i][0] == '#' {
+			// skip empty lines and comments
+		} else {
+			patternsNameSplit := strings.Split(patterns[i], "##") //separate pattern name from its definition
+			if len(patternsNameSplit) != 2 {
+				log.Fatal("Error with pattern number ",i+1," name, use [NAME##<token> word ...].")
+			}
+			if len(patternsNameSplit[0]) == 0 {
+				log.Fatal("Error with pattern number ",i+1,": name cannot be empty.")
+			}
+			if len(patternsNameSplit[1]) == 0 {
+				log.Fatal("Error with pattern number ",i+1,": pattern cannot be empty.")
+			}
+			newOutput := make([]string, cap(output)+1)
+			copy(newOutput, output)
+			output = newOutput
+			output[len(output)-1] = patterns[i]
+		}
+	}
+	return output
 }
 
 // ReadTokens reads a single file of tokens (regex definitions) located
@@ -44,13 +66,13 @@ func ReadTokens(filePath string) (output map[string]string) {
 	tokens := lineSplit(fileToString(filePath))
 	output = make(map[string]string)
 	for t := range tokens {
-		if tokens[t] == "" {
-			// skip empty lines
+		if tokens[t] == "" || tokens[t][0] == '#' {
+			// skip empty lines and comments
 		} else {
 			currentTokenLine := strings.Split(tokens[t], " ")
-			if currentTokenLine[0][0] != '#' && len(currentTokenLine) == 2 {
+			if len(currentTokenLine) == 2 {
 				output[currentTokenLine[0]] = currentTokenLine[1]
-			} else if currentTokenLine[0][0] != '#' && len(currentTokenLine) != 2 {
+			} else {
 				log.Fatal("Problem in tokens definition, error reading: "+tokens[t])
 			}
 		}
@@ -72,7 +94,7 @@ func fileToString(filePath string) string {
 // strings).
 func lineSplit(input string) []string {
 	inputSplit := make([]string, 1) 
-	inputSplit[0] = input //default single pattern, no line break
+	inputSplit[0] = input // default single pattern, no line break
 	if strings.Contains(input, "\r\n") { //CR+LF
 		inputSplit = strings.Split(input, "\r\n")
 	} else if strings.Contains(input, "\n") { //LF
