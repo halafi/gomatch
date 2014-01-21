@@ -12,19 +12,15 @@ import "strings"
 // it tries reading from a FilePath given in a single command line
 // argument.
 func ReadLog() (logLines []string) {
-	if ! terminal.IsTerminal(0) {
+	if !terminal.IsTerminal(0) {
 		bytes, err := ioutil.ReadAll(os.Stdin)
 		if err != nil {
 			log.Fatal(err)
 		}
 		logLines = lineSplit(string(bytes))
 	} else {
-		if len(os.Args) == 2 { 
-			logFile, err := ioutil.ReadFile(os.Args[1])
-			if err != nil {
-				log.Fatal(err)
-			}
-			logLines = lineSplit(string(logFile))
+		if len(os.Args) == 2 {
+			logLines = lineSplit(fileToString(os.Args[1]))
 		} else {
 			log.Fatal("No standard input or FilePath argument given.")
 		}
@@ -43,13 +39,13 @@ func ReadPatterns(filePath string) (output []string) {
 		} else {
 			patternsNameSplit := strings.Split(patterns[i], "##") //separate pattern name from its definition
 			if len(patternsNameSplit) != 2 {
-				log.Fatal("Error with pattern number ",i+1," name, use [NAME##<token> word ...].")
+				log.Fatal("Error with pattern number ", i+1, " name, use [NAME##<token> word ...].")
 			}
 			if len(patternsNameSplit[0]) == 0 {
-				log.Fatal("Error with pattern number ",i+1,": name cannot be empty.")
+				log.Fatal("Error with pattern number ", i+1, ": name cannot be empty.")
 			}
 			if len(patternsNameSplit[1]) == 0 {
-				log.Fatal("Error with pattern number ",i+1,": pattern cannot be empty.")
+				log.Fatal("Error with pattern number ", i+1, ": pattern cannot be empty.")
 			}
 			newOutput := make([]string, cap(output)+1)
 			copy(newOutput, output)
@@ -73,14 +69,14 @@ func ReadTokens(filePath string) (output map[string]string) {
 			if len(currentTokenLine) == 2 {
 				output[currentTokenLine[0]] = currentTokenLine[1]
 			} else {
-				log.Fatal("Problem in tokens definition, error reading: "+tokens[t])
+				log.Fatal("Problem in tokens definition, error reading: " + tokens[t])
 			}
 		}
 	}
 	return output
 }
 
-// Simple file reader that returns a string content of a given 
+// Simple file reader that returns a string content of a given
 // 'filePath' file location.
 func fileToString(filePath string) string {
 	file, err := ioutil.ReadFile(filePath)
@@ -93,8 +89,8 @@ func fileToString(filePath string) string {
 // Function that parses a mutli-line string into single lines (array of
 // strings).
 func lineSplit(input string) []string {
-	inputSplit := make([]string, 1) 
-	inputSplit[0] = input // default single pattern, no line break
+	inputSplit := make([]string, 1)
+	inputSplit[0] = input                // default single pattern, no line break
 	if strings.Contains(input, "\r\n") { //CR+LF
 		inputSplit = strings.Split(input, "\r\n")
 	} else if strings.Contains(input, "\n") { //LF

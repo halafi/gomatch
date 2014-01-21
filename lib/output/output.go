@@ -5,11 +5,11 @@ package output
 import "encoding/json"
 import "fmt"
 import "log"
-import  "../match"
+import "../match"
 
 // Determines JSON output indent (formatting), you can use anything like
 // three spaces(default) or "\t".
-const indent = "   " 
+const indent = "   "
 
 // PrintJSON prints to STDOUT a formatted JSON text data.
 func PrintJSON(matchPerLine []match.Match) {
@@ -19,13 +19,13 @@ func PrintJSON(matchPerLine []match.Match) {
 	}
 }
 
-// For a set of matches this function returns a string containing 
+// For a set of matches this function returns a string containing
 // formatted JSON data.
 func getJSON(matchPerLine []match.Match) string {
 	output := "["
 	first := true
 	for n := range matchPerLine {
-		if matchPerLine[n].Type	!= "" {
+		if matchPerLine[n].Type != "" {
 			if !first {
 				output = output + ","
 			} else {
@@ -35,7 +35,7 @@ func getJSON(matchPerLine []match.Match) string {
 			if err != nil {
 				log.Fatal(err)
 			}
-			output = output + "\r\n"+indent+"{\r\n"+indent+indent+"\"Event\": " + string(b)+"\r\n"+indent+"}"
+			output = output + "\r\n" + indent + "{\r\n" + indent + indent + "\"Event\": " + string(b) + "\r\n" + indent + "}"
 		}
 	}
 	return output + "\r\n]"
