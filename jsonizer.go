@@ -4,16 +4,14 @@ import "./lib/input"
 import "./lib/output"
 import "./lib/match"
 
-// Function main() works in a few steps: reading of input, construction
-// of prefix tree (trie), matching and priting output to STDOUT.
+// Function main() performs a few steps: reading of input, matching and 
+// priting of JSON output to STDOUT.
 func main() {
 	logLines := input.ReadLog()
-	patterns := input.ReadPatterns()
-	tokenDefinitions := input.ReadTokens()
+	patterns := input.ReadPatterns("Patterns")
+	tokenDefinitions := input.ReadTokens("Tokens")
 
-	trie, finalFor, stateIsTerminal := match.ConstructPrefixTree(tokenDefinitions, patterns) 
-	
-	matches := match.GetMatches(logLines, tokenDefinitions, patterns, trie, finalFor, stateIsTerminal)
+	matches := match.GetMatches(logLines, patterns, tokenDefinitions)
 	
 	output.PrintJSON(matches)
 	return

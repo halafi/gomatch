@@ -8,12 +8,6 @@ import "code.google.com/p/go.crypto/ssh/terminal"
 import "log"
 import "strings"
 
-//FilePath of Pattern definitions
-const patternsFilePath = "Patterns" 
-
-//FilePath of Token definitions 
-const tokensFilePath = "Tokens"
-
 // ReadLog attempts to read Log data from STDIN if it's possible, if not
 // it tries reading from a FilePath given in a single command line
 // argument.
@@ -39,15 +33,29 @@ func ReadLog() (logLines []string) {
 }
 
 // ReadPatterns reads a single file of patterns located at
-// 'patternsFilePath' constant location.
-func ReadPatterns() ([]string) {
-	return lineSplit(fileToString(patternsFilePath))
+// 'filePath' argument location.
+func ReadPatterns(filePath string) ([]string) {
+	return lineSplit(fileToString(filePath))
 }
 
 // ReadTokens reads a single file of tokens (regex definitions) located
-// at 'tokensFilePath' constant location.
-func ReadTokens() ([]string) {
-	return lineSplit(fileToString(tokensFilePath))
+// at 'filePath' argument location into map of key=token, value=regex.
+func ReadTokens(filePath string) (output map[string]string) {
+	tokens := lineSplit(fileToString(filePath))
+	output = make(map[string]string)
+	for t := range tokens {
+		if tokens[t] == "" {
+			// skip empty lines
+		} else {
+			currentTokenLine := strings.Split(tokens[t], " ")
+			if currentTokenLine[0][0] != '#' && len(currentTokenLine) == 2 {
+				output[currentTokenLine[0]] = currentTokenLine[1]
+			} else if currentTokenLine[0][0] != '#' && len(currentTokenLine) != 2 {
+				log.Fatal("Problem in tokens definition, error reading: "+tokens[t])
+			}
+		}
+	}
+	return output
 }
 
 // Simple file reader that returns a string content of a given 

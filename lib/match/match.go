@@ -6,6 +6,7 @@ import "log"
 import "strings"
 import "regexp"
 import "strconv"
+import "fmt"
 
 // Structure used for storing a single match. Type = event type, Body =
 // map of matched token(s) and their matched values (1 to 1 relation).
@@ -16,9 +17,9 @@ type Match struct {
 
 // GetMatches performs the matching function in a given log lines 
 // against given patterns (pattern lines).
-// It takes prefix tree 'trie' with it's supporting arrays.
 // Returns matches for each log line in an array of 'Match'.
-func GetMatches (logLines, tokenDefinitions, patterns []string, trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) (matchPerLine []Match) {
+func GetMatches (logLines, patterns []string, tokenDefinitions map[string]string) (matchPerLine []Match) {
+	trie, finalFor, stateIsTerminal := constructPrefixTree(tokenDefinitions, patterns) 
 	matchPerLine = make([]Match, len(logLines))
 	for n := range logLines {
 		words, current := strings.Split(logLines[n], " "), 0
@@ -70,7 +71,7 @@ func GetMatches (logLines, tokenDefinitions, patterns []string, trie map[int]map
 
 // GetMatchBody returns a Match Body, map of matched token(s) and their
 // matched values (1 to 1 relation).
-func GetMatchBody (logLine, pattern string, tokens []string) (output map[string]string) {
+func GetMatchBody (logLine, pattern string, tokens map[string]string) (output map[string]string) {
 	logLineWords := strings.Split(logLine, " ")
 	patternWords := strings.Split(pattern, " ")
 	output = make(map[string]string)
@@ -100,92 +101,91 @@ func GetMatchBody (logLine, pattern string, tokens []string) (output map[string]
 // strings 'p' (array of patterns beginning with event name separated by
 // ## and after that containing words and tokens separated by single 
 // spaces each).
-func ConstructPrefixTree (tokenDefinitions, p []string) (trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) {
+func constructPrefixTree (tokenDefinitions map[string]string, p []string) (trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) {
 	trie = make(map[int]map[string]int)
 	stateIsTerminal = make([]bool, 1)
 	finalFor = make([]int, 1) 
 	state := 1
 	for i := range p {
-		if p[i]== "" { //EOF, extra line break
-			if i == len(p)-1 {
-				break
-			}
-		}
-		patternsNameSplit := strings.Split(p[i], "##") //separate pattern name from its definition
-		if len(patternsNameSplit) != 2 {
-			log.Fatal("Error with pattern number ",i+1," name, use [NAME##<token> word ...].")
-		}
-		if len(patternsNameSplit[0]) == 0 {
-			log.Fatal("Error with pattern number ",i+1,": name cannot be empty.")
-		}
-		if len(patternsNameSplit[1]) == 0 {
-			log.Fatal("Error with pattern number ",i+1,": pattern cannot be empty.")
-		}
-		words := strings.Split(patternsNameSplit[1], " ")
-		current, j := 0, 0
-		for j < len(words) && getTransition(current, words[j], trie) != -1 {
-			current = getTransition(current, words[j], trie)
-			j++
-		}
-		for j < len(words) {
-			newStateIsTerminal := make([]bool, cap(stateIsTerminal)+1)
-			copy(newStateIsTerminal, stateIsTerminal)
-			stateIsTerminal = newStateIsTerminal
-			
-			newFinalFor := make([]int, cap(finalFor)+1)
-			copy(newFinalFor, finalFor) 
-			finalFor = newFinalFor
-			
-			stateIsTerminal[state] = false
-			if len(getTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { //conflict check when adding regex transition
-				transitionWords := getTransitionWords(current, trie)
-				for w := range transitionWords {
-					tokenWithoutBrackets := cutWord(1, len(words[j])-2, words[j])
-					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-					switch len(tokenWithoutBracketsSplit) {
-						case 2: {
-							if MatchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], transitionWords[w]) {
-								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
-							}
-						}
-						case 1: {
-							if MatchToken(tokenDefinitions, tokenWithoutBrackets, transitionWords[w]) {
-								log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
-							}
-						}
-						default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
-					}
-				}
-			} else if len(getTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word
-				transitionTokens := getTransitionTokens(current, trie)
-				for t := range transitionTokens {
-					tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
-					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-					switch len(tokenWithoutBracketsSplit) {
-						case 2: {
-							if MatchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], words[j]) {
-								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
-							}
-						}
-						case 1: {
-							if MatchToken(tokenDefinitions, tokenWithoutBrackets, words[j]) {
-								log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
-							}
-						}
-						default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
-					}
-				}
-			}
-			createTransition(current, words[j], state, trie)
-			current = state
-			j++
-			state++
-		}
-		if stateIsTerminal[current] {
-			log.Fatal("Duplicate pattern definition detected, pattern number: ",i+1,".")
+		if p[i] == "" || p[i][0] == '#' {
+			// skip empty lines and comments
 		} else {
-			stateIsTerminal[current] = true
-			finalFor[current] = i
+			patternsNameSplit := strings.Split(p[i], "##") //separate pattern name from its definition
+			if len(patternsNameSplit) != 2 {
+				log.Fatal("Error with pattern number ",i+1," name, use [NAME##<token> word ...].")
+			}
+			if len(patternsNameSplit[0]) == 0 {
+				log.Fatal("Error with pattern number ",i+1,": name cannot be empty.")
+			}
+			if len(patternsNameSplit[1]) == 0 {
+				log.Fatal("Error with pattern number ",i+1,": pattern cannot be empty.")
+			}
+			words := strings.Split(patternsNameSplit[1], " ")
+			current, j := 0, 0
+			for j < len(words) && getTransition(current, words[j], trie) != -1 {
+				current = getTransition(current, words[j], trie)
+				j++
+			}
+			for j < len(words) {
+				newStateIsTerminal := make([]bool, cap(stateIsTerminal)+1)
+				copy(newStateIsTerminal, stateIsTerminal)
+				stateIsTerminal = newStateIsTerminal
+				
+				newFinalFor := make([]int, cap(finalFor)+1)
+				copy(newFinalFor, finalFor) 
+				finalFor = newFinalFor
+				
+				stateIsTerminal[state] = false
+				if len(getTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { //conflict check when adding regex transition
+					transitionWords := getTransitionWords(current, trie)
+					for w := range transitionWords {
+						tokenWithoutBrackets := cutWord(1, len(words[j])-2, words[j])
+						tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+						switch len(tokenWithoutBracketsSplit) {
+							case 2: {
+								if MatchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], transitionWords[w]) {
+									log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
+								}
+							}
+							case 1: {
+								if MatchToken(tokenDefinitions, tokenWithoutBrackets, transitionWords[w]) {
+									log.Fatal("Conflict in patterns definition, token "+words[j]+" matches word "+transitionWords[w]+".")	
+								}
+							}
+							default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
+						}
+					}
+				} else if len(getTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word
+					transitionTokens := getTransitionTokens(current, trie)
+					for t := range transitionTokens {
+						tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+						tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+						switch len(tokenWithoutBracketsSplit) {
+							case 2: {
+								if MatchToken(tokenDefinitions, tokenWithoutBracketsSplit[0], words[j]) {
+									log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
+								}
+							}
+							case 1: {
+								if MatchToken(tokenDefinitions, tokenWithoutBrackets, words[j]) {
+									log.Fatal("Conflict in patterns definition, token "+transitionTokens[t]+" matches word "+words[j]+".")	
+								}
+							}
+							default: log.Fatal("Problem in token definition: <"+tokenWithoutBrackets+">, use only <TOKEN> or <TOKEN:name>.")
+						}
+					}
+				}
+				createTransition(current, words[j], state, trie)
+				current = state
+				j++
+				state++
+			}
+			if stateIsTerminal[current] {
+				log.Fatal("Duplicate pattern definition detected, pattern number: ",i+1,".")
+			} else {
+				stateIsTerminal[current] = true
+				finalFor[current] = i
+			}
 		}
 	}
 	return trie, finalFor, stateIsTerminal
@@ -194,8 +194,8 @@ func ConstructPrefixTree (tokenDefinitions, p []string) (trie map[int]map[string
 // MatchToken first finds a corresponding regex for a given token,
 // then attempts to match the token against given word.
 // Returns true if token matches, false otherwise.
-func MatchToken (tokens []string, token, word string) bool {
-	for n := range tokens {
+func MatchToken (tokens map[string]string, token, word string) bool {
+	/*for n := range tokens {
 		lineSplit := strings.Split(tokens[n], " ")
 		if len(lineSplit) == 2 && lineSplit[0] == token {
 			regex := regexp.MustCompile(lineSplit[1])
@@ -207,7 +207,14 @@ func MatchToken (tokens []string, token, word string) bool {
 		}
 	}
 	log.Fatal("No token definition for: ", token,".")
-	return false
+	return false*/
+	fmt.Println(tokens[token])
+	regex := regexp.MustCompile(tokens[token])
+	if regex.MatchString(word) {
+		return true
+	} else {
+		return false
+	}
 }
 
 // Function checks if a word 'word 'exist in an array of strings, if not

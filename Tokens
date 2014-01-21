@@ -1,15 +1,23 @@
+#Numbers
 IP ^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$
-WORD ^\w+$
 NUMBER ^[0-9]+$
+PORT ^\d+$
+
+#Strings
 USERNAME ^[a-zA-Z0-9_-]+$
-EMAIL ^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]
-URI ^([a-zA-Z][a-zA-Z0-9]*)://
+CLASS [\.\w]+
+WORD ^\w+$
 LEVEL (ERROR|DEBUG|INFO|TRACE|WARN)
 USER ^\w+$
-PORT ^\d+$
-CLASS [\.\w]+
-TIMESTAMP_ISO8601 ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
-DATE ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
-ANYTHING .*
+
+EMAIL ^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]
+URI ^([a-zA-Z][a-zA-Z0-9]*)://
+
+#Date
 TIME \d{1,2}:\d{1,2}:\d{1,2}
 YEAR \d{4}
+TIMESTAMP_ISO8601 ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
+DATE ^(\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}:\d{2})
+
+#Other
+ANYTHING .*
