@@ -1,11 +1,10 @@
-// Package output provides output funcionality - writing JSON text data
-// to STDOUT.
-package output
+// Package json provides output funcionality of JSON data to STDOUT.
+package json
 
 import "encoding/json"
 import "fmt"
 import "log"
-import "../match"
+import "../../match"
 
 // Determines JSON output indent (formatting), you can use anything like
 // three spaces(default) or "\t".
