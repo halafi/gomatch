@@ -3,52 +3,48 @@ package patterns
 
 import "log"
 import "strings"
-import "io/ioutil"
+import "io"
+import "bufio"
+import "os"
 
-// ReadPatterns reads a single file of patterns located at
-// 'filePath' argument location.
-func ReadPatterns(filePath string) (output []string) {
-	patternsFile, err := ioutil.ReadFile(filePath)
+// Init does the initialization of buffered io.Reader for reading from
+// given file path.
+func Init(filePath string) *bufio.Reader {
+	file, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	patterns := lineSplit(string(patternsFile))
-	output = make([]string, 0)
-	
-	for i := range patterns {
-		if patterns[i] == "" || patterns[i][0] == '#' {
-			// skip empty lines and comments
-		} else {
-			patternsNameSplit := strings.Split(patterns[i], "##") //separate pattern name from its definition
-			if len(patternsNameSplit) != 2 {
-				log.Fatal("Error with pattern number ", i+1, " name, use [NAME##<token> word ...].")
-			}
-			if len(patternsNameSplit[0]) == 0 {
-				log.Fatal("Error with pattern number ", i+1, ": name cannot be empty.")
-			}
-			if len(patternsNameSplit[1]) == 0 {
-				log.Fatal("Error with pattern number ", i+1, ": pattern cannot be empty.")
-			}
-			newOutput := make([]string, cap(output)+1)
-			copy(newOutput, output)
-			output = newOutput
-			output[len(output)-1] = patterns[i]
-		}
-	}
-	return output
+	reader := bufio.NewReader(file)
+	return reader
 }
 
-// Function that parses a mutli-line string into single lines (array of
-// strings).
-func lineSplit(input string) []string {
-	inputSplit := make([]string, 1)
-	inputSplit[0] = input                // default single pattern, no line break
-	if strings.Contains(input, "\r\n") { //CR+LF
-		inputSplit = strings.Split(input, "\r\n")
-	} else if strings.Contains(input, "\n") { //LF
-		inputSplit = strings.Split(input, "\n")
-	} else if strings.Contains(input, "\r") { //CR
-		inputSplit = strings.Split(input, "\r")
+// Reads a single file line using a given reader.
+func ReadPattern(reader *bufio.Reader) (pattern string, eof bool) {
+    for {
+        line, _, err:= reader.ReadLine()
+        if err != nil {
+			if err == io.EOF {
+				return "", true
+			} else {
+				log.Fatal(err)
+			}
+        }
+        return checkPattern(string(line)), false
+    }
+}
+
+// Function checkPattern validates given pattern, if it passes the given
+// pattern is returned, otherwise error is logged.
+func checkPattern(pattern string) string {
+	patternNameSplit := strings.Split(pattern, "##") //separate pattern name from its definition
+	if len(patternNameSplit[0]) == 0 {
+		log.Fatal("pattern error \"", pattern, "\": name cannot be empty.")
 	}
-	return inputSplit
+	if len(patternNameSplit[1]) == 0 {
+		log.Fatal("pattern error \"", pattern, "\": cannot be empty.")
+	}
+	if len(patternNameSplit) != 2 {
+		log.Fatal("pattern error: \"", pattern+"\"")
+	}
+	return pattern
 }

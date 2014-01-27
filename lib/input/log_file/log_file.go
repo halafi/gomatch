@@ -1,20 +1,18 @@
-// Package unixpipe provides input funcionality for STDIN.
+// Package file provides input funcionality for a single file.
 package file
 
 import "io/ioutil"
 import "log"
 import "strings"
 
-// ReadLog attempts to read Log data from STDIN if it's possible, if not
-// it tries reading from a FilePath given in a single command line
-// argument.
-func ReadLine(filePath string) (logLines []string) {
+// ReadLog attempts to read from a file located at 'filePath' and then
+// parses it into an array of strings (single lines).
+func ReadLog(filePath string) (logLines []string) {
 	logFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	logLines = lineSplit(string(logFile))
-	return logLines
+	return lineSplit(string(logFile))
 }
 
 // Function that parses a mutli-line string into single lines (array of

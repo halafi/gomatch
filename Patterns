@@ -1,0 +1,2 @@
+event 1##<DATE> <LEVEL> <CLASS> - Failed password for <USER:Username> from <IP:sourceIP> port <PORT> #1#
+event 2##<DATE> <LEVEL> <CLASS> - Failed password for <USER:Username> from <IP:sourceIP> port <PORT> #2#

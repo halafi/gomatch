@@ -14,6 +14,6 @@ func PrintJSON(matchPerLine match.Match) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf(string(b) + ",\r\n")
+		fmt.Printf(string(b) + "\r\n")
 	}
 }
