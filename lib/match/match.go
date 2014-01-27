@@ -58,7 +58,7 @@ func GetMatch(logLine string, patterns []string, tokens map[string]string, tree 
 		if stateIsTerminal[current] && w == len(words)-1 { // leaf node - match
 			patternSplit := strings.Split(patterns[finalFor[current]], "##")
 			body := GetMatchBody(logLine, patternSplit[1], tokens)
-			if len(body) > 1 { // body with some tokens
+			if len(body) >= 1 { // body with some tokens
 				inputMatch = Match{patternSplit[0], body}
 			} else { // empty body
 				inputMatch = Match{patternSplit[0], nil}

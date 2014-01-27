@@ -1,5 +1,0 @@
-#comment for event1
-event 1##<DATE> <LEVEL> <CLASS> - Failed password for <USER:Username> from <IP:sourceIP> port <PORT> #1#
-
-#comment for event2
-event 2##<DATE> <LEVEL> <CLASS> - Failed password for <USER:Username> from <IP:sourceIP> port <PORT> #2#
