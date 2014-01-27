@@ -16,61 +16,56 @@ type Match struct {
 	Body map[string]string
 }
 
-// GetMatches performs the matching function in a given Log text lines
-// against the pattern definitions (pattern lines).
-// Returns matches for each log line in an array of 'Match'.
-func GetMatches(logLines, patterns []string, tokens map[string]string) (matchPerLine []Match) {
-	tree, finalFor, stateIsTerminal := trie.ConstructPrefixTree(tokens, patterns)
-	matchPerLine = make([]Match, len(logLines))
-	for n := range logLines {
-		words := strings.Split(logLines[n], " ")
-		current := 0
-		for w := range words {
-			transitionTokens := trie.GetTransitionTokens(current, tree)
-			validTokens := make([]string, 0)
-			if trie.GetTransition(current, words[w], tree) != -1 { // we move by word
-				current = trie.GetTransition(current, words[w], tree)
-			} else if len(transitionTokens) > 0 { // we can move by some regex
-				for t := range transitionTokens { // for each token leading from 'current' state
-					tokenWithoutBrackets := string_util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
-					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-					switch len(tokenWithoutBracketsSplit) {
-					case 2:
-						{ // token + name, i.e. <IP:ipAddress>
-							if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[w]) {
-								validTokens = string_util.AddWord(validTokens, transitionTokens[t])
-							}
+// GetMatch finds and returns match for a given log line.
+func GetMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int, stateIsTerminal []bool) Match {
+	inputMatch := Match{}
+	words := strings.Split(logLine, " ")
+	current := 0
+	for w := range words {
+		transitionTokens := trie.GetTransitionTokens(current, tree)
+		validTokens := make([]string, 0)
+		if trie.GetTransition(current, words[w], tree) != -1 { // we move by word
+			current = trie.GetTransition(current, words[w], tree)
+		} else if len(transitionTokens) > 0 { // we can move by some regex
+			for t := range transitionTokens { // for each token leading from 'current' state
+				tokenWithoutBrackets := string_util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+				switch len(tokenWithoutBracketsSplit) {
+				case 2:
+					{ // token + name, i.e. <IP:ipAddress>
+						if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[w]) {
+							validTokens = string_util.AddWord(validTokens, transitionTokens[t])
 						}
-					case 1:
-						{ // token only, i.e.: <IP>
-							if token_util.MatchToken(tokens, tokenWithoutBrackets, words[w]) {
-								validTokens = string_util.AddWord(validTokens, transitionTokens[t])
-							}
-						}
-					default:
-						log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
 					}
+				case 1:
+					{ // token only, i.e.: <IP>
+						if token_util.MatchToken(tokens, tokenWithoutBrackets, words[w]) {
+							validTokens = string_util.AddWord(validTokens, transitionTokens[t])
+						}
+					}
+				default:
+					log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
 				}
-				if len(validTokens) > 1 {
-					log.Fatal("Multiple acceptable tokens for one word at log line: " + strconv.Itoa(n+1) + ", position: " + strconv.Itoa(w+1) + ".")
-				} else if len(validTokens) == 1 { // we move by regex
-					current = trie.GetTransition(current, validTokens[0], tree)
-				}
-			} else {
-				break
 			}
-			if stateIsTerminal[current] && w == len(words)-1 { // leaf node - match
-				patternSplit := strings.Split(patterns[finalFor[current]], "##")
-				body := GetMatchBody(logLines[n], patternSplit[1], tokens)
-				if len(body) > 1 { // body with some tokens
-					matchPerLine[n] = Match{patternSplit[0], body}
-				} else { // empty body
-					matchPerLine[n] = Match{patternSplit[0], nil}
-				}
+			if len(validTokens) > 1 {
+				log.Fatal("Multiple acceptable tokens for one word at line: " + logLine + ", position: " + strconv.Itoa(w+1) + ".")
+			} else if len(validTokens) == 1 { // we move by regex
+				current = trie.GetTransition(current, validTokens[0], tree)
+			}
+		} else {
+			break
+		}
+		if stateIsTerminal[current] && w == len(words)-1 { // leaf node - match
+			patternSplit := strings.Split(patterns[finalFor[current]], "##")
+			body := GetMatchBody(logLine, patternSplit[1], tokens)
+			if len(body) > 1 { // body with some tokens
+				inputMatch = Match{patternSplit[0], body}
+			} else { // empty body
+				inputMatch = Match{patternSplit[0], nil}
 			}
 		}
 	}
-	return matchPerLine
+	return inputMatch
 }
 
 // GetMatchBody returns a Match Body, map of matched token(s) and their

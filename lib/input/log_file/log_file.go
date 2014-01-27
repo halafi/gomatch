@@ -8,7 +8,7 @@ import "strings"
 // ReadLog attempts to read Log data from STDIN if it's possible, if not
 // it tries reading from a FilePath given in a single command line
 // argument.
-func ReadLog(filePath string) (logLines []string) {
+func ReadLine(filePath string) (logLines []string) {
 	logFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatal(err)
