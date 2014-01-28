@@ -20,17 +20,17 @@ func Init(filePath string) *bufio.Reader {
 
 // Reads a single file line using a given reader.
 func ReadPattern(reader *bufio.Reader) (pattern string, eof bool) {
-    for {
-        line, _, err:= reader.ReadLine()
-        if err != nil {
+	for {
+		line, _, err := reader.ReadLine()
+		if err != nil {
 			if err == io.EOF {
 				return "", true
 			} else {
 				log.Fatal(err)
 			}
-        }
-        return checkPattern(string(line)), false
-    }
+		}
+		return checkPattern(string(line)), false
+	}
 }
 
 // Function checkPattern validates given pattern, if it passes the given

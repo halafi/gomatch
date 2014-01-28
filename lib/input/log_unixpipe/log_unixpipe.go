@@ -16,15 +16,15 @@ func Init() *bufio.Reader {
 // ReadLine reads a single line using the given reader, returns the line
 // and 'true' when EOF is reached, 'false' otherwise.
 func ReadLine(reader *bufio.Reader) (logLine string, eof bool) {
-    for {
-        line, _, err:= reader.ReadLine()
-        if err != nil {
+	for {
+		line, _, err := reader.ReadLine()
+		if err != nil {
 			if err == io.EOF {
 				return string(line), true
 			} else {
 				log.Fatal(err)
 			}
-        }
-        return string(line), false
-    }
+		}
+		return string(line), false
+	}
 }

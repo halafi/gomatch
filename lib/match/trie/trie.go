@@ -7,90 +7,87 @@ import "log"
 import "../string_util"
 import "../token_util"
 
-// Function that returns constructed prefix tree/automaton for a set of
-// strings 'p' (array of patterns beginning with event name separated by
-// ## and after that containing words and tokens separated by single
-// spaces each).
-func ConstructPrefixTree(tokens map[string]string, p []string) (trie map[int]map[string]int, finalFor []int, stateIsTerminal []bool) {
+// Init() initializes new prefix tree. State is the number of first created
+// state, i is the number of first pattern to be appended.
+func Init() (trie map[int]map[string]int, finalFor []int, state int, i int) {
 	trie = make(map[int]map[string]int)
-	stateIsTerminal = make([]bool, 1)
 	finalFor = make([]int, 1)
-	state := 1
-	for i := range p {
-		patternsNameSplit := strings.Split(p[i], "##")
-		words := strings.Split(patternsNameSplit[1], " ")
-		current, j := 0, 0
-		for j < len(words) && GetTransition(current, words[j], trie) != -1 {
-			current = GetTransition(current, words[j], trie)
-			j++
-		}
-		for j < len(words) {
-			newStateIsTerminal := make([]bool, cap(stateIsTerminal)+1)
-			copy(newStateIsTerminal, stateIsTerminal)
-			stateIsTerminal = newStateIsTerminal // array size +1
-			newFinalFor := make([]int, cap(finalFor)+1)
-			copy(newFinalFor, finalFor)
-			finalFor = newFinalFor // array size +1
+	return trie, finalFor, 1, 1
+}
 
-			stateIsTerminal[state] = false
-			if len(GetTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { // conflict check when adding regex transition
-				transitionWords := GetTransitionWords(current, trie)
-				for w := range transitionWords {
-					tokenWithoutBrackets := string_util.CutWord(1, len(words[j])-2, words[j])
-					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-					switch len(tokenWithoutBracketsSplit) {
-					case 2:
-						{
-							if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
-								log.Fatal("Conflict in patterns definition, token " + words[j] + " matches word " + transitionWords[w] + ".")
-							}
+// AppendPattern creates all the necessary transitions for given pattern
+// to output trie.
+func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[string]int, finalFor []int, state int, i int) (map[int]map[string]int, []int, int, int) {
+	patternsNameSplit := strings.Split(pattern, "##") // we will ignore pattern name
+	words := strings.Split(patternsNameSplit[1], " ")
+	current := 0
+	j := 0
+	for j < len(words) && GetTransition(current, words[j], trie) != -1 {
+		current = GetTransition(current, words[j], trie)
+		j++
+	}
+	for j < len(words) {
+		newFinalFor := make([]int, cap(finalFor)+1) // array size +1
+		copy(newFinalFor, finalFor)
+		finalFor = newFinalFor
+		finalFor[state] = 0
+		if len(GetTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { // conflict check when adding regex transition
+			transitionWords := GetTransitionWords(current, trie)
+			for w := range transitionWords {
+				tokenWithoutBrackets := string_util.CutWord(1, len(words[j])-2, words[j])
+				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+				switch len(tokenWithoutBracketsSplit) {
+				case 2:
+					{
+						if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
+							log.Fatal("Conflict in patterns definition, token " + words[j] + " matches word " + transitionWords[w] + ".")
 						}
-					case 1:
-						{
-							if token_util.MatchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
-								log.Fatal("Conflict in patterns definition, token " + words[j] + " matches word " + transitionWords[w] + ".")
-							}
-						}
-					default:
-						log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
 					}
-				}
-			} else if len(GetTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word transition
-				transitionTokens := GetTransitionTokens(current, trie)
-				for t := range transitionTokens {
-					tokenWithoutBrackets := string_util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
-					tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-					switch len(tokenWithoutBracketsSplit) {
-					case 2:
-						{
-							if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
-								log.Fatal("Conflict in patterns definition, token " + transitionTokens[t] + " matches word " + words[j] + ".")
-							}
+				case 1:
+					{
+						if token_util.MatchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
+							log.Fatal("Conflict in patterns definition, token " + words[j] + " matches word " + transitionWords[w] + ".")
 						}
-					case 1:
-						{
-							if token_util.MatchToken(tokens, tokenWithoutBrackets, words[j]) {
-								log.Fatal("Conflict in patterns definition, token " + transitionTokens[t] + " matches word " + words[j] + ".")
-							}
-						}
-					default:
-						log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
 					}
+				default:
+					log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
 				}
 			}
-			createTransition(current, words[j], state, trie)
-			current = state
-			j++
-			state++
+		} else if len(GetTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word transition
+			transitionTokens := GetTransitionTokens(current, trie)
+			for t := range transitionTokens {
+				tokenWithoutBrackets := string_util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
+				switch len(tokenWithoutBracketsSplit) {
+				case 2:
+					{
+						if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
+							log.Fatal("Conflict in patterns definition, token " + transitionTokens[t] + " matches word " + words[j] + ".")
+						}
+					}
+				case 1:
+					{
+						if token_util.MatchToken(tokens, tokenWithoutBrackets, words[j]) {
+							log.Fatal("Conflict in patterns definition, token " + transitionTokens[t] + " matches word " + words[j] + ".")
+						}
+					}
+				default:
+					log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
+				}
+			}
 		}
-		if stateIsTerminal[current] {
-			log.Fatal("Duplicate pattern definition detected, pattern number: ", i+1, ".")
-		} else {
-			stateIsTerminal[current] = true
-			finalFor[current] = i
-		}
+		createTransition(current, words[j], state, trie)
+		current = state
+		j++
+		state++
 	}
-	return trie, finalFor, stateIsTerminal
+	if finalFor[current] != 0 {
+		log.Fatal("Duplicate pattern definition detected, pattern : \"", pattern, "\".")
+	} else {
+		finalFor[current] = i // mark current state as terminal for pattern number i
+	}
+	i++ // increment pattern number
+	return trie, finalFor, state, i
 }
 
 // Returns all transitioning tokens (without words) for a given 'state'

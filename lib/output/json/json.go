@@ -6,7 +6,7 @@ import "fmt"
 import "log"
 import "../../match"
 
-// PrintJSON takes a single Match input and prints it to STDOUT in 
+// PrintJSON takes a single Match input and prints it to STDOUT in
 // JSON.
 func PrintJSON(matchPerLine match.Match) {
 	if matchPerLine.Type != "" {

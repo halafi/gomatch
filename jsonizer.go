@@ -15,35 +15,35 @@ func main() {
 	tokens := tokens.ReadTokens("Tokens")
 	patternsArr := make([]string, 0)
 	patternReader := patterns.Init("Patterns")
-
+	tree, finalFor, state, i := trie.Init()
 	for {
 		pattern, eof := patterns.ReadPattern(patternReader)
 		if eof {
 			break
 		} else {
-			newPatternsArr := make([]string, cap(patternsArr)+1)
+			newPatternsArr := make([]string, cap(patternsArr)+1) // array size +1
 			copy(newPatternsArr, patternsArr)
-			newPatternsArr[len(newPatternsArr)-1] = pattern
+			newPatternsArr[len(newPatternsArr)-1] = pattern // add pattern to array of all patterns
 			patternsArr = newPatternsArr
+
+			tree, finalFor, state, i = trie.AppendPattern(tokens, pattern, tree, finalFor, state, i) // add pattern to trie
 		}
 	}
-
-	tree, finalFor, stateIsTerminal := trie.ConstructPrefixTree(tokens, patternsArr)
 
 	if len(os.Args) == 2 {
 		logLines := file.ReadLog(os.Args[1])
 		for n := range logLines {
-			json.PrintJSON(match.GetMatch(logLines[n], patternsArr, tokens, tree, finalFor, stateIsTerminal))
+			json.PrintJSON(match.GetMatch(logLines[n], patternsArr, tokens, tree, finalFor))
 		}
 	} else {
 		unixPipeReader := unixpipe.Init()
 		for {
 			logLine, eof := unixpipe.ReadLine(unixPipeReader)
 			if eof {
-				json.PrintJSON(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor, stateIsTerminal))
+				json.PrintJSON(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))
 				return
 			} else {
-				json.PrintJSON(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor, stateIsTerminal))
+				json.PrintJSON(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))
 			}
 		}
 	}

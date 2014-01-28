@@ -4,7 +4,6 @@ package match
 
 import "log"
 import "strings"
-import "strconv"
 import "./trie"
 import "./string_util"
 import "./token_util"
@@ -17,7 +16,7 @@ type Match struct {
 }
 
 // GetMatch finds and returns match for a given log line.
-func GetMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int, stateIsTerminal []bool) Match {
+func GetMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int) Match {
 	inputMatch := Match{}
 	words := strings.Split(logLine, " ")
 	current := 0
@@ -48,15 +47,15 @@ func GetMatch(logLine string, patterns []string, tokens map[string]string, tree 
 				}
 			}
 			if len(validTokens) > 1 {
-				log.Fatal("Multiple acceptable tokens for one word at line: " + logLine + ", position: " + strconv.Itoa(w+1) + ".")
+				log.Fatal("Multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + words[w] + "\".")
 			} else if len(validTokens) == 1 { // we move by regex
 				current = trie.GetTransition(current, validTokens[0], tree)
 			}
 		} else {
 			break
 		}
-		if stateIsTerminal[current] && w == len(words)-1 { // leaf node - match
-			patternSplit := strings.Split(patterns[finalFor[current]], "##")
+		if finalFor[current] != 0 && w == len(words)-1 { // leaf node - match
+			patternSplit := strings.Split(patterns[finalFor[current]-1], "##")
 			body := GetMatchBody(logLine, patternSplit[1], tokens)
 			if len(body) >= 1 { // body with some tokens
 				inputMatch = Match{patternSplit[0], body}
