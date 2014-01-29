@@ -8,13 +8,22 @@ import "./lib/match"
 import "./lib/match/trie"
 import "./lib/output/json"
 import "os"
+import "flag"
+import "log"
 
-// Function main() performs a few steps: reading of input, matching and
-// priting of JSON output to STDOUT.
+// Command-line flags.
+var input = flag.String("i", "os.Stdin", "Log data input.")
+var patternsIn = flag.String("p", "./Patterns", "Pattern definitions input.")
+var tokensIn = flag.String("t", "./Tokens", "Token definitions input.")
+var output = flag.String("o", "os.Stdout", "JSON data output.")
+
+// Function main() performs a few steps: 
 func main() {
-	tokens := tokens.ReadTokens("Tokens")
+	flag.Parse()
+	tokens := tokens.ReadTokens(*tokensIn)
+	patternReader := patterns.Init(*patternsIn)
+	
 	patternsArr := make([]string, 0)
-	patternReader := patterns.Init("Patterns")
 	tree, finalFor, state, i := trie.Init()
 	for {
 		pattern, eof := patterns.ReadPattern(patternReader)
@@ -30,20 +39,61 @@ func main() {
 		}
 	}
 
-	if len(os.Args) == 2 {
-		logLines := file.ReadLog(os.Args[1])
+	if *input != "os.Stdin" && *output =="os.Stdout" { // Read file, write pipe.
+		logLines := file.ReadLog(*input)
+		
 		for n := range logLines {
-			json.PrintJSON(match.GetMatch(logLines[n], patternsArr, tokens, tree, finalFor))
+			json.Get(match.GetMatch(logLines[n], patternsArr, tokens, tree, finalFor))
 		}
-	} else {
+	} else if *input == "os.Stdin" && *output =="os.Stdout" { // Read pipe, write pipe.
 		unixPipeReader := unixpipe.Init()
+		
 		for {
 			logLine, eof := unixpipe.ReadLine(unixPipeReader)
 			if eof {
-				json.PrintJSON(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))
+				json.Get(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))
 				return
 			} else {
-				json.PrintJSON(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))
+				json.Get(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))
+			}
+		}
+	} else if *input != "os.Stdin" && *output != "os.Stdout" { // Read file, write file.
+		logLines := file.ReadLog(*input)
+		
+		file, err := os.Create(*output)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		
+		for n := range logLines {
+			_, err := file.WriteString(json.Get(match.GetMatch(logLines[n], patternsArr, tokens, tree, finalFor)))
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	} else if *input == "os.Stdin" && *output != "os.Stdout" { // Read pipe, write file.
+		unixPipeReader := unixpipe.Init()
+		
+		file, err := os.Create(*output)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		
+		for {
+			logLine, eof := unixpipe.ReadLine(unixPipeReader)
+			if eof {
+				_, err := file.WriteString(json.Get(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor)))
+				if err != nil {
+					log.Fatal(err)
+				}
+				return
+			} else {
+				_, err := file.WriteString(json.Get(match.GetMatch(logLine, patternsArr, tokens, tree, finalFor)))
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	}

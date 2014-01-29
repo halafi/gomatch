@@ -2,18 +2,16 @@
 package json
 
 import "encoding/json"
-import "fmt"
 import "log"
 import "../../match"
 
-// PrintJSON takes a single Match input and prints it to STDOUT in
-// JSON.
-func PrintJSON(matchPerLine match.Match) {
+func Get(matchPerLine match.Match) string {
 	if matchPerLine.Type != "" {
 		b, err := json.Marshal(matchPerLine)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf(string(b) + "\r\n")
+		return string(b) + "\r\n"
 	}
+	return ""
 }
