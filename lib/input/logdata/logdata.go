@@ -1,15 +1,18 @@
-// Package unixpipe provides input funcionality for reading from
-// /dev/stdin.
-package unixpipe
+// Package file provides input funcionality for a single log file.
+package logdata
 
-import "io"
 import "log"
+import "io"
 import "bufio"
 import "os"
 
-// Init does the initialization of buffered io.Reader.
-func Init() *bufio.Reader {
-	reader := bufio.NewReader(os.Stdin)
+// Open does the initialization of buffered io.Reader.
+func Open(filePath string) *bufio.Reader {
+	fi, err := os.Open(filePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	reader := bufio.NewReader(fi)
 	return reader
 }
 
