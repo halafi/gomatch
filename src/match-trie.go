@@ -1,14 +1,12 @@
-// Package trie provides construction of perfix tree and supporting
-// funcionality.
-package trie
+package main
 
 import "strings"
 import "log"
-import "../../util"
 
-// Init() initializes new prefix tree. State is the number of first created
-// state, i is the number of first pattern to be appended.
-func Init() (trie map[int]map[string]int, finalFor []int, state int, i int) {
+// Function createNewTrie()initializes new prefix tree. State is the 
+// number of first created state, i is the number of first pattern to be
+// appended.
+func createNewTrie() (trie map[int]map[string]int, finalFor []int, state int, i int) {
 	trie = make(map[int]map[string]int)
 	finalFor = make([]int, 1)
 	return trie, finalFor, 1, 1
@@ -16,13 +14,13 @@ func Init() (trie map[int]map[string]int, finalFor []int, state int, i int) {
 
 // AppendPattern creates all the necessary transitions for given pattern
 // to output trie.
-func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[string]int, finalFor []int, state int, i int) (map[int]map[string]int, []int, int, int) {
+func appendPattern(tokens map[string]string, pattern string, trie map[int]map[string]int, finalFor []int, state int, i int) (map[int]map[string]int, []int, int, int) {
 	patternsNameSplit := strings.Split(pattern, "##") // we will ignore pattern name
 	words := strings.Split(patternsNameSplit[1], " ")
 	current := 0
 	j := 0
-	for j < len(words) && GetTransition(current, words[j], trie) != -1 {
-		current = GetTransition(current, words[j], trie)
+	for j < len(words) && getTransition(current, words[j], trie) != -1 {
+		current = getTransition(current, words[j], trie)
 		j++
 	}
 	for j < len(words) {
@@ -30,21 +28,21 @@ func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[st
 		copy(newFinalFor, finalFor)
 		finalFor = newFinalFor
 		finalFor[state] = 0
-		if len(GetTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { // conflict check when adding regex transition
-			transitionWords := GetTransitionWords(current, trie)
+		if len(getTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { // conflict check when adding regex transition
+			transitionWords := getTransitionWords(current, trie)
 			for w := range transitionWords {
-				tokenWithoutBrackets := util.CutWord(1, len(words[j])-2, words[j])
+				tokenWithoutBrackets := cutWord(1, len(words[j])-2, words[j])
 				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 				switch len(tokenWithoutBracketsSplit) {
 				case 2:
 					{
-						if util.MatchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
+						if matchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
 							log.Fatal("pattern conflict: token \"" + words[j] + "\" matches word \"" + transitionWords[w] + "\"")
 						}
 					}
 				case 1:
 					{
-						if util.MatchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
+						if matchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
 							log.Fatal("pattern conflict: token \"" + words[j] + "\" matches word \"" + transitionWords[w] + "\"")
 						}
 					}
@@ -52,21 +50,21 @@ func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[st
 					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
 				}
 			}
-		} else if len(GetTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word transition
-			transitionTokens := GetTransitionTokens(current, trie)
+		} else if len(getTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word transition
+			transitionTokens := getTransitionTokens(current, trie)
 			for t := range transitionTokens {
-				tokenWithoutBrackets := util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+				tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 				switch len(tokenWithoutBracketsSplit) {
 				case 2:
 					{
-						if util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
+						if matchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
 							log.Fatal("pattern conflict: token \"" + transitionTokens[t] + "\" matches word \"" + words[j] + "\"")
 						}
 					}
 				case 1:
 					{
-						if util.MatchToken(tokens, tokenWithoutBrackets, words[j]) {
+						if matchToken(tokens, tokenWithoutBrackets, words[j]) {
 							log.Fatal("pattern conflict: token \"" + transitionTokens[t] + "\" matches word \"" + words[j] + "\"")
 						}
 					}
@@ -92,11 +90,11 @@ func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[st
 // Returns all transitioning tokens (without words) for a given 'state'
 // in an automaton 'at' (map with stored states and their transitions)
 // as an array of strings.
-func GetTransitionTokens(state int, at map[int]map[string]int) []string {
+func getTransitionTokens(state int, at map[int]map[string]int) []string {
 	transitionTokens := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] == '<' && s[len(s)-1] == '>' {
-			transitionTokens = util.AddWord(transitionTokens, s)
+			transitionTokens = addWord(transitionTokens, s)
 		}
 	}
 	return transitionTokens
@@ -105,11 +103,11 @@ func GetTransitionTokens(state int, at map[int]map[string]int) []string {
 // Returns all transitioning words (without tokens) for a given 'state'
 // in an automaton 'at' (map with stored states and their transitions)
 // as an array of strings.
-func GetTransitionWords(state int, at map[int]map[string]int) []string {
+func getTransitionWords(state int, at map[int]map[string]int) []string {
 	transitionWords := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] != '<' && s[len(s)-1] != '>' {
-			transitionWords = util.AddWord(transitionWords, s)
+			transitionWords = addWord(transitionWords, s)
 		}
 	}
 	return transitionWords
@@ -118,7 +116,7 @@ func GetTransitionWords(state int, at map[int]map[string]int) []string {
 // Returns an ending state for transition 'σ(fromState,overString)' in
 // an automaton 'at' (map with stored states and their transitions).
 // Returns '-1' if there is no transition.
-func GetTransition(fromState int, overString string, at map[int]map[string]int) int {
+func getTransition(fromState int, overString string, at map[int]map[string]int) int {
 	if !stateExists(fromState, at) {
 		return -1
 	}

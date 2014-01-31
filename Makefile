@@ -1,15 +1,7 @@
-GOROOT := ~/go
-GOPATH := ~/go/bin
-
-all: build clean
+all: build
 
 get_dependencies:
 	sudo apt-get install golang-go
-	sudo apt-get install bzr
-build:
-	GOPATH=$(GOPATH) go build jsonizer.go
-clean:
-	rm -r -f $(GOROOT)
 
-uninstall:
-	rm ./jsonizer
+build:
+	go build -o jsonizer src/*

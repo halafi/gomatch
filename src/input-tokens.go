@@ -1,6 +1,4 @@
-// Package tokens provides funcionality for reading of token definitions
-// from a single file.
-package tokens
+package main
 
 import "io/ioutil"
 import "log"
@@ -8,7 +6,7 @@ import "strings"
 
 // ReadTokens reads a single file of tokens (regex definitions) located
 // at 'filePath' argument location into map of key=token, value=regex.
-func ReadTokens(filePath string) (output map[string]string) {
+func readTokens(filePath string) (output map[string]string) {
 	tokensFile, err := ioutil.ReadFile(filePath)
 	if err != nil {
 		log.Fatal(err)
