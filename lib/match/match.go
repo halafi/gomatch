@@ -5,8 +5,7 @@ package match
 import "log"
 import "strings"
 import "./trie"
-import "./string_util"
-import "./token_util"
+import "../util"
 
 // Structure used for storing a single match. Event type and a map of
 // matched token(s) and their matched values (1 to 1).
@@ -27,27 +26,27 @@ func GetMatch(logLine string, patterns []string, tokens map[string]string, tree 
 			current = trie.GetTransition(current, words[w], tree)
 		} else if len(transitionTokens) > 0 { // we can move by some regex
 			for t := range transitionTokens { // for each token leading from 'current' state
-				tokenWithoutBrackets := string_util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+				tokenWithoutBrackets := util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 				switch len(tokenWithoutBracketsSplit) {
 				case 2:
 					{ // token + name, i.e. <IP:ipAddress>
-						if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[w]) {
-							validTokens = string_util.AddWord(validTokens, transitionTokens[t])
+						if util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[w]) {
+							validTokens = util.AddWord(validTokens, transitionTokens[t])
 						}
 					}
 				case 1:
 					{ // token only, i.e.: <IP>
-						if token_util.MatchToken(tokens, tokenWithoutBrackets, words[w]) {
-							validTokens = string_util.AddWord(validTokens, transitionTokens[t])
+						if util.MatchToken(tokens, tokenWithoutBrackets, words[w]) {
+							validTokens = util.AddWord(validTokens, transitionTokens[t])
 						}
 					}
 				default:
-					log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
+					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
 				}
 			}
 			if len(validTokens) > 1 {
-				log.Fatal("Multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + words[w] + "\".")
+				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + words[w] + "\"")
 			} else if len(validTokens) == 1 { // we move by regex
 				current = trie.GetTransition(current, validTokens[0], tree)
 			}
@@ -75,23 +74,23 @@ func GetMatchBody(logLine, pattern string, tokens map[string]string) (output map
 	output = make(map[string]string)
 	for i := range patternWords {
 		if logLineWords[i] != patternWords[i] {
-			tokenWithoutBrackets := string_util.CutWord(1, len(patternWords[i])-2, patternWords[i])
+			tokenWithoutBrackets := util.CutWord(1, len(patternWords[i])-2, patternWords[i])
 			tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 			switch len(tokenWithoutBracketsSplit) {
 			case 2:
 				{
-					if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], logLineWords[i]) {
+					if util.MatchToken(tokens, tokenWithoutBracketsSplit[0], logLineWords[i]) {
 						output[tokenWithoutBracketsSplit[1]] = logLineWords[i]
 					}
 				}
 			case 1:
 				{
-					if token_util.MatchToken(tokens, tokenWithoutBrackets, logLineWords[i]) {
+					if util.MatchToken(tokens, tokenWithoutBrackets, logLineWords[i]) {
 						output[tokenWithoutBrackets] = logLineWords[i]
 					}
 				}
 			default:
-				log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
+				log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
 			}
 		}
 	}

@@ -23,7 +23,7 @@ func ReadTokens(filePath string) (output map[string]string) {
 			if len(currentTokenLine) == 2 {
 				output[currentTokenLine[0]] = currentTokenLine[1]
 			} else {
-				log.Fatal("Problem in tokens definition, error reading: " + tokens[t])
+				log.Printf("invalid token definition: \"" + tokens[t] +"\", ignoring")
 			}
 		}
 	}

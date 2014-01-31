@@ -6,10 +6,13 @@ import "./lib/input/patterns"
 
 import "./lib/match"
 import "./lib/match/trie"
+import "./lib/util"
 
 import "./lib/output/json"
 
 import "flag"
+import "log"
+import "os"
 
 // Command-line flags.
 var input = flag.String("i", "/dev/stdin", "Log data input.")
@@ -31,7 +34,7 @@ func main() {
 		pattern, eof := patterns.ReadPattern(patternReader)
 		if eof {
 			break
-		} else {
+		} else if !eof && pattern != "fail" {
 			newPatternsArr := make([]string, cap(patternsArr)+1) // array size +1
 			copy(newPatternsArr, patternsArr)
 			newPatternsArr[len(newPatternsArr)-1] = pattern // add pattern to array of all patterns
@@ -39,11 +42,35 @@ func main() {
 			tree, finalFor, state, i = trie.AppendPattern(tokens, pattern, tree, finalFor, state, i) // add pattern to trie
 		}
 	}
+	patternsFileInfo, err := os.Stat(*patternsIn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lastModified := patternsFileInfo.ModTime()
 	
 	// Reading of input lines, matching them and writing them to output.
 	inputReader := logdata.Open(*input)
 	outputFile := json.CreateOutputFile(*output)
 	for {
+		// If last mod time for patterns file is different, then read
+		// the first line of patterns file and check for a new pattern
+		patternsFileInfo, err = os.Stat(*patternsIn)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if lastModified != patternsFileInfo.ModTime() {
+			patternReader = patterns.Init(*patternsIn)
+			pattern, eof := patterns.ReadPattern(patternReader)
+			if !eof && pattern != "fail" && !util.Contains(patternsArr, pattern) {
+				log.Printf("New event: \"%s\".", pattern)
+				newPatternsArr := make([]string, cap(patternsArr)+1) // array size +1
+				copy(newPatternsArr, patternsArr)
+				newPatternsArr[len(newPatternsArr)-1] = pattern // add pattern to array of all patterns
+				patternsArr = newPatternsArr
+				tree, finalFor, state, i = trie.AppendPattern(tokens, pattern, tree, finalFor, state, i) // add pattern to trie
+			}
+			lastModified = patternsFileInfo.ModTime()
+		}
 		logLine, eof := logdata.ReadLine(inputReader)
 		if eof {
 			json.WriteOutputFile(outputFile, match.GetMatch(logLine, patternsArr, tokens, tree, finalFor))

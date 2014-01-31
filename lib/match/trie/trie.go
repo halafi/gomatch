@@ -4,8 +4,7 @@ package trie
 
 import "strings"
 import "log"
-import "../string_util"
-import "../token_util"
+import "../../util"
 
 // Init() initializes new prefix tree. State is the number of first created
 // state, i is the number of first pattern to be appended.
@@ -34,45 +33,45 @@ func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[st
 		if len(GetTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { // conflict check when adding regex transition
 			transitionWords := GetTransitionWords(current, trie)
 			for w := range transitionWords {
-				tokenWithoutBrackets := string_util.CutWord(1, len(words[j])-2, words[j])
+				tokenWithoutBrackets := util.CutWord(1, len(words[j])-2, words[j])
 				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 				switch len(tokenWithoutBracketsSplit) {
 				case 2:
 					{
-						if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
-							log.Fatal("Conflict in patterns definition, token " + words[j] + " matches word " + transitionWords[w] + ".")
+						if util.MatchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
+							log.Fatal("pattern conflict: token \"" + words[j] + "\" matches word \"" + transitionWords[w] + "\"")
 						}
 					}
 				case 1:
 					{
-						if token_util.MatchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
-							log.Fatal("Conflict in patterns definition, token " + words[j] + " matches word " + transitionWords[w] + ".")
+						if util.MatchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
+							log.Fatal("pattern conflict: token \"" + words[j] + "\" matches word \"" + transitionWords[w] + "\"")
 						}
 					}
 				default:
-					log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
+					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
 				}
 			}
 		} else if len(GetTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' { //conflict check when adding word transition
 			transitionTokens := GetTransitionTokens(current, trie)
 			for t := range transitionTokens {
-				tokenWithoutBrackets := string_util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
+				tokenWithoutBrackets := util.CutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 				switch len(tokenWithoutBracketsSplit) {
 				case 2:
 					{
-						if token_util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
-							log.Fatal("Conflict in patterns definition, token " + transitionTokens[t] + " matches word " + words[j] + ".")
+						if util.MatchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
+							log.Fatal("pattern conflict: token \"" + transitionTokens[t] + "\" matches word \"" + words[j] + "\"")
 						}
 					}
 				case 1:
 					{
-						if token_util.MatchToken(tokens, tokenWithoutBrackets, words[j]) {
-							log.Fatal("Conflict in patterns definition, token " + transitionTokens[t] + " matches word " + words[j] + ".")
+						if util.MatchToken(tokens, tokenWithoutBrackets, words[j]) {
+							log.Fatal("pattern conflict: token \"" + transitionTokens[t] + "\" matches word \"" + words[j] + "\"")
 						}
 					}
 				default:
-					log.Fatal("Problem in token definition: <" + tokenWithoutBrackets + ">, use only <TOKEN> or <TOKEN:name>.")
+					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
 				}
 			}
 		}
@@ -82,7 +81,7 @@ func AppendPattern(tokens map[string]string, pattern string, trie map[int]map[st
 		state++
 	}
 	if finalFor[current] != 0 {
-		log.Fatal("Duplicate pattern definition detected, pattern : \"", pattern, "\".")
+		log.Fatal("duplicate pattern detected: \"", pattern, "\"")
 	} else {
 		finalFor[current] = i // mark current state as terminal for pattern number i
 	}
@@ -97,7 +96,7 @@ func GetTransitionTokens(state int, at map[int]map[string]int) []string {
 	transitionTokens := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] == '<' && s[len(s)-1] == '>' {
-			transitionTokens = string_util.AddWord(transitionTokens, s)
+			transitionTokens = util.AddWord(transitionTokens, s)
 		}
 	}
 	return transitionTokens
@@ -110,7 +109,7 @@ func GetTransitionWords(state int, at map[int]map[string]int) []string {
 	transitionWords := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] != '<' && s[len(s)-1] != '>' {
-			transitionWords = string_util.AddWord(transitionWords, s)
+			transitionWords = util.AddWord(transitionWords, s)
 		}
 	}
 	return transitionWords

@@ -20,31 +20,32 @@ func Init(filePath string) *bufio.Reader {
 
 // Reads a single file line using a given reader.
 func ReadPattern(reader *bufio.Reader) (pattern string, eof bool) {
-	for {
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				return "", true
-			} else {
-				log.Fatal(err)
-			}
+	line, _, err := reader.ReadLine()
+	if err != nil {
+		if err == io.EOF {
+			return "", true
+		} else {
+			log.Fatal(err)
 		}
-		return checkPattern(string(line)), false
 	}
+	return checkPattern(string(line)), false
 }
 
 // Function checkPattern validates given pattern, if it passes the given
 // pattern is returned, otherwise error is logged.
 func checkPattern(pattern string) string {
 	patternNameSplit := strings.Split(pattern, "##") //separate pattern name from its definition
+	if len(patternNameSplit) != 2 {
+		log.Println("invalid pattern: \"", pattern+"\"")
+		return "fail"
+	}
 	if len(patternNameSplit[0]) == 0 {
-		log.Fatal("pattern error \"", pattern, "\": name cannot be empty.")
+		log.Println("invalid pattern \"", pattern, "\": name cannot be empty")
+		return "fail"
 	}
 	if len(patternNameSplit[1]) == 0 {
-		log.Fatal("pattern error \"", pattern, "\": cannot be empty.")
-	}
-	if len(patternNameSplit) != 2 {
-		log.Fatal("pattern error: \"", pattern+"\"")
+		log.Println("invalid pattern \"", pattern, "\": cannot be empty")
+		return "fail"
 	}
 	return pattern
 }
