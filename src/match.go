@@ -7,7 +7,7 @@ import "strings"
 // matched token(s) and their matched values (1 to 1).
 type Match struct {
 	Type string
-	Body map[string]string
+	Body []string
 }
 
 // Function getMatch finds and returns match for a given log line.
@@ -64,10 +64,10 @@ func getMatch(logLine string, patterns []string, tokens map[string]string, tree 
 
 // Function getMatchBody returns a Match Body - map of matched token(s) 
 // and their matched values (1 to 1 relation).
-func getMatchBody(logLine, pattern string, tokens map[string]string) (output map[string]string) {
+func getMatchBody(logLine, pattern string, tokens map[string]string) (output []string) {
 	logLineWords := strings.Split(logLine, " ")
 	patternWords := strings.Split(pattern, " ")
-	output = make(map[string]string)
+	output = make([]string, 0)
 	for i := range patternWords {
 		if logLineWords[i] != patternWords[i] {
 			tokenWithoutBrackets := cutWord(1, len(patternWords[i])-2, patternWords[i])
@@ -76,13 +76,21 @@ func getMatchBody(logLine, pattern string, tokens map[string]string) (output map
 			case 2:
 				{
 					if matchToken(tokens, tokenWithoutBracketsSplit[0], logLineWords[i]) {
-						output[tokenWithoutBracketsSplit[1]] = logLineWords[i]
+						newOutput := make([]string, cap(output)+2) // array size +2
+						copy(newOutput, output)
+						newOutput[len(newOutput)-2] = tokenWithoutBracketsSplit[1]
+						newOutput[len(newOutput)-1] = logLineWords[i]
+						output = newOutput
 					}
 				}
 			case 1:
 				{
 					if matchToken(tokens, tokenWithoutBrackets, logLineWords[i]) {
-						output[tokenWithoutBrackets] = logLineWords[i]
+						newOutput := make([]string, cap(output)+2) // array size +2
+						copy(newOutput, output)
+						newOutput[len(newOutput)-2] = tokenWithoutBrackets
+						newOutput[len(newOutput)-1] = logLineWords[i]
+						output = newOutput
 					}
 				}
 			default:

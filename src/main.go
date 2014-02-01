@@ -5,21 +5,32 @@ import "log"
 import "os"
 
 // Command-line flags.
-var input = flag.String("i", "/dev/stdin", "Log data input.")
-var output = flag.String("o", "/dev/stdout", "JSON data output.")
+var input = flag.String("i", "/dev/stdin", "Data input stream.")
+var output = flag.String("o", "/dev/stdout", "Data output stream.")
+var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml, plain.")
 var patternsIn = flag.String("p", "./Patterns", "Pattern definitions input.")
 var tokensIn = flag.String("t", "./Tokens", "Token definitions input.")
 
 // Function main() performs a few steps: 
 func main() {
 	flag.Parse()
-	
-	tokens := readTokens(*tokensIn)
+	// Token reading
+	tokenReader := openFile(*tokensIn)
+	tokens := make(map[string]string)
+	for {
+		line, eof := readLine(tokenReader)
+		if eof {
+			break
+		}
+		token := checkToken(line)
+		if token != "" {
+			addToken(token, tokens)
+		}
+	}
+	tree, finalFor, state, i := createNewTrie()
+	// Initial pattern reading
 	patternReader := openFile(*patternsIn)
 	patternsArr := make([]string, 0)
-	tree, finalFor, state, i := createNewTrie()
-	
-	// Initial pattern reading
 	for {
 		line, eof := readLine(patternReader)
 		if eof {
@@ -40,7 +51,7 @@ func main() {
 	}
 	lastModified := patternsFileInfo.ModTime()
 	
-	// Reading of input lines, matching them and writing them to output.
+	// Reading of input lines, matching them and writing them to output
 	inputReader := openFile(*input)
 	outputFile := createFile(*output)
 	for {
@@ -69,12 +80,24 @@ func main() {
 		}
 		logLine, eof := readLine(inputReader)
 		if eof {
-			writeFile(outputFile, getJSON(getMatch(logLine, patternsArr, tokens, tree, finalFor)))
+			writeFile(outputFile, convertMatch(getMatch(logLine, patternsArr, tokens, tree, finalFor), *outputFormat))
 			break
 		} else {
-			writeFile(outputFile, getJSON(getMatch(logLine, patternsArr, tokens, tree, finalFor)))
+			writeFile(outputFile, convertMatch(getMatch(logLine, patternsArr, tokens, tree, finalFor), *outputFormat))
 		}
 	}
 	closeFile(outputFile)
 	return
+}
+
+// Calls the desired get method and returns its output.
+func convertMatch(match Match, output string) string {
+	if output=="JSON" || output=="json" {
+		return getJSON(match)
+	}
+	if output=="XML" || output=="xml" {
+		return getXML(match)
+	}
+	log.Fatal("unknown output format: \"", output +"\"")
+	return ""
 }

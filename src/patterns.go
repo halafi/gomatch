@@ -4,8 +4,11 @@ import "log"
 import "strings"
 
 // Function checkPattern validates given pattern, if it passes the given
-// pattern is returned, otherwise error is logged.
+// pattern is returned, otherwise empty string is returned.
 func checkPattern(pattern string) string {
+	if pattern == "" {
+		return ""
+	}
 	patternNameSplit := strings.Split(pattern, "##") //separate pattern name from its definition
 	if len(patternNameSplit) != 2 {
 		log.Println("invalid pattern: \"", pattern+"\"")
