@@ -7,7 +7,7 @@ import "os"
 // Command-line flags.
 var input = flag.String("i", "/dev/stdin", "Data input stream.")
 var output = flag.String("o", "/dev/stdout", "Data output stream.")
-var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml, plain.")
+var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml.")
 var patternsIn = flag.String("p", "./Patterns", "Pattern definitions input.")
 var tokensIn = flag.String("t", "./Tokens", "Token definitions input.")
 
@@ -38,10 +38,8 @@ func main() {
 		}
 		pattern := checkPattern(line)
 		if pattern != "" {
-			newPatternsArr := make([]string, cap(patternsArr)+1) // array size +1
-			copy(newPatternsArr, patternsArr)
-			newPatternsArr[len(newPatternsArr)-1] = pattern // add pattern to array of all patterns
-			patternsArr = newPatternsArr
+			patternsArr = stringArraySizeUp(patternsArr, 1)
+			patternsArr[len(patternsArr)-1] = pattern // add pattern to array of all patterns
 			tree, finalFor, state, i = appendPattern(tokens, pattern, tree, finalFor, state, i) // add pattern to trie
 		}
 	}
@@ -68,10 +66,8 @@ func main() {
 				pattern := checkPattern(line)
 				if pattern != "" && !contains(patternsArr, pattern) {
 					log.Printf("New event: \"%s\".", pattern)
-					newPatternsArr := make([]string, cap(patternsArr)+1) // array size +1
-					copy(newPatternsArr, patternsArr)
-					newPatternsArr[len(newPatternsArr)-1] = pattern // add pattern to array of all patterns
-					patternsArr = newPatternsArr
+					patternsArr = stringArraySizeUp(patternsArr, 1)
+					patternsArr[len(patternsArr)-1] = pattern // add pattern to array of all patterns
 					tree, finalFor, state, i = appendPattern(tokens, pattern, tree, finalFor, state, i) // add pattern to trie
 				}
 				lastModified = patternsFileInfo.ModTime()

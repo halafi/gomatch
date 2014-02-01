@@ -1,7 +1,5 @@
 package main
 
-import "log"
-
 // Converts given Match to JSON.
 func getJSON(match Match) string {
 	json := ""

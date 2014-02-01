@@ -76,21 +76,17 @@ func getMatchBody(logLine, pattern string, tokens map[string]string) (output []s
 			case 2:
 				{
 					if matchToken(tokens, tokenWithoutBracketsSplit[0], logLineWords[i]) {
-						newOutput := make([]string, cap(output)+2) // array size +2
-						copy(newOutput, output)
-						newOutput[len(newOutput)-2] = tokenWithoutBracketsSplit[1]
-						newOutput[len(newOutput)-1] = logLineWords[i]
-						output = newOutput
+						output = stringArraySizeUp(output, 2)
+						output[len(output)-2] = tokenWithoutBracketsSplit[1]
+						output[len(output)-1] = logLineWords[i]
 					}
 				}
 			case 1:
 				{
 					if matchToken(tokens, tokenWithoutBrackets, logLineWords[i]) {
-						newOutput := make([]string, cap(output)+2) // array size +2
-						copy(newOutput, output)
-						newOutput[len(newOutput)-2] = tokenWithoutBrackets
-						newOutput[len(newOutput)-1] = logLineWords[i]
-						output = newOutput
+						output = stringArraySizeUp(output, 2)
+						output[len(output)-2] = tokenWithoutBrackets
+						output[len(output)-1] = logLineWords[i]
 					}
 				}
 			default:

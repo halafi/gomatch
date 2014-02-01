@@ -50,3 +50,17 @@ func contains(s []string, word string) bool {
 	}
 	return false
 }
+
+// Increases size of string array by the ammnout given 'c'.
+func stringArraySizeUp(array []string, c int) []string {
+	newA := make([]string, cap(array)+c)
+	copy(newA, array)
+	return newA
+}
+
+// Increases size of int array by the ammnout given 'c'.
+func intArraySizeUp(array []int, c int) []int {
+	newA := make([]int, cap(array)+c)
+	copy(newA, array)
+	return newA
+}

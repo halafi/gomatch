@@ -24,9 +24,7 @@ func appendPattern(tokens map[string]string, pattern string, trie map[int]map[st
 		j++
 	}
 	for j < len(words) {
-		newFinalFor := make([]int, cap(finalFor)+1) // array size +1
-		copy(newFinalFor, finalFor)
-		finalFor = newFinalFor
+		finalFor = intArraySizeUp(finalFor, 1)
 		finalFor[state] = 0
 		if len(getTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' { // conflict check when adding regex transition
 			transitionWords := getTransitionWords(current, trie)
