@@ -49,7 +49,6 @@ func main() {
 		log.Fatal(err)
 	}
 	lastModified := patternsFileInfo.ModTime()
-	
 	outputFile := createFile(*output)
 	// Reading of input lines, matching them and writing them to output
 	if *inputSocket != "none" { // Reading from socket

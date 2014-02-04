@@ -6,7 +6,7 @@ See the project <a href="https://github.com/halafi/String-matching-Go/wiki">wiki
 
 Installation - Linux
 -----------------------
-1. Download or clone this repository (<code>git clone https://github.com/halafi/String-matching-Go.git</code>).
+1. Download or clone this repository.
 2. Open a command-line and navigate to the root of this tool directory.
 3. Use <code>make</code> to build the tool. If you already have Go you can use <code>go build -o jsonizer src/*</code>.
 
