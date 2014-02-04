@@ -6,7 +6,7 @@ import "os"
 
 // Command-line flags.
 var input = flag.String("i", "/dev/stdin", "Data input stream.")
-var inputSocket = flag.String("s", "/tmp/echo.sock", "Data input Unix domain socket (none or filePath).")
+var inputSocket = flag.String("s", "none", "Data input Unix domain socket (none or filePath).")
 var output = flag.String("o", "/dev/stdout", "Data output stream.")
 var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml.")
 var patternsIn = flag.String("p", "./Patterns", "Pattern definitions input.")
