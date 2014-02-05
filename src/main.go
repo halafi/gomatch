@@ -8,7 +8,7 @@ import "os"
 var input = flag.String("i", "/dev/stdin", "Data input stream.")
 var inputSocket = flag.String("s", "none", "Data input Unix domain socket (none or filePath).")
 var output = flag.String("o", "/dev/stdout", "Data output stream.")
-var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml, line, none.")
+var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml, eventname, none.")
 var patternsIn = flag.String("p", "./Patterns", "Pattern definitions input.")
 var tokensIn = flag.String("t", "./Tokens", "Token definitions input.")
 
@@ -121,10 +121,7 @@ func convertMatch(match Match, output string) string {
 	if output == "XML" || output == "xml" {
 		return getXML(match)
 	}
-	/*if output == "line" {
-		
-	}*/
-	if output == "event_name" {
+	if output == "eventname" {
 		if match.Type == "" {
 			return ""
 		}
