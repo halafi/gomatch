@@ -8,13 +8,14 @@ import "os"
 var input = flag.String("i", "/dev/stdin", "Data input stream.")
 var inputSocket = flag.String("s", "none", "Data input Unix domain socket (none or filePath).")
 var output = flag.String("o", "/dev/stdout", "Data output stream.")
-var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml.")
+var outputFormat = flag.String("f", "json", "Output data format, supported: json, xml, line, none.")
 var patternsIn = flag.String("p", "./Patterns", "Pattern definitions input.")
 var tokensIn = flag.String("t", "./Tokens", "Token definitions input.")
 
 // Function main() performs a few steps: 
 func main() {
 	flag.Parse()
+	i := 0
 	// Token reading
 	tokenReader := openFile(*tokensIn)
 	tokens := make(map[string]string)
@@ -98,7 +99,6 @@ func main() {
 					}
 					lastModified = patternsFileInfo.ModTime()
 				}
-				
 			}
 			logLine, eof := readLine(inputReader)
 			if eof {
@@ -115,11 +115,23 @@ func main() {
 
 // Calls the desired get method and returns its output.
 func convertMatch(match Match, output string) string {
-	if output=="JSON" || output=="json" {
+	if output == "JSON" || output == "json" {
 		return getJSON(match)
 	}
-	if output=="XML" || output=="xml" {
+	if output == "XML" || output == "xml" {
 		return getXML(match)
+	}
+	/*if output == "line" {
+		
+	}*/
+	if output == "event_name" {
+		if match.Type == "" {
+			return ""
+		}
+		return match.Type+"\r\n"
+	}
+	if output == "none" {
+		return ""
 	}
 	log.Fatal("unknown output format: \"", output +"\"")
 	return ""

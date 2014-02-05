@@ -13,6 +13,7 @@ type Match struct {
 // Function getMatch finds and returns match for a given log line.
 func getMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int) Match {
 	inputMatch := Match{}
+	inputMatchBody := make([]string, 0)
 	words := strings.Split(logLine, " ")
 	current := 0
 	for w := range words {
@@ -45,54 +46,21 @@ func getMatch(logLine string, patterns []string, tokens map[string]string, tree 
 				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + words[w] + "\"")
 			} else if len(validTokens) == 1 { // we move by regex
 				current = getTransition(current, validTokens[0], tree)
+				inputMatchBody = stringArraySizeUp(inputMatchBody, 2)
+				inputMatchBody[len(inputMatchBody)-2] = validTokens[0]
+				inputMatchBody[len(inputMatchBody)-1] = words[w]
 			}
 		} else {
 			break
 		}
 		if finalFor[current] != 0 && w == len(words)-1 { // leaf node - match
 			patternSplit := strings.Split(patterns[finalFor[current]-1], "##")
-			body := getMatchBody(logLine, patternSplit[1], tokens)
-			if len(body) >= 1 { // body with some tokens
-				inputMatch = Match{patternSplit[0], body}
+			if len(inputMatchBody) > 0 { // body with some tokens
+				inputMatch = Match{patternSplit[0], inputMatchBody}
 			} else { // empty body
 				inputMatch = Match{patternSplit[0], nil}
 			}
 		}
 	}
 	return inputMatch
-}
-
-// Function getMatchBody returns a Match Body - map of matched token(s) 
-// and their matched values (1 to 1 relation).
-func getMatchBody(logLine, pattern string, tokens map[string]string) (output []string) {
-	logLineWords := strings.Split(logLine, " ")
-	patternWords := strings.Split(pattern, " ")
-	output = make([]string, 0)
-	for i := range patternWords {
-		if logLineWords[i] != patternWords[i] {
-			tokenWithoutBrackets := cutWord(1, len(patternWords[i])-2, patternWords[i])
-			tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-			switch len(tokenWithoutBracketsSplit) {
-			case 2:
-				{
-					if matchToken(tokens, tokenWithoutBracketsSplit[0], logLineWords[i]) {
-						output = stringArraySizeUp(output, 2)
-						output[len(output)-2] = tokenWithoutBracketsSplit[1]
-						output[len(output)-1] = logLineWords[i]
-					}
-				}
-			case 1:
-				{
-					if matchToken(tokens, tokenWithoutBrackets, logLineWords[i]) {
-						output = stringArraySizeUp(output, 2)
-						output[len(output)-2] = tokenWithoutBrackets
-						output[len(output)-1] = logLineWords[i]
-					}
-				}
-			default:
-				log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
-			}
-		}
-	}
-	return output
 }
