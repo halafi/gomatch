@@ -14,7 +14,7 @@ type Match struct {
 func getMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int) Match {
 	inputMatch := Match{}
 	inputMatchBody := make([]string, 0)
-	words := strings.Split(logLine, " ")
+	words := logLineSplit(logLine)
 	current := 0
 	for w := range words {
 		transitionTokens := getTransitionTokens(current, tree)
@@ -29,13 +29,13 @@ func getMatch(logLine string, patterns []string, tokens map[string]string, tree 
 				case 2:
 					{ // token + name, i.e. <IP:ipAddress>
 						if matchToken(tokens, tokenWithoutBracketsSplit[0], words[w]) {
-							validTokens = addWord(validTokens, transitionTokens[t])
+							validTokens = append(validTokens, transitionTokens[t])
 						}
 					}
 				case 1:
 					{ // token only, i.e.: <IP>
 						if matchToken(tokens, tokenWithoutBrackets, words[w]) {
-							validTokens = addWord(validTokens, transitionTokens[t])
+							validTokens = append(validTokens, transitionTokens[t])
 						}
 					}
 				default:

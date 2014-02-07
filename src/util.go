@@ -2,6 +2,31 @@ package main
 
 import "regexp"
 import "strings" 
+
+// Splits a single log line into words, words can be separated by any
+// ammount of spaces, nothing else.
+func logLineSplit(line string) []string {
+	words := make([]string, 0)
+	if line == "" {
+		return words
+	}
+	words = stringArraySizeUp(words, 1)
+	wordIndex := 0
+	chars := []uint8(line)
+	for c := range chars {
+		if chars[c] == ' ' {
+			if words[wordIndex] != "" {
+				words = stringArraySizeUp(words, 1)
+				wordIndex++
+			}
+		} else {
+			words[wordIndex] = words[wordIndex] + string(chars[c])
+		}
+		
+	}
+	return words
+}
+
 // MatchToken returns true if 'word' matches given 'token' regex, false
 // otherwise.
 func matchToken(tokens map[string]string, token, word string) bool {
@@ -10,20 +35,6 @@ func matchToken(tokens map[string]string, token, word string) bool {
 		return true
 	}
 	return false
-}
-
-// Function checks if a word 'word 'exist in an array of strings, if not
-// then it is added. Returns an array of strings containing 'word' and
-// all of the old values
-func addWord(s []string, word string) []string {
-	if !contains(s, word) {
-		newS := make([]string, cap(s)+1)
-		copy(newS, s)
-		newS[len(newS)-1] = word
-		return newS
-	} else {
-		return s
-	}
 }
 
 // Function cutWord for a given 'word' performs a cut, so that the new

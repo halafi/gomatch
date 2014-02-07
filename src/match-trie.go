@@ -92,7 +92,7 @@ func getTransitionTokens(state int, at map[int]map[string]int) []string {
 	transitionTokens := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] == '<' && s[len(s)-1] == '>' {
-			transitionTokens = addWord(transitionTokens, s)
+			transitionTokens = append(transitionTokens, s)
 		}
 	}
 	return transitionTokens
@@ -105,7 +105,7 @@ func getTransitionWords(state int, at map[int]map[string]int) []string {
 	transitionWords := make([]string, 0)
 	for s, _ := range at[state] {
 		if s[0] != '<' && s[len(s)-1] != '>' {
-			transitionWords = addWord(transitionWords, s)
+			transitionWords = append(transitionWords, s)
 		}
 	}
 	return transitionWords
