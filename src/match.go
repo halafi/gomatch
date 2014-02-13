@@ -1,40 +1,43 @@
+// match.go provides the core for match handling.
 package main
 
 import "log"
 import "strings"
 
-// Structure used for storing a single match. Event type and a map of
-// matched token(s) and their matched values (1 to 1).
+// Match is the representation of a single event matched.
+// Match consists of: type (name), and an array of matched token(s)
+// followed with value that was matched.
 type Match struct {
 	Type string
 	Body []string
 }
 
-// Function getMatch finds and returns match for a given log line.
+// getMatch returns match for a given log line.
 func getMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int) Match {
-	inputMatch := Match{}
-	inputMatchBody := make([]string, 0)
-	words := logLineSplit(logLine)
+	match, matchBody := Match{}, make([]string, 0)
 	current := 0
-	for w := range words {
+	logWords := logLineSplit(logLine)
+	for i := range logWords {
 		transitionTokens := getTransitionTokens(current, tree)
 		validTokens := make([]string, 0)
-		if getTransition(current, words[w], tree) != -1 { // we move by word
-			current = getTransition(current, words[w], tree)
-		} else if len(transitionTokens) > 0 { // we can move by some regex
-			for t := range transitionTokens { // for each token leading from 'current' state
+		if getTransition(current, logWords[i], tree) != -1 {
+			// we move by word
+			current = getTransition(current, logWords[i], tree)
+		} else if len(transitionTokens) > 0 {
+			// we can move by some regex
+			for t := range transitionTokens {
 				tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
 				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
 				switch len(tokenWithoutBracketsSplit) {
 				case 2:
 					{ // token + name, i.e. <IP:ipAddress>
-						if matchToken(tokens, tokenWithoutBracketsSplit[0], words[w]) {
+						if matchToken(tokens, tokenWithoutBracketsSplit[0], logWords[i]) {
 							validTokens = append(validTokens, transitionTokens[t])
 						}
 					}
 				case 1:
 					{ // token only, i.e.: <IP>
-						if matchToken(tokens, tokenWithoutBrackets, words[w]) {
+						if matchToken(tokens, tokenWithoutBrackets, logWords[i]) {
 							validTokens = append(validTokens, transitionTokens[t])
 						}
 					}
@@ -43,24 +46,25 @@ func getMatch(logLine string, patterns []string, tokens map[string]string, tree 
 				}
 			}
 			if len(validTokens) > 1 {
-				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + words[w] + "\"")
+				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + logWords[i] + "\"")
 			} else if len(validTokens) == 1 { // we move by regex
 				current = getTransition(current, validTokens[0], tree)
-				inputMatchBody = stringArraySizeUp(inputMatchBody, 2)
-				inputMatchBody[len(inputMatchBody)-2] = validTokens[0]
-				inputMatchBody[len(inputMatchBody)-1] = words[w]
+				matchBody = stringArraySizeUp(matchBody, 2)
+				matchBody[len(matchBody)-2] = validTokens[0]
+				matchBody[len(matchBody)-1] = logWords[i]
 			}
 		} else {
 			break
 		}
-		if finalFor[current] != 0 && w == len(words)-1 { // leaf node - match
-			patternSplit := strings.Split(patterns[finalFor[current]-1], "##")
-			if len(inputMatchBody) > 0 { // body with some tokens
-				inputMatch = Match{patternSplit[0], inputMatchBody}
-			} else { // empty body
-				inputMatch = Match{patternSplit[0], nil}
+		// leaf node - got match
+		if finalFor[current] != 0 && i == len(logWords)-1 {
+			patternSplit := separatePatternFromName(patterns[finalFor[current]-1])
+			if len(matchBody) > 0 {
+				match = Match{patternSplit[0], matchBody}
+			} else {
+				match = Match{patternSplit[0], nil}
 			}
 		}
 	}
-	return inputMatch
+	return match
 }

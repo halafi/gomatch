@@ -1,10 +1,13 @@
+// util.go provides some utility functions (strings, slices, regexp).
 package main
 
-import "regexp"
-import "strings" 
+import (
+	"regexp"
+	"strings"
+)
 
-// Splits a single log line into words, words can be separated by any
-// ammount of spaces, nothing else.
+// logLineSplit splits a single log line string into words, words can
+// only be separated by any ammount of spaces.
 func logLineSplit(line string) []string {
 	words := make([]string, 0)
 	if line == "" {
@@ -22,13 +25,11 @@ func logLineSplit(line string) []string {
 		} else {
 			words[wordIndex] = words[wordIndex] + string(chars[c])
 		}
-		
 	}
 	return words
 }
 
-// MatchToken returns true if 'word' matches given 'token' regex, false
-// otherwise.
+// matchToken returns true if a word matches token, false otherwise.
 func matchToken(tokens map[string]string, token, word string) bool {
 	regex := regexp.MustCompile(tokens[token])
 	if regex.MatchString(word) {
@@ -37,9 +38,7 @@ func matchToken(tokens map[string]string, token, word string) bool {
 	return false
 }
 
-// Function cutWord for a given 'word' performs a cut, so that the new
-// word (returned) starts at 'begin' position of the old word, and ends
-// at 'end' position of the old word.
+// cutWord for a given word performs a cut (both prefix and sufix).
 func cutWord(begin, end int, word string) string {
 	if end >= len(word) {
 		return ""
@@ -51,8 +50,7 @@ func cutWord(begin, end int, word string) string {
 	return string(d)
 }
 
-// Contains checks if an array of strings 's' contains 'word', if yes
-// returns true, false otherwise.
+// contains checks if an array of strings contains given word.
 func contains(s []string, word string) bool {
 	for i := range s {
 		if s[i] == word {
@@ -62,11 +60,11 @@ func contains(s []string, word string) bool {
 	return false
 }
 
-// Function that parses a mutli-line string into single lines (array of
+// lineSplit parses a mutli-line string into single lines (array of
 // strings).
 func lineSplit(input string) []string {
 	inputSplit := make([]string, 1)
-	inputSplit[0] = input                // default single line, no line break
+	inputSplit[0] = input
 	if strings.Contains(input, "\r\n") { //CR+LF
 		inputSplit = strings.Split(input, "\r\n")
 	} else if strings.Contains(input, "\n") { //LF
@@ -77,14 +75,16 @@ func lineSplit(input string) []string {
 	return inputSplit
 }
 
-// Increases size of string array by the ammnout given 'c'.
+// stringArraySizeUp creates a new string array with old values and
+// increased maximum size by the ammnout given.
 func stringArraySizeUp(array []string, c int) []string {
 	newA := make([]string, cap(array)+c)
 	copy(newA, array)
 	return newA
 }
 
-// Increases size of int array by the ammnout given 'c'.
+// intArraySizeUp creates a new int array with old values and increased
+// maximum size by the ammnout given.
 func intArraySizeUp(array []int, c int) []int {
 	newA := make([]int, cap(array)+c)
 	copy(newA, array)

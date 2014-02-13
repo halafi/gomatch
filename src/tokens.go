@@ -1,16 +1,16 @@
+// tokens.go provides funcionality for handling file with tokens.
 package main
 
-import "log"
-import "strings"
+import (
+	"log"
+	"strings"
+)
 
-// Function checkPattern validates given token, if it passes the given
-// token is returned, if empty line or comment is encounteres, then
-// empty string is returned.
+// checkToken validates the given token line, if it passes the token
+// line is returned.
+// If empty line or comment is encountered empty string is returned.
 func checkToken(token string) string {
-	if token == "" {
-		return ""
-	}
-	if token[0] == '#' {
+	if token == "" || token[0] == '#' {
 		return ""
 	}
 	tokenSplit := strings.Split(token, " ") // separate name and regex
@@ -20,7 +20,8 @@ func checkToken(token string) string {
 	return token
 }
 
-// Performs addition of token to map of tokens.
+// addToken takes a token line and adds it to a given map (key = token
+// name; value = regular expression for that token).
 func addToken(token string, tokens map[string]string) {
 	tokenSplit := strings.Split(token, " ")
 	tokens[tokenSplit[0]] = tokenSplit[1]
