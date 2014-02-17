@@ -1,9 +1,9 @@
 DEST := /usr/local/bin
-TARGETNAME := jsonizer
+TARGETNAME := logmatch
 
-all: build
+all: dependencies build
 
-get_dependencies:
+dependencies:
 	sudo apt-get install golang-go
 
 build:
@@ -11,6 +11,7 @@ build:
 
 install:
 	sudo cp ./$(TARGETNAME) $(DEST)/$(TARGETNAME)
+	rm $(TARGETNAME)
 
 uninstall:
 	sudo rm -f $(DEST)/$(TARGETNAME)
