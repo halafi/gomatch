@@ -1,5 +1,5 @@
 DEST := /usr/local/bin
-TARGETNAME := logmatch
+TARGETNAME := gomatch
 
 all: dependencies build
 

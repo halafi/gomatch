@@ -1,4 +1,4 @@
-Logmatch
+Gomatch
 ==================
 Search for multiple patterns/events in single line log records and convert them into desired data format (JSON, XML). 
 
@@ -16,6 +16,6 @@ Installation - Windows
 1. Download or clone this repository.
 2. If you don't have Go installed, get it from <a href="https://code.google.com/p/go/downloads/list">here</a>.
 3. Open a command-line and navigate to the root of this tool directory.
-4. Use <code>go build -o logmatch.exe .\src</code> to create a stand-alone executable.
+4. Use <code>go build -o gomatch.exe .\src</code> to create a stand-alone executable.
 
 By <a href="mailto:xgam33@gmail.com">Filip Halas</a>.
