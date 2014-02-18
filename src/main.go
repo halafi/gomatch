@@ -96,7 +96,7 @@ func main() {
 			for i := range lines {
 				match := getMatch(lines[i], patternsArr, tokens, tree, finalFor)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match, *outputFormat) + "\r\n")
+					writeFile(outputFile, convertMatch(match) + "\r\n")
 				} else {
 					writeFile(unmatchedOutputFile, lines[i] + "\r\n")
 				}
@@ -135,7 +135,7 @@ func main() {
 			if eof {
 				match := getMatch(logLine, patternsArr, tokens, tree, finalFor)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match, *outputFormat) + "\r\n")
+					writeFile(outputFile, convertMatch(match) + "\r\n")
 				} else {
 					writeFile(unmatchedOutputFile, logLine + "\r\n")
 				}
@@ -143,7 +143,7 @@ func main() {
 			} else {
 				match := getMatch(logLine, patternsArr, tokens, tree, finalFor)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match, *outputFormat) + "\r\n")
+					writeFile(outputFile, convertMatch(match) + "\r\n")
 				} else {
 					writeFile(unmatchedOutputFile, logLine + "\r\n")
 				}
@@ -155,19 +155,19 @@ func main() {
 }
 
 // convertMatch returns the desired output for a given match.
-func convertMatch(match Match, output string) string {
-	if output == "JSON" || output == "json" {
+func convertMatch(match Match) string {
+	if *outputFormat == "JSON" || *outputFormat == "json" {
 		return getJSON(match)
 	}
-	if output == "XML" || output == "xml" {
+	if *outputFormat == "XML" || *outputFormat == "xml" {
 		return getXML(match)
 	}
-	if output == "name" {
+	if *outputFormat == "name" {
 		return match.Type
 	}
-	if output == "none" {
+	if *outputFormat == "none" {
 		return ""
 	}
-	log.Fatal("unknown output format: \"", output+"\"")
+	log.Fatal("unknown output format: \"", *outputFormat+"\"")
 	return ""
 }

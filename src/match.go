@@ -19,7 +19,7 @@ func getMatch(logLine string, patterns []string, tokens map[string]string, tree 
 	logWords := logLineSplit(logLine)
 	for i := range logWords {
 		transitionTokens := getTransitionTokens(current, tree)
-		validTokens := make([]string, 0)
+		validTokens := 0
 		if getTransition(current, logWords[i], tree) != -1 {
 			// we move by word
 			current = getTransition(current, logWords[i], tree)
@@ -32,26 +32,29 @@ func getMatch(logLine string, patterns []string, tokens map[string]string, tree 
 				case 2:
 					{ // token + name, i.e. <IP:ipAddress>
 						if matchToken(tokens, tokenWithoutBracketsSplit[0], logWords[i]) {
-							validTokens = append(validTokens, transitionTokens[t])
+							validTokens++
+							current = getTransition(current, transitionTokens[t], tree)
+							matchBody = stringArraySizeUp(matchBody, 2)
+							matchBody[len(matchBody)-2] = tokenWithoutBracketsSplit[1]
+							matchBody[len(matchBody)-1] = logWords[i]
 						}
 					}
 				case 1:
 					{ // token only, i.e.: <IP>
 						if matchToken(tokens, tokenWithoutBrackets, logWords[i]) {
-							validTokens = append(validTokens, transitionTokens[t])
+							validTokens++
+							current = getTransition(current, transitionTokens[t], tree)
+							matchBody = stringArraySizeUp(matchBody, 2)
+							matchBody[len(matchBody)-2] = tokenWithoutBrackets
+							matchBody[len(matchBody)-1] = logWords[i]
 						}
 					}
 				default:
 					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
 				}
 			}
-			if len(validTokens) > 1 {
-				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nword: \"" + logWords[i] + "\"")
-			} else if len(validTokens) == 1 { // we move by regex
-				current = getTransition(current, validTokens[0], tree)
-				matchBody = stringArraySizeUp(matchBody, 2)
-				matchBody[len(matchBody)-2] = validTokens[0]
-				matchBody[len(matchBody)-1] = logWords[i]
+			if validTokens > 1 {
+				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nfor word: \"" + logWords[i] + "\"")
 			}
 		} else {
 			break
