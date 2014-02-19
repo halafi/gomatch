@@ -17,12 +17,12 @@ func logLineSplit(line string) []string {
 	wordIndex := 0
 	chars := []uint8(line)
 	for c := range chars {
-		if chars[c] == ' ' {
+		if chars[c] == ' ' && c < len(chars)-1 {
 			if words[wordIndex] != "" {
 				words = stringArraySizeUp(words, 1)
 				wordIndex++
 			}
-		} else {
+		} else if chars[c] != ' ' {
 			words[wordIndex] = words[wordIndex] + string(chars[c])
 		}
 	}
