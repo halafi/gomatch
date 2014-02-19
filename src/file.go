@@ -22,17 +22,15 @@ func openFile(filePath string) *bufio.Reader {
 // readLine reads a single text line using the given reader, returns the
 // line and true when EOF is reached, line and false otherwise.
 func readLine(reader *bufio.Reader) (string, bool) {
-	for {
-		line, _, err := reader.ReadLine()
-		if err != nil {
-			if err == io.EOF {
-				return string(line), true
-			} else {
-				log.Fatal(err)
-			}
+	line, _, err := reader.ReadLine()
+	if err != nil {
+		if err == io.EOF {
+			return string(line), true
+		} else {
+			log.Fatal(err)
 		}
-		return string(line), false
 	}
+	return string(line), false
 }
 
 // createFile creates a single file at given filePath, returns pointer
