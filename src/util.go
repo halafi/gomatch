@@ -4,6 +4,7 @@ package main
 import (
 	"regexp"
 	"strings"
+	"log"
 )
 
 // logLineSplit splits a single log line string into words, words can
@@ -31,6 +32,9 @@ func logLineSplit(line string) []string {
 
 // matchToken returns true if a word matches token, false otherwise.
 func matchToken(tokens map[string]string, token, word string) bool {
+	if tokens[token] == "" {
+		log.Fatal("token undefined: \""+token+"\"")
+	}
 	regex := regexp.MustCompile(tokens[token])
 	if regex.MatchString(word) {
 		return true
