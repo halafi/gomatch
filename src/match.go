@@ -3,7 +3,6 @@ package main
 
 import (
 	"log"
-	"strings"
 	"regexp"
 )
 
@@ -16,48 +15,29 @@ type Match struct {
 }
 
 // getMatch returns match for a given log line.
-func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Regexp, tree map[int]map[string]int, finalFor []int) Match {
+func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Regexp, trie map[int]map[Token]int, finalFor []int) Match {
 	match, matchBody := Match{}, make([]string, 0)
 	current := 0
 	logWords := logLineSplit(logLine)
 	for i := range logWords {
-		transitionTokens := getTransitionTokens(current, tree)
+		transitionTokens := getTransitionRegexes(current, trie)
 		validTokens := 0
-		if getTransition(current, logWords[i], tree) != -1 {
+		if getTransition(current, Token{false, logWords[i], ""}, trie) != -1 {
 			// we move by word
-			current = getTransition(current, logWords[i], tree)
+			current = getTransition(current, Token{false, logWords[i], ""}, trie)
 		} else if len(transitionTokens) > 0 {
 			// we can move by some regex
 			for t := range transitionTokens {
-				tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
-				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-				switch len(tokenWithoutBracketsSplit) {
-				case 2:
-					{ // token + name, i.e. <IP:ipAddress>
-						if matchToken(tokens, tokenWithoutBracketsSplit[0], logWords[i]) {
-							validTokens++
-							current = getTransition(current, transitionTokens[t], tree)
-							matchBody = stringArraySizeUp(matchBody, 2)
-							matchBody[len(matchBody)-2] = tokenWithoutBracketsSplit[1]
-							matchBody[len(matchBody)-1] = logWords[i]
-						}
-					}
-				case 1:
-					{ // token only, i.e.: <IP>
-						if matchToken(tokens, tokenWithoutBrackets, logWords[i]) {
-							validTokens++
-							current = getTransition(current, transitionTokens[t], tree)
-							matchBody = stringArraySizeUp(matchBody, 2)
-							matchBody[len(matchBody)-2] = tokenWithoutBrackets
-							matchBody[len(matchBody)-1] = logWords[i]
-						}
-					}
-				default:
-					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
+				if matchToken(tokens, transitionTokens[t].Value, logWords[i]) {
+					validTokens++
+					current = getTransition(current, transitionTokens[t], trie)
+					matchBody = stringArraySizeUp(matchBody, 2)
+					matchBody[len(matchBody)-2] = transitionTokens[t].OutputName
+					matchBody[len(matchBody)-1] = logWords[i]
 				}
 			}
 			if validTokens > 1 {
-				log.Fatal("multiple acceptable tokens for one word at log line:\n" + logLine + "\nfor word: \"" + logWords[i] + "\"")
+				log.Fatal("multiple acceptable tokens for one word: \"" + logWords[i] + "\"")
 			}
 		} else {
 			break

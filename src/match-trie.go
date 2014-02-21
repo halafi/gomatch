@@ -3,84 +3,54 @@ package main
 
 import (
 	"log"
-	"strings"
 	"regexp"
 )
 
 // createNewTrie initializes a new prefix tree. State is the number of
 // first state to be created, i is the number of first pattern to be
 // added.
-func createNewTrie() (trie map[int]map[string]int, finalFor []int, state int, i int) {
-	return make(map[int]map[string]int), make([]int, 1), 1, 1
+func createNewTrie() (trie map[int]map[Token]int, finalFor []int, state int, i int) {
+	return make(map[int]map[Token]int), make([]int, 1), 1, 1
 }
 
 // appendPattern creates all the necessary transitions for a single
 // pattern to the given trie.
-func appendPattern(tokens map[string]*regexp.Regexp, pattern Pattern, trie map[int]map[string]int, finalFor []int, state int, i int) ([]int, int, int) {
-	words := pattern.Body
+func appendPattern(tokens map[string]*regexp.Regexp, pattern Pattern, trie map[int]map[Token]int, finalFor []int, state int, i int) ([]int, int, int) {
 	current := 0
 	j := 0
-	for j < len(words) && getTransition(current, words[j], trie) != -1 {
-		current = getTransition(current, words[j], trie)
+	for j < len(pattern.Body) && getTransition(current, pattern.Body[j], trie) != -1 {
+		current = getTransition(current, pattern.Body[j], trie)
 		j++
 	}
-	for j < len(words) {
+	for j < len(pattern.Body) {
 		finalFor = intArraySizeUp(finalFor, 1)
 		finalFor[state] = 0
-		if len(getTransitionWords(current, trie)) > 0 && words[j][0] == '<' && words[j][len(words[j])-1] == '>' {
-			// conflict check when adding regex transition
+		
+		// conflict check when adding regex transition or word transition
+		if len(getTransitionWords(current, trie)) > 0 && pattern.Body[j].IsRegex {
+			// conflict check 
 			transitionWords := getTransitionWords(current, trie)
 			for w := range transitionWords {
-				tokenWithoutBrackets := cutWord(1, len(words[j])-2, words[j])
-				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-				switch len(tokenWithoutBracketsSplit) {
-				case 2:
-					{
-						if matchToken(tokens, tokenWithoutBracketsSplit[0], transitionWords[w]) {
-							log.Fatal("pattern conflict: token \"" + words[j] + "\" matches word \"" + transitionWords[w] + "\"")
-						}
-					}
-				case 1:
-					{
-						if matchToken(tokens, tokenWithoutBrackets, transitionWords[w]) {
-							log.Fatal("pattern conflict: token \"" + words[j] + "\" matches word \"" + transitionWords[w] + "\"")
-						}
-					}
-				default:
-					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
+				if matchToken(tokens, pattern.Body[j].Value, transitionWords[w].Value) {
+					log.Fatal("pattern conflict: token \"" + pattern.Body[j].Value + "\" matches word \"" + transitionWords[w].Value + "\"")
 				}
 			}
-		} else if len(getTransitionTokens(current, trie)) > 0 && words[j][0] != '<' && words[j][len(words[j])-1] != '>' {
-			// conflict check when adding word transition
-			transitionTokens := getTransitionTokens(current, trie)
+		} else if len(getTransitionRegexes(current, trie)) > 0 && !pattern.Body[j].IsRegex {
+			transitionTokens := getTransitionRegexes(current, trie)
 			for t := range transitionTokens {
-				tokenWithoutBrackets := cutWord(1, len(transitionTokens[t])-2, transitionTokens[t])
-				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-				switch len(tokenWithoutBracketsSplit) {
-				case 2:
-					{
-						if matchToken(tokens, tokenWithoutBracketsSplit[0], words[j]) {
-							log.Fatal("pattern conflict: token \"" + transitionTokens[t] + "\" matches word \"" + words[j] + "\"")
-						}
-					}
-				case 1:
-					{
-						if matchToken(tokens, tokenWithoutBrackets, words[j]) {
-							log.Fatal("pattern conflict: token \"" + transitionTokens[t] + "\" matches word \"" + words[j] + "\"")
-						}
-					}
-				default:
-					log.Fatal("invalid token definition: \"<" + tokenWithoutBrackets + ">\"")
+				if matchToken(tokens, transitionTokens[t].Value, pattern.Body[j].Value) {
+					log.Fatal("pattern conflict: token \"" + transitionTokens[t].Value + "\" matches word \"" + pattern.Body[j].Value + "\"")
 				}
 			}
 		}
-		createTransition(current, words[j], state, trie)
+		
+		createTransition(current, pattern.Body[j], state, trie)
 		current = state
 		j++
 		state++
 	}
 	if finalFor[current] != 0 {
-		log.Fatal("duplicate pattern detected: \"", pattern.Name, "##", pattern.Body, "\"")
+		log.Fatal("duplicate pattern detected: \"", pattern.Name, "\"")
 	} else {
 		// mark current state as terminal for pattern number i
 		finalFor[current] = i
