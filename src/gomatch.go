@@ -55,12 +55,11 @@ func main() {
 				patternReader = openFile(*patternsIn)
 				line, eof := readLine(patternReader)
 				if !eof {
-					pattern := checkPattern(line)
-					if pattern != "" && !contains(patternsArr, pattern) {
-						log.Printf("New event: \"%s\".", pattern)
-						patternsArr = stringArraySizeUp(patternsArr, 1)
-						patternsArr[len(patternsArr)-1] = pattern
-						finalFor, state, i = appendPattern(tokens, pattern, trie, finalFor, state, i)
+					oldLen := len(patternsArr)
+					patternsArr = addPattern(line, patternsArr)
+					if len(patternsArr) > oldLen {
+						finalFor, state, i = appendPattern(tokens, patternsArr[len(patternsArr)-1], trie, finalFor, state, i)
+						log.Printf("New event: \"%s\".", patternsArr[len(patternsArr)-1].Name)
 					}
 					lastModified = patternsFileInfo.ModTime()
 				}
@@ -93,12 +92,11 @@ func main() {
 				patternReader = openFile(*patternsIn)
 				line, eof := readLine(patternReader)
 				if !eof {
-					pattern := checkPattern(line)
-					if pattern != "" && !contains(patternsArr, pattern) {
-						log.Printf("New event: \"%s\".", pattern)
-						patternsArr = stringArraySizeUp(patternsArr, 1)
-						patternsArr[len(patternsArr)-1] = pattern
-						finalFor, state, i = appendPattern(tokens, pattern, trie, finalFor, state, i)
+					oldLen := len(patternsArr)
+					patternsArr = addPattern(line, patternsArr)
+					if len(patternsArr) > oldLen {
+						finalFor, state, i = appendPattern(tokens, patternsArr[len(patternsArr)-1], trie, finalFor, state, i)
+						log.Printf("New event: \"%s\".", patternsArr[len(patternsArr)-1].Name)
 					}
 					lastModified = patternsFileInfo.ModTime()
 				}

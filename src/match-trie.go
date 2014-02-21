@@ -16,9 +16,8 @@ func createNewTrie() (trie map[int]map[string]int, finalFor []int, state int, i 
 
 // appendPattern creates all the necessary transitions for a single
 // pattern to the given trie.
-func appendPattern(tokens map[string]*regexp.Regexp, pattern string, trie map[int]map[string]int, finalFor []int, state int, i int) ([]int, int, int) {
-	patternsNameSplit := separatePatternFromName(pattern)
-	words := strings.Split(patternsNameSplit[1], " ")
+func appendPattern(tokens map[string]*regexp.Regexp, pattern Pattern, trie map[int]map[string]int, finalFor []int, state int, i int) ([]int, int, int) {
+	words := pattern.Body
 	current := 0
 	j := 0
 	for j < len(words) && getTransition(current, words[j], trie) != -1 {
@@ -81,7 +80,7 @@ func appendPattern(tokens map[string]*regexp.Regexp, pattern string, trie map[in
 		state++
 	}
 	if finalFor[current] != 0 {
-		log.Fatal("duplicate pattern detected: \"", pattern, "\"")
+		log.Fatal("duplicate pattern detected: \"", pattern.Name, "##", pattern.Body, "\"")
 	} else {
 		// mark current state as terminal for pattern number i
 		finalFor[current] = i

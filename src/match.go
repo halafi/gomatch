@@ -16,7 +16,7 @@ type Match struct {
 }
 
 // getMatch returns match for a given log line.
-func getMatch(logLine string, patterns []string, tokens map[string]*regexp.Regexp, tree map[int]map[string]int, finalFor []int) Match {
+func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Regexp, tree map[int]map[string]int, finalFor []int) Match {
 	match, matchBody := Match{}, make([]string, 0)
 	current := 0
 	logWords := logLineSplit(logLine)
@@ -64,11 +64,10 @@ func getMatch(logLine string, patterns []string, tokens map[string]*regexp.Regex
 		}
 		// leaf node - got match
 		if finalFor[current] != 0 && i == len(logWords)-1 {
-			patternSplit := separatePatternFromName(patterns[finalFor[current]-1])
 			if len(matchBody) > 0 {
-				match = Match{patternSplit[0], matchBody}
+				match = Match{patterns[finalFor[current]-1].Name, matchBody}
 			} else {
-				match = Match{patternSplit[0], nil}
+				match = Match{patterns[finalFor[current]-1].Name, nil}
 			}
 		}
 	}
