@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 	"strings"
+	"regexp"
 )
 
 // createNewTrie initializes a new prefix tree. State is the number of
@@ -15,7 +16,7 @@ func createNewTrie() (trie map[int]map[string]int, finalFor []int, state int, i 
 
 // appendPattern creates all the necessary transitions for a single
 // pattern to the given trie.
-func appendPattern(tokens map[string]string, pattern string, trie map[int]map[string]int, finalFor []int, state int, i int) ([]int, int, int) {
+func appendPattern(tokens map[string]*regexp.Regexp, pattern string, trie map[int]map[string]int, finalFor []int, state int, i int) ([]int, int, int) {
 	patternsNameSplit := separatePatternFromName(pattern)
 	words := strings.Split(patternsNameSplit[1], " ")
 	current := 0

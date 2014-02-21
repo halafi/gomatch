@@ -1,8 +1,11 @@
 // match.go provides the core for match handling.
 package main
 
-import "log"
-import "strings"
+import (
+	"log"
+	"strings"
+	"regexp"
+)
 
 // Match is the representation of a single event matched.
 // Match consists of: type (name), and an array of matched token(s)
@@ -13,7 +16,7 @@ type Match struct {
 }
 
 // getMatch returns match for a given log line.
-func getMatch(logLine string, patterns []string, tokens map[string]string, tree map[int]map[string]int, finalFor []int) Match {
+func getMatch(logLine string, patterns []string, tokens map[string]*regexp.Regexp, tree map[int]map[string]int, finalFor []int) Match {
 	match, matchBody := Match{}, make([]string, 0)
 	current := 0
 	logWords := logLineSplit(logLine)

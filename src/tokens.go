@@ -4,12 +4,13 @@ package main
 import (
 	"log"
 	"strings"
+	"regexp"
 )
 
 // readTokens reasds all tokens at given filePath into map.
-func readTokens(filePath string) map[string]string {
+func readTokens(filePath string) map[string]*regexp.Regexp {
 	tokenReader := openFile(filePath)
-	tokens := make(map[string]string)
+	tokens := make(map[string]*regexp.Regexp)
 	for {
 		line, eof := readLine(tokenReader)
 		if eof {
@@ -39,7 +40,11 @@ func checkToken(token string) string {
 
 // addToken takes a token line and adds it to a given map (key = token
 // name; value = regular expression for that token).
-func addToken(token string, tokens map[string]string) {
+func addToken(token string, tokens map[string]*regexp.Regexp) {
 	tokenSplit := strings.Split(token, " ")
-	tokens[tokenSplit[0]] = tokenSplit[1]
+	compiled, err := regexp.Compile(tokenSplit[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+	tokens[tokenSplit[0]] = compiled
 }

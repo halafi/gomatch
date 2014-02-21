@@ -31,15 +31,11 @@ func logLineSplit(line string) []string {
 }
 
 // matchToken returns true if a word matches token, false otherwise.
-func matchToken(tokens map[string]string, token, word string) bool {
-	if tokens[token] == "" {
-		log.Fatal("token undefined: \""+token+"\"")
+func matchToken(tokens map[string]*regexp.Regexp, token, word string) bool {
+	if tokens[token] == nil {
+		log.Fatal("token: ", token, " undefined")
 	}
-	regex := regexp.MustCompile(tokens[token])
-	if regex.MatchString(word) {
-		return true
-	}
-	return false
+	return tokens[token].MatchString(word)
 }
 
 // cutWord for a given word performs a cut (both prefix and sufix).
