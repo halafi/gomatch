@@ -6,6 +6,23 @@ import (
 	"strings"
 )
 
+// readTokens reasds all tokens at given filePath into map.
+func readTokens(filePath string) map[string]string {
+	tokenReader := openFile(filePath)
+	tokens := make(map[string]string)
+	for {
+		line, eof := readLine(tokenReader)
+		if eof {
+			break
+		}
+		token := checkToken(line)
+		if token != "" {
+			addToken(token, tokens)
+		}
+	}
+	return tokens
+}
+
 // checkToken validates the given token line, if it passes the token
 // line is returned.
 // If empty line or comment is encountered empty string is returned.

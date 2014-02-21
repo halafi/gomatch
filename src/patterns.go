@@ -6,6 +6,25 @@ import (
 	"strings"
 )
 
+// readPatterns reads all patterns at given filePath into an array of 
+// strings.
+func readPatterns(filePath string) []string {
+	patternReader := openFile(filePath)
+	patternsArr := make([]string, 0)
+	for {
+		line, eof := readLine(patternReader)
+		if eof {
+			break
+		}
+		pattern := checkPattern(line)
+		if pattern != "" {
+			patternsArr = stringArraySizeUp(patternsArr, 1)
+			patternsArr[len(patternsArr)-1] = pattern
+		}
+	}
+	return patternsArr
+}
+
 // checkPattern validates given pattern line, if it passes the pattern
 // line is returned.
 // If empty line or comment is encountered empty string is returned.

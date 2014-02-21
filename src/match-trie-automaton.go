@@ -1,6 +1,6 @@
 // match-trie-automaton.go provides funcions for handling an automaton
-// with stored transitions in a double map, transition from one state to
-// another is over string.
+// (finite state machine) with stored transitions in a double map, 
+// transition from one state to another is over string.
 package main
 
 // getTransition returns an ending state for transition function

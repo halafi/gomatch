@@ -16,60 +16,34 @@ var noMatchOut = flag.String("u", "no_match.log", "Unmatched data output.")
 var outputFormat = flag.String("f", "json", "Matched data format. Supported: json, xml, name, none.")
 var inputSocket = flag.String("s", "none", "Reading from Socket.")
 
-// main starts when the program is executed.
+// main function starts when the program is executed.
 func main() {
-	// parsing of command-line flags.
 	flag.Parse()
-	// token reading
-	tokenReader := openFile(*tokensIn)
-	tokens := make(map[string]string)
-	for {
-		line, eof := readLine(tokenReader)
-		if eof {
-			break
-		}
-		token := checkToken(line)
-		if token != "" {
-			addToken(token, tokens)
-		}
+	
+	tokens := readTokens(*tokensIn)
+	
+	trie, finalFor, state, i := createNewTrie()
+	
+	patternsArr := readPatterns(*patternsIn)
+	for p := range patternsArr {
+		finalFor, state, i = appendPattern(tokens, patternsArr[p], trie, finalFor, state, i)
 	}
-	// initial pattern reading and trie construction
-	tree, finalFor, state, i := createNewTrie()
+
+	outputFile := createFile(*output) // file for matched output
+	unmatchedOutputFile := createFile(*noMatchOut) // file for nomatch
+	
+	// for dynamic pattern insert, stores patterns file info for later
 	patternReader := openFile(*patternsIn)
-	patternsArr := make([]string, 0)
-	for {
-		line, eof := readLine(patternReader)
-		if eof {
-			break
-		}
-		pattern := checkPattern(line)
-		if pattern != "" {
-			patternsArr = stringArraySizeUp(patternsArr, 1)
-			patternsArr[len(patternsArr)-1] = pattern
-			tree, finalFor, state, i = appendPattern(tokens, pattern, tree, finalFor, state, i)
-		}
-	}
-	// store patterns file info for later use
 	patternsFileInfo, err := os.Stat(*patternsIn)
 	if err != nil {
 		log.Fatal(err)
 	}
 	lastModified := patternsFileInfo.ModTime()
-	// open files for output
-	outputFile := createFile(*output)
-	unmatchedOutputFile := createFile(*noMatchOut)
 
 	// reading of input lines from either socket or file, matching them
 	// and writing them to output until EOF
 	if *inputSocket != "none" {
-		l := startServer(*inputSocket)
-		con := openSocket(*inputSocket)
-		write(con, "2013-02-26T12:24:05.425+00:00 WARN org.ssh.ServerImpl - Failed password for xtovarn from 147.251.49.42 port 46177 #1#")
-		fd, err := l.Accept()
-		if err != nil {
-			log.Println("accept error", err)
-		}
-		go echoServer(fd) 
+		connection := openSocket(*inputSocket)
 		// do until eof
 		for {
 			// check for a new pattern in patterns file at first line
@@ -86,15 +60,15 @@ func main() {
 						log.Printf("New event: \"%s\".", pattern)
 						patternsArr = stringArraySizeUp(patternsArr, 1)
 						patternsArr[len(patternsArr)-1] = pattern
-						tree, finalFor, state, i = appendPattern(tokens, pattern, tree, finalFor, state, i)
+						finalFor, state, i = appendPattern(tokens, pattern, trie, finalFor, state, i)
 					}
 					lastModified = patternsFileInfo.ModTime()
 				}
 			}
 			// read everything from socket
-			lines, eof := readFully(con)
+			lines, eof := readFully(connection)
 			for i := range lines {
-				match := getMatch(lines[i], patternsArr, tokens, tree, finalFor)
+				match := getMatch(lines[i], patternsArr, tokens, trie, finalFor)
 				if match.Type != "" {
 					writeFile(outputFile, convertMatch(match) + "\r\n")
 				} else {
@@ -105,8 +79,7 @@ func main() {
 				break
 			}
 		}
-		con.Close()
-		 closeServer(l)
+		connection.Close()
 	} else {
 		inputReader := openFile(*input)
 		// do until eof
@@ -125,7 +98,7 @@ func main() {
 						log.Printf("New event: \"%s\".", pattern)
 						patternsArr = stringArraySizeUp(patternsArr, 1)
 						patternsArr[len(patternsArr)-1] = pattern
-						tree, finalFor, state, i = appendPattern(tokens, pattern, tree, finalFor, state, i)
+						finalFor, state, i = appendPattern(tokens, pattern, trie, finalFor, state, i)
 					}
 					lastModified = patternsFileInfo.ModTime()
 				}
@@ -133,7 +106,7 @@ func main() {
 			// read log line
 			logLine, eof := readLine(inputReader)
 			if eof {
-				match := getMatch(logLine, patternsArr, tokens, tree, finalFor)
+				match := getMatch(logLine, patternsArr, tokens, trie, finalFor)
 				if match.Type != "" {
 					writeFile(outputFile, convertMatch(match) + "\r\n")
 				} else {
@@ -141,7 +114,7 @@ func main() {
 				}
 				break
 			} else {
-				match := getMatch(logLine, patternsArr, tokens, tree, finalFor)
+				match := getMatch(logLine, patternsArr, tokens, trie, finalFor)
 				if match.Type != "" {
 					writeFile(outputFile, convertMatch(match) + "\r\n")
 				} else {
