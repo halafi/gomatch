@@ -13,8 +13,7 @@ type Pattern struct {
 	Body []Token
 }
 
-// Token is the representation of a single thing to match.
-// Can be regex or a single word.
+// Token represents a single thing to match. Can be regex or a word.
 type Token struct {
 	IsRegex bool
 	Value string // i.e.: IP

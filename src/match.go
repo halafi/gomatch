@@ -2,8 +2,8 @@
 package main
 
 import (
-	"log"
 	"regexp"
+	"log"
 )
 
 // Match is the representation of a single event matched.
@@ -16,24 +16,27 @@ type Match struct {
 
 // getMatch returns match for a given log line.
 func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Regexp, trie map[int]map[Token]int, finalFor []int) Match {
-	match, matchBody := Match{}, make([]string, 0)
+	match := Match{}
+	matchBody := make([]string, 0)
+	
 	current := 0
 	logWords := logLineSplit(logLine)
+	
 	for i := range logWords {
 		transitionTokens := getTransitionRegexes(current, trie)
 		validTokens := 0
+		
 		if getTransition(current, Token{false, logWords[i], ""}, trie) != -1 {
 			// we move by word
 			current = getTransition(current, Token{false, logWords[i], ""}, trie)
 		} else if len(transitionTokens) > 0 {
 			// we can move by some regex
 			for t := range transitionTokens {
-				if matchToken(tokens, transitionTokens[t].Value, logWords[i]) {
+				if matchToken(tokens, transitionTokens[t], Token{false, logWords[i], ""}) {
 					validTokens++
 					current = getTransition(current, transitionTokens[t], trie)
-					matchBody = stringArraySizeUp(matchBody, 2)
-					matchBody[len(matchBody)-2] = transitionTokens[t].OutputName
-					matchBody[len(matchBody)-1] = logWords[i]
+					matchBody = append(matchBody, transitionTokens[t].OutputName)
+					matchBody = append(matchBody, logWords[i])
 				}
 			}
 			if validTokens > 1 {
@@ -42,7 +45,8 @@ func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Rege
 		} else {
 			break
 		}
-		// leaf node - got match
+		
+		// leaf node (ending state) -> got match
 		if finalFor[current] != 0 && i == len(logWords)-1 {
 			if len(matchBody) > 0 {
 				match = Match{patterns[finalFor[current]-1].Name, matchBody}
@@ -52,4 +56,27 @@ func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Rege
 		}
 	}
 	return match
+}
+
+// logLineSplit splits a single log line string into words, words can
+// only be separated by any ammount of spaces.
+func logLineSplit(line string) []string {
+	words := make([]string, 0)
+	if line == "" {
+		return words
+	}
+	words = append(words, "")
+	wordIndex := 0
+	chars := []uint8(line)
+	for c := range chars {
+		if chars[c] == ' ' && c < len(chars)-1 {
+			if words[wordIndex] != "" {
+				words = append(words, "")
+				wordIndex++
+			}
+		} else if chars[c] != ' ' {
+			words[wordIndex] = words[wordIndex] + string(chars[c])
+		}
+	}
+	return words
 }

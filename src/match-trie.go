@@ -6,9 +6,9 @@ import (
 	"regexp"
 )
 
-// createNewTrie initializes a new prefix tree. State is the number of
-// first state to be created, i is the number of first pattern to be
-// added.
+// createNewTrie initializes a new prefix tree.
+// State is the number of first state to be created, i is the number of
+// first pattern to be added.
 func createNewTrie() (trie map[int]map[Token]int, finalFor []int, state int, i int) {
 	return make(map[int]map[Token]int), make([]int, 1), 1, 1
 }
@@ -18,28 +18,30 @@ func createNewTrie() (trie map[int]map[Token]int, finalFor []int, state int, i i
 func appendPattern(tokens map[string]*regexp.Regexp, pattern Pattern, trie map[int]map[Token]int, finalFor []int, state int, i int) ([]int, int, int) {
 	current := 0
 	j := 0
+	
+	// read current pattern for as long as there are transitions
 	for j < len(pattern.Body) && getTransition(current, pattern.Body[j], trie) != -1 {
 		current = getTransition(current, pattern.Body[j], trie)
 		j++
 	}
+	
+	// create missing transitions
 	for j < len(pattern.Body) {
-		finalFor = intArraySizeUp(finalFor, 1)
-		finalFor[state] = 0
+		// set current state as terminal for nothing
+		finalFor = append(finalFor, 0) 
 		
-		// conflict check when adding regex transition or word transition
-		if len(getTransitionWords(current, trie)) > 0 && pattern.Body[j].IsRegex {
-			// conflict check 
-			transitionWords := getTransitionWords(current, trie)
-			for w := range transitionWords {
-				if matchToken(tokens, pattern.Body[j].Value, transitionWords[w].Value) {
-					log.Fatal("pattern conflict: token \"" + pattern.Body[j].Value + "\" matches word \"" + transitionWords[w].Value + "\"")
-				}
-			}
-		} else if len(getTransitionRegexes(current, trie)) > 0 && !pattern.Body[j].IsRegex {
-			transitionTokens := getTransitionRegexes(current, trie)
-			for t := range transitionTokens {
-				if matchToken(tokens, transitionTokens[t].Value, pattern.Body[j].Value) {
-					log.Fatal("pattern conflict: token \"" + transitionTokens[t].Value + "\" matches word \"" + pattern.Body[j].Value + "\"")
+		// iterate over all current transitions and check for conflicts
+		transitions := getAllTransitions(current, trie)
+		if len(transitions) > 0 {
+			for t := range transitions {
+				if transitions[t].IsRegex && !pattern.Body[j].IsRegex {
+					if matchToken(tokens, transitions[t], pattern.Body[j]) {
+						log.Fatal("pattern conflict: <" + transitions[t].Value + "> matches word " + pattern.Body[j].Value)
+					}
+				} else if !transitions[t].IsRegex && pattern.Body[j].IsRegex {
+					if matchToken(tokens, pattern.Body[j], transitions[t]) {
+						log.Fatal("pattern conflict: <" + pattern.Body[j].Value + "> matches word " + transitions[t].Value)
+					}
 				}
 			}
 		}
@@ -49,12 +51,12 @@ func appendPattern(tokens map[string]*regexp.Regexp, pattern Pattern, trie map[i
 		j++
 		state++
 	}
+	
 	if finalFor[current] != 0 {
-		log.Fatal("duplicate pattern detected: \"", pattern.Name, "\"")
-	} else {
-		// mark current state as terminal for pattern number i
+		log.Fatal("duplicate pattern detected: ", pattern.Name)
+	} else { // set current state as terminal for pattern number i
 		finalFor[current] = i
 	}
-	i++ // increment pattern number
-	return finalFor, state, i
+	
+	return finalFor, state, i+1 // increment pattern number and return
 }

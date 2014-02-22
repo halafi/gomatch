@@ -2,41 +2,8 @@
 package main
 
 import (
-	"regexp"
 	"strings"
-	"log"
 )
-
-// logLineSplit splits a single log line string into words, words can
-// only be separated by any ammount of spaces.
-func logLineSplit(line string) []string {
-	words := make([]string, 0)
-	if line == "" {
-		return words
-	}
-	words = stringArraySizeUp(words, 1)
-	wordIndex := 0
-	chars := []uint8(line)
-	for c := range chars {
-		if chars[c] == ' ' && c < len(chars)-1 {
-			if words[wordIndex] != "" {
-				words = stringArraySizeUp(words, 1)
-				wordIndex++
-			}
-		} else if chars[c] != ' ' {
-			words[wordIndex] = words[wordIndex] + string(chars[c])
-		}
-	}
-	return words
-}
-
-// matchToken returns true if a word matches token, false otherwise.
-func matchToken(tokens map[string]*regexp.Regexp, token, word string) bool {
-	if tokens[token] == nil {
-		log.Fatal("token: ", token, " undefined")
-	}
-	return tokens[token].MatchString(word)
-}
 
 // cutWord for a given word performs a cut (both prefix and sufix).
 func cutWord(begin, end int, word string) string {
@@ -73,20 +40,4 @@ func lineSplit(input string) []string {
 		inputSplit = strings.Split(input, "\r")
 	}
 	return inputSplit
-}
-
-// stringArraySizeUp creates a new string array with old values and
-// increased maximum size by the ammnout given.
-func stringArraySizeUp(array []string, c int) []string {
-	newA := make([]string, cap(array)+c)
-	copy(newA, array)
-	return newA
-}
-
-// intArraySizeUp creates a new int array with old values and increased
-// maximum size by the ammnout given.
-func intArraySizeUp(array []int, c int) []int {
-	newA := make([]int, cap(array)+c)
-	copy(newA, array)
-	return newA
 }

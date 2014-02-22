@@ -37,3 +37,11 @@ func readTokens(filePath string) map[string]*regexp.Regexp {
 	}
 	return tokens
 }
+
+// matchToken returns true if a word matches regex, false otherwise.
+func matchToken(tokens map[string]*regexp.Regexp, regex, word Token) bool {
+	if tokens[regex.Value] == nil {
+		log.Fatal("<", regex.Value, "> undefined")
+	}
+	return tokens[regex.Value].MatchString(word.Value)
+}
