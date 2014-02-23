@@ -1,38 +1,35 @@
-// match.go provides the core for match handling.
 package main
 
 import (
-	"regexp"
 	"log"
+	"regexp"
 )
 
 // Match is the representation of a single event matched.
-// Match consists of: type (name), and an array of matched token(s)
-// followed with value that was matched.
 type Match struct {
-	Type string
-	Body []string
+	Type string   // matched event name
+	Body []string // token name followed by matched value
 }
 
 // getMatch returns match for a given log line.
-func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Regexp, trie map[int]map[Token]int, finalFor []int) Match {
+func getMatch(logLine string, patterns []Pattern, regexes map[string]*regexp.Regexp, trie map[int]map[Token]int, finalFor []int) Match {
 	match := Match{}
 	matchBody := make([]string, 0)
-	
+
 	current := 0
 	logWords := logLineSplit(logLine)
-	
+
 	for i := range logWords {
 		transitionTokens := getTransitionRegexes(current, trie)
 		validTokens := 0
-		
+
 		if getTransition(current, Token{false, logWords[i], ""}, trie) != -1 {
 			// we move by word
 			current = getTransition(current, Token{false, logWords[i], ""}, trie)
 		} else if len(transitionTokens) > 0 {
 			// we can move by some regex
 			for t := range transitionTokens {
-				if matchToken(tokens, transitionTokens[t], Token{false, logWords[i], ""}) {
+				if regexes[transitionTokens[t].Value].MatchString(logWords[i]) {
 					validTokens++
 					current = getTransition(current, transitionTokens[t], trie)
 					matchBody = append(matchBody, transitionTokens[t].OutputName)
@@ -45,7 +42,7 @@ func getMatch(logLine string, patterns []Pattern, tokens map[string]*regexp.Rege
 		} else {
 			break
 		}
-		
+
 		// leaf node (ending state) -> got match
 		if finalFor[current] != 0 && i == len(logWords)-1 {
 			if len(matchBody) > 0 {

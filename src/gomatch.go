@@ -1,122 +1,92 @@
-// main.go - program core.
 package main
 
 import (
 	"flag"
 	"log"
 	"os"
+	"regexp"
+	"time"
 )
 
-// Command-line flags.
-var input = flag.String("i", "/dev/stdin", "Data input.")
-var patternsIn = flag.String("p", "Patterns", "Patterns input.")
-var tokensIn = flag.String("t", "Tokens", "Tokens input.")
-var output = flag.String("o", "/dev/stdout", "Matched data output.")
-var noMatchOut = flag.String("u", "no_match.log", "Unmatched data output.")
-var outputFormat = flag.String("f", "json", "Matched data format. Supported: json, xml, name, none.")
-var inputSocket = flag.String("s", "none", "Reading from Socket.")
+var (
+	// Command-line flags.
+	inputFilePath         = flag.String("i", "/dev/stdin", "Data input.")
+	inputSocketFilePath   = flag.String("s", "none", "Reading from Socket.")
+	patternsFilePath      = flag.String("p", "Patterns", "Patterns input.")
+	tokensFilePath        = flag.String("t", "Tokens", "Tokens input.")
+	outputFilePath        = flag.String("o", "/dev/stdout", "Matched data output.")
+	noMatchOutputFilePath = flag.String("u", "no_match.log", "Unmatched data output.")
+	matchedDataFormat     = flag.String("f", "json", "Matched data format. Supported: json, xml, name, none.")
 
-// main function starts when the program is executed.
+	// Shared variables between all goroutines.
+	trie          map[int]map[Token]int
+	finalFor      []int
+	state         int
+	patternNumber int
+	patterns      []Pattern
+	regexes       map[string]*regexp.Regexp
+)
+
+// Starts when the program is executed.
+// Performs parsing of flags, reading of both Tokens and Patterns file,
+// prefix tree construction and output files init.
+// Runs separate goroutine for watching file with patterns.
+// Reads input from either socket or input file/pipe.
+// For each input line performs matching and writing to output.
 func main() {
 	flag.Parse()
-	
-	tokens := readTokens(*tokensIn)
-	
-	trie, finalFor, state, i := createNewTrie()
-	
-	patternsArr := readPatterns(*patternsIn)
-	for p := range patternsArr {
-		finalFor, state, i = appendPattern(tokens, patternsArr[p], trie, finalFor, state, i)
+
+	regexes := parseTokensFile(*tokensFilePath)
+	trie, finalFor, state, patternNumber = initTrie()
+
+	patterns := readPatterns(*patternsFilePath, regexes)
+	for p := range patterns {
+		finalFor, state, patternNumber = appendPattern(regexes, patterns[p], trie, finalFor, state, patternNumber)
 	}
 
-	outputFile := createFile(*output) // file for matched output
-	unmatchedOutputFile := createFile(*noMatchOut) // file for nomatch
-	
-	// for dynamic pattern insert, stores patterns file info for later
-	patternReader := openFile(*patternsIn)
-	patternsFileInfo, err := os.Stat(*patternsIn)
-	if err != nil {
-		log.Fatal(err)
-	}
-	lastModified := patternsFileInfo.ModTime()
+	outputFile := createFile(*outputFilePath)
+	noMatchOutputFile := createFile(*noMatchOutputFilePath)
 
-	// reading of input lines from either socket or file, matching them
-	// and writing them to output until EOF
-	if *inputSocket != "none" {
-		connection := openSocket(*inputSocket)
-		// do until eof
+	go watchPatterns()
+
+	if *inputSocketFilePath != "none" {
+		connection := openSocket(*inputSocketFilePath)
+
 		for {
-			// check for a new pattern in patterns file at first line
-			patternsFileInfo, err = os.Stat(*patternsIn)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if lastModified != patternsFileInfo.ModTime() {
-				patternReader = openFile(*patternsIn)
-				line, eof := readLine(patternReader)
-				if !eof {
-					oldLen := len(patternsArr)
-					patternsArr = addPattern(line, patternsArr)
-					if len(patternsArr) > oldLen {
-						finalFor, state, i = appendPattern(tokens, patternsArr[len(patternsArr)-1], trie, finalFor, state, i)
-						log.Printf("New event: \"%s\".", patternsArr[len(patternsArr)-1].Name)
-					}
-					lastModified = patternsFileInfo.ModTime()
-				}
-			}
-			// read everything from socket
 			lines, eof := readFully(connection)
 			for i := range lines {
-				match := getMatch(lines[i], patternsArr, tokens, trie, finalFor)
+				match := getMatch(lines[i], patterns, regexes, trie, finalFor)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match) + "\r\n")
+					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
 				} else {
-					writeFile(unmatchedOutputFile, lines[i] + "\r\n")
+					writeFile(noMatchOutputFile, lines[i]+"\r\n")
 				}
 			}
 			if eof {
 				break
 			}
 		}
+
 		connection.Close()
 	} else {
-		inputReader := openFile(*input)
-		// do until eof
+		inputReader := openFile(*inputFilePath)
+
 		for {
-			// check for a new pattern in patterns file at first line
-			patternsFileInfo, err = os.Stat(*patternsIn)
-			if err != nil {
-				log.Fatal(err)
-			}
-			if lastModified != patternsFileInfo.ModTime() {
-				patternReader = openFile(*patternsIn)
-				line, eof := readLine(patternReader)
-				if !eof {
-					oldLen := len(patternsArr)
-					patternsArr = addPattern(line, patternsArr)
-					if len(patternsArr) > oldLen {
-						finalFor, state, i = appendPattern(tokens, patternsArr[len(patternsArr)-1], trie, finalFor, state, i)
-						log.Printf("New event: \"%s\".", patternsArr[len(patternsArr)-1].Name)
-					}
-					lastModified = patternsFileInfo.ModTime()
-				}
-			}
-			// read log line
 			logLine, eof := readLine(inputReader)
 			if eof {
-				match := getMatch(logLine, patternsArr, tokens, trie, finalFor)
+				match := getMatch(logLine, patterns, regexes, trie, finalFor)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match) + "\r\n")
+					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
 				} else {
-					writeFile(unmatchedOutputFile, logLine + "\r\n")
+					writeFile(noMatchOutputFile, logLine+"\r\n")
 				}
 				break
 			} else {
-				match := getMatch(logLine, patternsArr, tokens, trie, finalFor)
+				match := getMatch(logLine, patterns, regexes, trie, finalFor)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match) + "\r\n")
+					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
 				} else {
-					writeFile(unmatchedOutputFile, logLine + "\r\n")
+					writeFile(noMatchOutputFile, logLine+"\r\n")
 				}
 			}
 		}
@@ -125,20 +95,66 @@ func main() {
 	return
 }
 
-// convertMatch returns the desired output for a given match.
-func convertMatch(match Match) string {
-	if *outputFormat == "JSON" || *outputFormat == "json" {
-		return getJSON(match)
+// watchPatterns performs re-reading of the first line in Patterns file
+// (if it was recently modified).
+// Then tries to add that line as a new pattern to trie.
+func watchPatterns() {
+	patternsFileInfo, err := os.Stat(*patternsFilePath)
+	if err != nil {
+		log.Fatal("watchPatterns(): ", err)
 	}
-	if *outputFormat == "XML" || *outputFormat == "xml" {
-		return getXML(match)
+	patternsLastModTime := patternsFileInfo.ModTime()
+	for {
+		time.Sleep(1 * time.Second)
+
+		patternsFileInfo, err := os.Stat(*patternsFilePath)
+		if err != nil {
+			log.Println("watchPatterns(): ", err)
+			break
+		}
+
+		if patternsLastModTime != patternsFileInfo.ModTime() {
+			patternReader := openFile(*patternsFilePath)
+			line, eof := readLine(patternReader)
+			if !eof {
+				oldLen := len(patterns)
+				patterns = addPattern(line, patterns, regexes)
+
+				if len(patterns) > oldLen {
+					// pattern was successfuly created -> append to trie
+					finalFor, state, patternNumber = appendPattern(regexes, patterns[len(patterns)-1], trie, finalFor, state, patternNumber)
+					log.Println("new event: ", patterns[len(patterns)-1].Name)
+				}
+				patternsLastModTime = patternsFileInfo.ModTime()
+			}
+		}
 	}
-	if *outputFormat == "name" {
-		return match.Type
+}
+
+// convertMatch takes a single match and returns string representation
+// for the desired data format.
+func convertMatch(match Match, dataFormat string) string {
+	switch dataFormat {
+	case "json":
+		{
+			return getJSON(match)
+		}
+	case "xml":
+		{
+			return getXML(match)
+		}
+	case "name":
+		{
+			return match.Type
+		}
+	case "none":
+		{
+			return ""
+		}
+	default:
+		{
+			log.Fatal("unknown output format: \"", dataFormat+"\"")
+			return ""
+		}
 	}
-	if *outputFormat == "none" {
-		return ""
-	}
-	log.Fatal("unknown output format: \"", *outputFormat+"\"")
-	return ""
 }

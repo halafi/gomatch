@@ -1,47 +1,39 @@
-// tokens.go provides funcionality for handling file with tokens.
 package main
 
 import (
 	"log"
-	"strings"
 	"regexp"
+	"strings"
 )
 
-// addToken takes a token line, validates it and if it's ok, adds it to
-// a given map of token names and their compiled regullar expressions.
-func addToken(token string, tokens map[string]*regexp.Regexp) {
-	if token == "" || token[0] == '#' { // empty lines and comments
+// addRegex validates the given string. If it's ok, adds it into given
+// map of token referencing names and their compiled regexes.
+func addRegex(line string, regexes map[string]*regexp.Regexp) {
+	if line == "" || line[0] == '#' { // empty lines and comments
 		return
 	}
-	tokenSplit := strings.Split(token, " ") // separate name and regex
-	if len(tokenSplit) != 2 {
-		log.Fatal("invalid token definition: \"", token, "\"")
+	lineSplit := strings.Split(line, " ") // separate token name and regex
+	if len(lineSplit) != 2 {
+		log.Fatal("invalid token definition: \"", line, "\"")
 	}
-	compiled, err := regexp.Compile(tokenSplit[1])
+	compiled, err := regexp.Compile(lineSplit[1])
 	if err != nil {
 		log.Fatal(err)
 	}
-	tokens[tokenSplit[0]] = compiled
+	regexes[lineSplit[0]] = compiled
 }
 
-// readTokens reasds all tokens at given filePath into map.
-func readTokens(filePath string) map[string]*regexp.Regexp {
-	tokenReader := openFile(filePath)
-	tokens := make(map[string]*regexp.Regexp)
+// parseTokensFile reads file at given filePath into map of token
+// referencing names and their compiled regexes.
+func parseTokensFile(filePath string) map[string]*regexp.Regexp {
+	tokensReader := openFile(filePath)
+	regexes := make(map[string]*regexp.Regexp)
 	for {
-		token, eof := readLine(tokenReader)
+		line, eof := readLine(tokensReader)
 		if eof {
 			break
 		}
-		addToken(token, tokens)
+		addRegex(line, regexes)
 	}
-	return tokens
-}
-
-// matchToken returns true if a word matches regex, false otherwise.
-func matchToken(tokens map[string]*regexp.Regexp, regex, word Token) bool {
-	if tokens[regex.Value] == nil {
-		log.Fatal("<", regex.Value, "> undefined")
-	}
-	return tokens[regex.Value].MatchString(word.Value)
+	return regexes
 }

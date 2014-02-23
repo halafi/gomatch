@@ -1,8 +1,6 @@
-// match-xml.go provides funcionality for conversion of struct Match to
-// XML string.
 package main
 
-// getXML converts given Match to XML.
+// getXML converts given match to XML string.
 func getXML(match Match) string {
 	xml := "<Event type=\"" + match.Type + "\">"
 	if len(match.Body) != 0 {

@@ -1,4 +1,3 @@
-// socket.go provides funcionality for unix domain sockets.
 package main
 
 import (
@@ -6,35 +5,51 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 )
 
-// openSocket connects to target socket file, returns connection.
+// openSocket connects to target socket file.
 func openSocket(filePath string) net.Conn {
-	con, err := net.Dial("unix", filePath)
+	connection, err := net.Dial("unix", filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return con
+	return connection
 }
 
-// readFully reads everything so far unread from target socket file
-// using estabilished connection into array of string lines.
+// readFully reads everything so far unread from target socket into
+// array of string lines.
 // Returns true if EOF was reached, false otherwise.
-func readFully(conn net.Conn) ([]string, bool) {
-	result := bytes.NewBuffer(nil)
+func readFully(connection net.Conn) ([]string, bool) {
+	toReturn := bytes.NewBuffer(nil)
 	var buf [512]byte
-	n, err := conn.Read(buf[0:])
-	result.Write(buf[0:n])
+	n, err := connection.Read(buf[0:])
+	toReturn.Write(buf[0:n])
 	if err != nil {
 		if err == io.EOF {
-			return lineSplit(string(result.Bytes())), true
+			return lineSplit(string(toReturn.Bytes())), true
 		}
 		log.Fatal(err)
 	}
-	return lineSplit(string(result.Bytes())), false
+	return lineSplit(string(toReturn.Bytes())), false
 }
 
-// closeSocket closes the target connection.
-func closeSocket(con net.Conn) {
-	con.Close()
+// closeSocket closes the target socket connection.
+func closeSocket(connection net.Conn) {
+	connection.Close()
+}
+
+// lineSplit parses a mutli-line string into single lines (array of
+// strings).
+func lineSplit(input string) []string {
+	inputSplit := make([]string, 1)
+	inputSplit[0] = input                // default single line
+	if strings.Contains(input, "\r\n") { //CR+LF
+		inputSplit = strings.Split(input, "\r\n")
+	} else if strings.Contains(input, "\n") { //LF
+		inputSplit = strings.Split(input, "\n")
+	} else if strings.Contains(input, "\r") { //CR
+		inputSplit = strings.Split(input, "\r")
+	}
+	return inputSplit
 }

@@ -1,4 +1,3 @@
-// file.go does everything IO related for files.
 package main
 
 import (
@@ -8,19 +7,17 @@ import (
 	"os"
 )
 
-// openFile does the initialization of buffered reader for a single file
-// located at given filePath and returns it.
+// openFile initializes buffered reader for file.
 func openFile(filePath string) *bufio.Reader {
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	reader := bufio.NewReader(file)
-	return reader
+	return bufio.NewReader(file)
 }
 
-// readLine reads a single text line using the given reader, returns the
-// line and true when EOF is reached, line and false otherwise.
+// readLine reads a single text line into string using the given reader.
+// Returns the line and true or false (whether EOF was reached or not).
 func readLine(reader *bufio.Reader) (string, bool) {
 	line, _, err := reader.ReadLine()
 	if err != nil {
@@ -33,14 +30,13 @@ func readLine(reader *bufio.Reader) (string, bool) {
 	return string(line), false
 }
 
-// createFile creates a single file at given filePath, returns pointer
-// to that file.
+// createFile creates file at filePath.
 func createFile(filePath string) *os.File {
-	file, err := os.Create(filePath)
+	newFile, err := os.Create(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return file
+	return newFile
 }
 
 // writeFile writes a string to file.
@@ -51,7 +47,7 @@ func writeFile(file *os.File, data string) {
 	}
 }
 
-// closeFile closes the given file.
+// closeFile closes file.
 func closeFile(file *os.File) {
 	file.Close()
 }

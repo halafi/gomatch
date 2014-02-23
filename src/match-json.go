@@ -1,8 +1,6 @@
-// match-json.go provides funcionality for conversion of struct Match
-// to JSON string.
 package main
 
-// getJSON converts given Match to JSON.
+// getJSON converts given match to JSON string.
 func getJSON(match Match) string {
 	json := "{\"Event\":{\"type\":\"" + match.Type + "\""
 	if len(match.Body) != 0 {
