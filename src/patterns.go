@@ -63,49 +63,33 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]string, c
 		body := make([]Token, len(patternBody))
 		for n := range patternBody {
 			if patternBody[n][0] == '<' && patternBody[n][len(patternBody[n])-1] == '>' {
-				// add as regex
-				tokenWithoutBrackets := cutWord(1, len(patternBody[n])-2, patternBody[n])
-				tokenWithoutBracketsSplit := strings.Split(tokenWithoutBrackets, ":")
-				switch len(tokenWithoutBracketsSplit) {
-				case 2:
-					{ // token + name, i.e. <IP:ipAddress>, OutputName ipAddress
-						if regexes[tokenWithoutBracketsSplit[0]] == "" {
-							log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
-							return regexes, compiledRegexes, patterns
-						}
-						if compiledRegexes[tokenWithoutBracketsSplit[0]] == nil {
-							compiled, err := regexp.Compile(regexes[tokenWithoutBracketsSplit[0]])
-							if err != nil {
-								log.Fatal(err)
-							}
-							compiledRegexes[tokenWithoutBracketsSplit[0]] = compiled
-							body[n] = Token{true, tokenWithoutBracketsSplit[0], tokenWithoutBracketsSplit[1], compiled}
-						} else {
-							body[n] = Token{true, tokenWithoutBracketsSplit[0], tokenWithoutBracketsSplit[1], compiledRegexes[tokenWithoutBracketsSplit[0]]}
-						}
-					}
-				case 1:
-					{ // token only, i.e.: <IP>, OutputName IP
-						if regexes[tokenWithoutBrackets] == "" {
-							log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
-							return regexes, compiledRegexes, patterns
-						}
-						if compiledRegexes[tokenWithoutBrackets] == nil {
-							compiled, err := regexp.Compile(regexes[tokenWithoutBrackets])
-							if err != nil {
-								log.Fatal(err)
-							}
-							compiledRegexes[tokenWithoutBrackets] = compiled
-							body[n] = Token{true, tokenWithoutBrackets, tokenWithoutBrackets, compiledRegexes[tokenWithoutBrackets]}
-						} else {
-							body[n] = Token{true, tokenWithoutBrackets, tokenWithoutBrackets, compiledRegexes[tokenWithoutBrackets]}
-						}
-					}
-				default:
+
+				regexName := cutWord(1, len(patternBody[n])-2, patternBody[n])
+				outputName := regexName
+				regexNameSplit := strings.Split(regexName, ":")
+				if len(regexNameSplit) == 2 { // token + name, i.e. <IP:ipAddress>, OutputName ipAddress
+					regexName = regexNameSplit[0]
+					outputName = regexNameSplit[1]
+				} else if len(regexNameSplit) != 1 { // !(token only, i.e.: <IP>, OutputName IP)
 					log.Fatal("invalid token definition: \"<" + patternBody[n] + ">\"")
 				}
-			} else { // add as word
-				body[n] = Token{false, patternBody[n], "", nil}
+
+				if regexes[regexName] == "" { // missing regex in Tokens file check
+					log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
+					return regexes, compiledRegexes, patterns
+				}
+
+				if compiledRegexes[regexName] == nil { // compile regex if it wasn't compiled yet
+					compiled, err := regexp.Compile(regexes[regexName])
+					if err != nil {
+						log.Fatal(err)
+					}
+					compiledRegexes[regexName] = compiled
+				}
+
+				body[n] = Token{true, regexName, outputName, compiledRegexes[regexName]} // add regex Token
+			} else {
+				body[n] = Token{false, patternBody[n], "", nil} // add word Token
 			}
 		}
 
@@ -133,9 +117,9 @@ func parseTokensFile(filePath string) map[string]string {
 	return regexes
 }
 
-// parseToken validates the given string. If it's ok, adds it into given
+// addToken validates the given string. If it's ok, adds it into given
 // map of token referencing names and their regexes.
-func parseToken(line string, regexes map[string]string) {
+func addToken(line string, regexes map[string]string) {
 	if line == "" || line[0] == '#' { // empty lines and comments
 		return
 	}
