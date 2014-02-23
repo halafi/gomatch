@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"regexp"
 )
 
 // initTrie initializes a new prefix tree.
@@ -15,7 +14,7 @@ func initTrie() (trie map[int]map[Token]int, finalFor []int, state int, patternN
 
 // appendPattern creates all the necessary transitions for a single
 // pattern to the given trie.
-func appendPattern(regexes map[string]*regexp.Regexp, pattern Pattern, trie map[int]map[Token]int, finalFor []int, state int, patternNumber int) ([]int, int, int) {
+func appendPattern(pattern Pattern, trie map[int]map[Token]int, finalFor []int, state int, patternNumber int) ([]int, int, int) {
 	current := 0
 	j := 0
 
@@ -34,11 +33,11 @@ func appendPattern(regexes map[string]*regexp.Regexp, pattern Pattern, trie map[
 		if len(transitions) > 0 {
 			for t := range transitions {
 				if transitions[t].IsRegex && !pattern.Body[j].IsRegex {
-					if regexes[transitions[t].Value].MatchString(pattern.Body[j].Value) {
+					if (transitions[t].CompiledRegex).MatchString(pattern.Body[j].Value) {
 						log.Fatal("pattern conflict: <" + transitions[t].Value + "> matches word " + pattern.Body[j].Value)
 					}
 				} else if !transitions[t].IsRegex && pattern.Body[j].IsRegex {
-					if regexes[pattern.Body[j].Value].MatchString(transitions[t].Value) {
+					if (pattern.Body[j].CompiledRegex).MatchString(transitions[t].Value) {
 						log.Fatal("pattern conflict: <" + pattern.Body[j].Value + "> matches word " + transitions[t].Value)
 					}
 				}

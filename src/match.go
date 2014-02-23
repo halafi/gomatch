@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"regexp"
 )
 
 // Match is the representation of a single event matched.
@@ -12,7 +11,7 @@ type Match struct {
 }
 
 // getMatch returns match for a given log line.
-func getMatch(logLine string, patterns []Pattern, regexes map[string]*regexp.Regexp, trie map[int]map[Token]int, finalFor []int) Match {
+func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int) Match {
 	match := Match{}
 	matchBody := make([]string, 0)
 
@@ -20,19 +19,19 @@ func getMatch(logLine string, patterns []Pattern, regexes map[string]*regexp.Reg
 	logWords := logLineSplit(logLine)
 
 	for i := range logWords {
-		transitionTokens := getTransitionRegexes(current, trie)
+		transitionTokens := getTransitionRegexes(current, trie) // chyba
 		validTokens := 0
 
-		if getTransition(current, Token{false, logWords[i], ""}, trie) != -1 {
+		if getTransition(current, Token{false, logWords[i], "", nil}, trie) != -1 {
 			// we move by word
-			current = getTransition(current, Token{false, logWords[i], ""}, trie)
+			current = getTransition(current, Token{false, logWords[i], "", nil}, trie)
 		} else if len(transitionTokens) > 0 {
 			// we can move by some regex
 			for t := range transitionTokens {
-				if regexes[transitionTokens[t].Value].MatchString(logWords[i]) {
+				if (transitionTokens[t].CompiledRegex).MatchString(logWords[i]) {
 					validTokens++
-					current = getTransition(current, transitionTokens[t], trie)
-					matchBody = append(matchBody, transitionTokens[t].OutputName)
+					current = getTransition(current, transitionTokens[0], trie)
+					matchBody = append(matchBody, transitionTokens[0].OutputName)
 					matchBody = append(matchBody, logWords[i])
 				}
 			}
