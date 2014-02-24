@@ -43,7 +43,9 @@ func closeSocket(connection net.Conn) {
 // strings).
 func lineSplit(input string) []string {
 	inputSplit := make([]string, 1)
-	inputSplit[0] = input                // default single line
+	
+	// default single line
+	inputSplit[0] = input
 	if strings.Contains(input, "\r\n") { //CR+LF
 		inputSplit = strings.Split(input, "\r\n")
 	} else if strings.Contains(input, "\n") { //LF

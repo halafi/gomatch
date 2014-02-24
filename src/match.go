@@ -6,11 +6,17 @@ import (
 
 // Match is the representation of a single event matched.
 type Match struct {
-	Type string   // matched event name
-	Body []string // token name followed by matched value
+	// matched event name
+	Type string  
+	// token name followed by matched value 
+	Body []string 
 }
 
-// getMatch returns match for a given log line.
+// getMatch returns match for a given log line. It takes a log line and
+// goes through all log words one by one, changing state using the trie.
+// Word transitions are prioritized over regex transitions.
+// If it reaches final state for some pattern after moving over last
+// log word, then it returns match with matched data.
 func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int, regexes map[string]Regex) Match {
 	match := Match{}
 	matchBody := make([]string, 0)
@@ -19,14 +25,12 @@ func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, fi
 	logWords := logLineSplit(logLine)
 
 	for i := range logWords {
-		transitionTokens := getTransitionRegexes(current, trie) // chyba
+		transitionTokens := getTransitionRegexes(current, trie)
 		validTokens := 0
 
 		if getTransition(current, Token{false, logWords[i], ""}, trie) != -1 {
-			// we move by word
 			current = getTransition(current, Token{false, logWords[i], ""}, trie)
 		} else if len(transitionTokens) > 0 {
-			// we can move by some regex
 			for t := range transitionTokens {
 				if (regexes[transitionTokens[t].Value].Compiled).MatchString(logWords[i]) {
 					validTokens++
@@ -42,7 +46,6 @@ func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, fi
 			break
 		}
 
-		// leaf node (ending state) -> got match
 		if finalFor[current] != 0 && i == len(logWords)-1 {
 			if len(matchBody) > 0 {
 				match = Match{patterns[finalFor[current]-1].Name, matchBody}

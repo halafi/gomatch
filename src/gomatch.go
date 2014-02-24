@@ -16,7 +16,6 @@ var (
 	outputFilePath        = flag.String("o", "/dev/stdout", "Matched data output.")
 	noMatchOutputFilePath = flag.String("u", "no_match.log", "Unmatched data output.")
 	matchedDataFormat     = flag.String("f", "json", "Matched data format. Supported: json, xml, name, none.")
-
 	// Shared variables between all goroutines.
 	trie          map[int]map[Token]int
 	finalFor      []int
@@ -119,7 +118,6 @@ func watchPatterns() {
 				regexes, patterns = addPattern(line, patterns, regexes)
 
 				if len(patterns) > oldLen {
-					// pattern was successfuly created -> append to trie
 					finalFor, state, patternNumber = appendPattern(patterns[len(patterns)-1], trie, finalFor, state, patternNumber, regexes)
 					log.Println("new event: ", patterns[len(patterns)-1].Name)
 				}

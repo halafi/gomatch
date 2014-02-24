@@ -67,36 +67,41 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (m
 		body := make([]Token, len(patternBody))
 		for n := range patternBody {
 			if patternBody[n][0] == '<' && patternBody[n][len(patternBody[n])-1] == '>' {
-
 				regexName := cutWord(1, len(patternBody[n])-2, patternBody[n])
-				outputName := regexName
+				
+				// default: token only, i.e.: <IP>
+				outputName := regexName 
+				
 				regexNameSplit := strings.Split(regexName, ":")
-				if len(regexNameSplit) == 2 { // token + name, i.e. <IP:ipAddress>, OutputName ipAddress
+				if len(regexNameSplit) == 2 {
+					// token + name, i.e. <IP:ipAddress>
 					regexName = regexNameSplit[0]
 					outputName = regexNameSplit[1]
-				} else if len(regexNameSplit) != 1 { // !(token only, i.e.: <IP>, OutputName IP)
+				} else if len(regexNameSplit) != 1 {
 					log.Fatal("invalid token definition: \"<" + patternBody[n] + ">\"")
 				}
-
-				if regexes[regexName].Expression == "" { // missing regex in Tokens file check
+				
+				// check for missing regex in Tokens file
+				if regexes[regexName].Expression == "" { 
 					log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
 					return regexes, patterns
 				}
 
-				if regexes[regexName].Compiled == nil { // compile regex if it wasn't compiled yet
+				if regexes[regexName].Compiled == nil {
 					compiled, err := regexp.Compile(regexes[regexName].Expression)
 					if err != nil {
 						log.Fatal(err)
 					}
 					regexes[regexName] = Regex{regexes[regexName].Expression, compiled}
 				}
-
-				body[n] = Token{true, regexName, outputName} // add regex Token
+				// add regex Token
+				body[n] = Token{true, regexName, outputName} 
 			} else {
-				body[n] = Token{false, patternBody[n], ""} // add word Token
+				// add word Token
+				body[n] = Token{false, patternBody[n], ""} 
 			}
 		}
-
+		
 		// add new pattern
 		newArr := make([]Pattern, cap(patterns)+1)
 		copy(newArr, patterns)

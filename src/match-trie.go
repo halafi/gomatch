@@ -7,24 +7,26 @@ import (
 // initTrie initializes a new prefix tree.
 // State is the number of first state to be created, patternNumber is
 // the number of first pattern to be added, finalFor is an array of
-// states with number of pattern that they are final for.
+// states with number of pattern that they are final for, patternNumber
+// is simply the number of first pattern to be added to trie.
 func initTrie() (trie map[int]map[Token]int, finalFor []int, state int, patternNumber int) {
 	return make(map[int]map[Token]int), make([]int, 1), 1, 1
 }
 
 // appendPattern creates all the necessary transitions for a single
 // pattern to the given trie.
+// At first it reads current pattern for as long as there are
+// transitions, after that it creates all the missing transitions (with
+// checking for conflicts).
 func appendPattern(pattern Pattern, trie map[int]map[Token]int, finalFor []int, state int, patternNumber int, regexes map[string]Regex) ([]int, int, int) {
 	current := 0
 	j := 0
 
-	// read current pattern for as long as there are transitions
 	for j < len(pattern.Body) && getTransition(current, pattern.Body[j], trie) != -1 {
 		current = getTransition(current, pattern.Body[j], trie)
 		j++
 	}
 
-	// create missing transitions
 	for j < len(pattern.Body) {
 		finalFor = append(finalFor, 0) // current state not terminal
 

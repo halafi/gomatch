@@ -1,0 +1,17 @@
+session opened##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> <PAM_UNIX> session opened for user <USERNAME> by (uid=0)
+session closed##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> <PAM_UNIX> session closed for user <USERNAME>
+disconnect##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Received disconnect from <IP> <NUMBER> disconnected by user
+public key##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Accepted publickey for <USERNAME> from <IP> port <PORT> ssh2
+invalid user##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Invalid user <ANY> from <IP>
+pass fail##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> <PAM_UNIX> check pass; user unknown
+pass fail2##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Failed password for invalid user <ANY> from <IP> port <PORT> ssh2
+pass fail3##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Failed password for bin from <IP> port <PORT> ssh2
+pass fail3##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Failed password for root from <IP> port <PORT> ssh2
+pass fail backup##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Failed password for backup from <IP> port <PORT> ssh2
+possible break-in##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> reverse mapping checking getaddrinfo for <ANY> <[IP]> failed - POSSIBLE BREAK-IN ATTEMPT!
+possible break-in##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Address <IP> maps to <CLASS> but this does not map back to the address - POSSIBLE BREAK-IN ATTEMPT!
+auth fail##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> <PAM_UNIX> authentication failure; logname= uid=0 euid=0 tty=ssh ruser= <RHOST> user=root
+no id string##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> Did not receive identification string from <IP>
+auth fail##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> <PAM_UNIX> authentication failure; logname= uid=0 euid=0 tty=ssh ruser= <RHOST>
+auth fail##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> PAM 1 more authentication failure; logname= uid=0 euid=0 tty=ssh ruser= <RHOST>
+msg repeat##<MONTH> <NUMBER> <TIME> <IP> <CLASS> <MONTH> <NUMBER> <TIME> <SYSLOGPROG> last message repeated 3 times

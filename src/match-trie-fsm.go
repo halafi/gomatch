@@ -1,7 +1,6 @@
 package main
 
-// getTransition returns an ending state for transition function
-// σ(from,over).
+// getTransition returns an ending state for transition σ(from,over).
 // Returns -1 if there is no transition.
 func getTransition(from int, over Token, fsm map[int]map[Token]int) int {
 	if !stateExists(from, fsm) {
@@ -14,8 +13,8 @@ func getTransition(from int, over Token, fsm map[int]map[Token]int) int {
 	return toState
 }
 
-// createTransition creates an ending state if there isn't one yet.
-// After that creates transitionion σ(fromState,overToken) = toState.
+// createTransition creates an ending state if there isn't one yet,
+// after that creates transitionion σ(fromState,overToken) = toState.
 func createTransition(fromState int, overToken Token, toState int, fsm map[int]map[Token]int) {
 	if stateExists(fromState, fsm) {
 		fsm[fromState][overToken] = toState
@@ -34,7 +33,7 @@ func stateExists(state int, fsm map[int]map[Token]int) bool {
 	return true
 }
 
-// getAllTransitions returns all transitions from state.
+// getAllTransitions returns all transitions leading from state.
 func getAllTransitions(state int, fsm map[int]map[Token]int) []Token {
 	tansitions := make([]Token, 0)
 	for s, _ := range fsm[state] {
