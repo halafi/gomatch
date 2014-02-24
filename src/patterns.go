@@ -15,17 +15,21 @@ type Pattern struct {
 
 // Token represents a single thing to match. Can be regex or a word.
 type Token struct {
-	IsRegex       bool
-	Value         string // i.e.: IP
-	OutputName    string // i.e.: ipAddress
-	CompiledRegex *regexp.Regexp
+	IsRegex    bool
+	Value      string // i.e.: IP
+	OutputName string // i.e.: ipAddress
+}
+
+// Regex represents a single string regex with it's compiled value.
+type Regex struct {
+	Expression string         // i.e.: ^\w+$
+	Compiled   *regexp.Regexp // nil or compiled regex, if it was used
 }
 
 // readPatterns reads all patterns at given filePath into an array of
 // strings.
-func readPatterns(patternsFilePath, tokensFilePath string) (map[string]string, map[string]*regexp.Regexp, []Pattern) {
+func readPatterns(patternsFilePath, tokensFilePath string) (map[string]Regex, []Pattern) {
 	regexes := parseTokensFile(tokensFilePath)
-	compiledRegexes := make(map[string]*regexp.Regexp)
 	patternReader := openFile(patternsFilePath)
 	patternsArr := make([]Pattern, 0)
 	for {
@@ -33,29 +37,29 @@ func readPatterns(patternsFilePath, tokensFilePath string) (map[string]string, m
 		if eof {
 			break
 		}
-		regexes, compiledRegexes, patternsArr = addPattern(line, patternsArr, regexes, compiledRegexes)
+		regexes, patternsArr = addPattern(line, patternsArr, regexes)
 	}
-	return regexes, compiledRegexes, patternsArr
+	return regexes, patternsArr
 }
 
 // addPattern validates the given string. If it's ok, adds it into given
 // array of patterns.
-func addPattern(pattern string, patterns []Pattern, regexes map[string]string, compiledRegexes map[string]*regexp.Regexp) (map[string]string, map[string]*regexp.Regexp, []Pattern) {
+func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (map[string]Regex, []Pattern) {
 	if pattern != "" && pattern[0] != '#' { // ignore empty lines and comments
 		split := strings.Split(pattern, "##")
 
 		// check for errors
 		if len(split) != 2 {
 			log.Println("invalid pattern: \"", pattern+"\"")
-			return regexes, compiledRegexes, patterns
+			return regexes, patterns
 		}
 		if split[0] == "" {
 			log.Println("invalid pattern \"", pattern, "\": empty name")
-			return regexes, compiledRegexes, patterns
+			return regexes, patterns
 		}
 		if split[1] == "" {
 			log.Println("invalid pattern \"", pattern, "\": is empty")
-			return regexes, compiledRegexes, patterns
+			return regexes, patterns
 		}
 
 		// convert pattern words into Tokens
@@ -74,22 +78,22 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]string, c
 					log.Fatal("invalid token definition: \"<" + patternBody[n] + ">\"")
 				}
 
-				if regexes[regexName] == "" { // missing regex in Tokens file check
+				if regexes[regexName].Expression == "" { // missing regex in Tokens file check
 					log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
-					return regexes, compiledRegexes, patterns
+					return regexes, patterns
 				}
 
-				if compiledRegexes[regexName] == nil { // compile regex if it wasn't compiled yet
-					compiled, err := regexp.Compile(regexes[regexName])
+				if regexes[regexName].Compiled == nil { // compile regex if it wasn't compiled yet
+					compiled, err := regexp.Compile(regexes[regexName].Expression)
 					if err != nil {
 						log.Fatal(err)
 					}
-					compiledRegexes[regexName] = compiled
+					regexes[regexName] = Regex{regexes[regexName].Expression, compiled}
 				}
 
-				body[n] = Token{true, regexName, outputName, compiledRegexes[regexName]} // add regex Token
+				body[n] = Token{true, regexName, outputName} // add regex Token
 			} else {
-				body[n] = Token{false, patternBody[n], "", nil} // add word Token
+				body[n] = Token{false, patternBody[n], ""} // add word Token
 			}
 		}
 
@@ -99,27 +103,28 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]string, c
 		patterns = newArr
 		patterns[len(patterns)-1] = Pattern{split[0], body}
 	}
-	return regexes, compiledRegexes, patterns
+	return regexes, patterns
 }
 
 // parseTokensFile reads file at given filePath into map of token
 // referencing names and their compiled regexes (default ./Tokens).
-func parseTokensFile(filePath string) map[string]string {
+func parseTokensFile(filePath string) map[string]Regex {
 	tokensReader := openFile(filePath)
-	regexes := make(map[string]string)
+	regexes := make(map[string]Regex)
 	for {
 		line, eof := readLine(tokensReader)
 		if eof {
 			break
 		}
-		parseToken(line, regexes)
+		addRegex(line, regexes)
 	}
 	return regexes
 }
 
-// addToken validates the given string. If it's ok, adds it into given
-// map of token referencing names and their regexes.
-func addToken(line string, regexes map[string]string) {
+// addRegex validates the given string. If it's ok, adds it into given
+// map of token referencing names and their regexes (takes lines from
+// Tokens file).
+func addRegex(line string, regexes map[string]Regex) {
 	if line == "" || line[0] == '#' { // empty lines and comments
 		return
 	}
@@ -127,7 +132,7 @@ func addToken(line string, regexes map[string]string) {
 	if len(lineSplit) != 2 {
 		log.Fatal("invalid token definition: \"", line, "\"")
 	}
-	regexes[lineSplit[0]] = lineSplit[1]
+	regexes[lineSplit[0]] = Regex{lineSplit[1], nil}
 }
 
 // cutWord for a given word performs a cut (both prefix and sufix).

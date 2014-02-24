@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"os"
-	"regexp"
 	"time"
 )
 
@@ -19,13 +18,12 @@ var (
 	matchedDataFormat     = flag.String("f", "json", "Matched data format. Supported: json, xml, name, none.")
 
 	// Shared variables between all goroutines.
-	trie            map[int]map[Token]int
-	finalFor        []int
-	state           int
-	patternNumber   int
-	patterns        []Pattern
-	compiledRegexes map[string]*regexp.Regexp
-	regexes         map[string]string
+	trie          map[int]map[Token]int
+	finalFor      []int
+	state         int
+	patternNumber int
+	patterns      []Pattern
+	regexes       map[string]Regex
 )
 
 // Starts when the program is executed.
@@ -39,9 +37,9 @@ func main() {
 
 	trie, finalFor, state, patternNumber = initTrie()
 
-	regexes, compiledRegexes, patterns = readPatterns(*patternsFilePath, *tokensFilePath)
+	regexes, patterns = readPatterns(*patternsFilePath, *tokensFilePath)
 	for p := range patterns {
-		finalFor, state, patternNumber = appendPattern(patterns[p], trie, finalFor, state, patternNumber)
+		finalFor, state, patternNumber = appendPattern(patterns[p], trie, finalFor, state, patternNumber, regexes)
 	}
 
 	outputFile := createFile(*outputFilePath)
@@ -55,7 +53,7 @@ func main() {
 		for {
 			lines, eof := readFully(connection)
 			for i := range lines {
-				match := getMatch(lines[i], patterns, trie, finalFor)
+				match := getMatch(lines[i], patterns, trie, finalFor, regexes)
 				if match.Type != "" {
 					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
 				} else {
@@ -74,7 +72,7 @@ func main() {
 		for {
 			logLine, eof := readLine(inputReader)
 			if eof {
-				match := getMatch(logLine, patterns, trie, finalFor)
+				match := getMatch(logLine, patterns, trie, finalFor, regexes)
 				if match.Type != "" {
 					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
 				} else {
@@ -82,7 +80,7 @@ func main() {
 				}
 				break
 			} else {
-				match := getMatch(logLine, patterns, trie, finalFor)
+				match := getMatch(logLine, patterns, trie, finalFor, regexes)
 				if match.Type != "" {
 					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
 				} else {
@@ -118,11 +116,11 @@ func watchPatterns() {
 			line, eof := readLine(patternReader)
 			if !eof {
 				oldLen := len(patterns)
-				regexes, compiledRegexes, patterns = addPattern(line, patterns, regexes, compiledRegexes)
+				regexes, patterns = addPattern(line, patterns, regexes)
 
 				if len(patterns) > oldLen {
 					// pattern was successfuly created -> append to trie
-					finalFor, state, patternNumber = appendPattern(patterns[len(patterns)-1], trie, finalFor, state, patternNumber)
+					finalFor, state, patternNumber = appendPattern(patterns[len(patterns)-1], trie, finalFor, state, patternNumber, regexes)
 					log.Println("new event: ", patterns[len(patterns)-1].Name)
 				}
 				patternsLastModTime = patternsFileInfo.ModTime()

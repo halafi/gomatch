@@ -11,7 +11,7 @@ type Match struct {
 }
 
 // getMatch returns match for a given log line.
-func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int) Match {
+func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int, regexes map[string]Regex) Match {
 	match := Match{}
 	matchBody := make([]string, 0)
 
@@ -22,13 +22,13 @@ func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, fi
 		transitionTokens := getTransitionRegexes(current, trie) // chyba
 		validTokens := 0
 
-		if getTransition(current, Token{false, logWords[i], "", nil}, trie) != -1 {
+		if getTransition(current, Token{false, logWords[i], ""}, trie) != -1 {
 			// we move by word
-			current = getTransition(current, Token{false, logWords[i], "", nil}, trie)
+			current = getTransition(current, Token{false, logWords[i], ""}, trie)
 		} else if len(transitionTokens) > 0 {
 			// we can move by some regex
 			for t := range transitionTokens {
-				if (transitionTokens[t].CompiledRegex).MatchString(logWords[i]) {
+				if (regexes[transitionTokens[t].Value].Compiled).MatchString(logWords[i]) {
 					validTokens++
 					current = getTransition(current, transitionTokens[0], trie)
 					matchBody = append(matchBody, transitionTokens[0].OutputName)
