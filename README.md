@@ -2,7 +2,7 @@ Gomatch
 ==================
 Search for multiple patterns/events in single line log records and convert them into desired data format (JSON, XML). 
 
-See the project <a href="https://github.com/halafi/String-matching-Go/wiki">wiki</a> to find help getting started.
+See the project <a href="https://github.com/halafi/gomatch/wiki">wiki</a> to find help getting started.
 
 Installation - Linux
 -----------------------
