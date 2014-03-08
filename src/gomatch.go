@@ -11,6 +11,7 @@ var (
 	// Command-line flags.
 	inputFilePath         = flag.String("i", "/dev/stdin", "Data input.")
 	inputSocketFilePath   = flag.String("s", "none", "Reading from Socket.")
+	ampqConfigFilePath    = flag.String("a", "none", "Filepath for AMQP config file.")
 	patternsFilePath      = flag.String("p", "Patterns", "Patterns input.")
 	tokensFilePath        = flag.String("t", "Tokens", "Tokens input.")
 	outputFilePath        = flag.String("o", "/dev/stdout", "Matched data output.")
@@ -29,7 +30,8 @@ var (
 // Performs parsing of flags, reading of both Tokens and Patterns file,
 // prefix tree construction and output files init.
 // Runs separate goroutine for watching file with patterns.
-// Reads input from either socket or input file/pipe.
+// Uses AMQP if flag is set. Otherwise reads input from either socket or
+// input file/pipe.
 // For each input line performs matching and writing to output.
 func main() {
 	flag.Parse()
@@ -46,7 +48,38 @@ func main() {
 
 	go watchPatterns()
 
-	if *inputSocketFilePath != "none" {
+	if *ampqConfigFilePath != "none" {
+		parseAmqpConfigFile(*ampqConfigFilePath)
+
+		// consumer init
+		c, err := NewConsumer(consumerUri, consumerExchangeName, consumerExchangeType, consumerQueue, consumerBindingKey, consumerTag)
+		if err != nil {
+			log.Fatal("%s", err)
+		}
+
+		// start consuming
+		if consumerLifetime > 0 {
+			log.Printf("running for %s", consumerLifetime)
+			time.Sleep(consumerLifetime)
+		} else {
+			log.Printf("running forever")
+			select {}
+		}
+
+		// stop consuming
+		log.Printf("shutting down")
+
+		if err := c.Shutdown(); err != nil {
+			log.Fatal("error during shutdown: ", err)
+		}
+
+		// producer - not belong here
+		if err := publish(producerUri, producerExchangeName, producerExchangeType, producerRoutingKey, producerBody, producerReliable); err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("published %dB OK", len(producerBody))
+
+	} else if *inputSocketFilePath != "none" {
 		connection := openSocket(*inputSocketFilePath)
 
 		for {

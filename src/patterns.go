@@ -68,10 +68,10 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (m
 		for n := range patternBody {
 			if patternBody[n][0] == '<' && patternBody[n][len(patternBody[n])-1] == '>' {
 				regexName := cutWord(1, len(patternBody[n])-2, patternBody[n])
-				
+
 				// default: token only, i.e.: <IP>
-				outputName := regexName 
-				
+				outputName := regexName
+
 				regexNameSplit := strings.Split(regexName, ":")
 				if len(regexNameSplit) == 2 {
 					// token + name, i.e. <IP:ipAddress>
@@ -80,9 +80,9 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (m
 				} else if len(regexNameSplit) != 1 {
 					log.Fatal("invalid token definition: \"<" + patternBody[n] + ">\"")
 				}
-				
+
 				// check for missing regex in Tokens file
-				if regexes[regexName].Expression == "" { 
+				if regexes[regexName].Expression == "" {
 					log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
 					return regexes, patterns
 				}
@@ -95,13 +95,13 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (m
 					regexes[regexName] = Regex{regexes[regexName].Expression, compiled}
 				}
 				// add regex Token
-				body[n] = Token{true, regexName, outputName} 
+				body[n] = Token{true, regexName, outputName}
 			} else {
 				// add word Token
-				body[n] = Token{false, patternBody[n], ""} 
+				body[n] = Token{false, patternBody[n], ""}
 			}
 		}
-		
+
 		// add new pattern
 		newArr := make([]Pattern, cap(patterns)+1)
 		copy(newArr, patterns)

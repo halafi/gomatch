@@ -7,9 +7,9 @@ import (
 // Match is the representation of a single event matched.
 type Match struct {
 	// matched event name
-	Type string  
-	// token name followed by matched value 
-	Body []string 
+	Type string
+	// token name followed by matched value
+	Body []string
 }
 
 // getMatch returns match for a given log line. It takes a log line and
