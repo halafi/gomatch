@@ -1,31 +1,24 @@
-# Sample AMQP config file
+# AMQP config file for Gomatch.
+#
+# .exchangeName - Durable, non-auto-deleted AMQP exchange name
+# .exchangType - direct|fanout|topic|x-custom
+# consumer.queue - Ephemeral AMQP queue name
+# consumer.tag - should not be blank
+# consumer.lifetimesec - lifetime of process before shutdown (0s=infinite)
+# producer.body - body of message
+# producer.reliable - Wait for the publisher confirmation before exiting
 
-### CONSUMER - accepts messages
-# AMQP URI
 amqp.consumer.uri=amqp://guest:guest@localhost:5672/
-# Durable, non-auto-deleted AMQP exchange name
 amqp.consumer.exchangeName=test-exchange
-# exchange type:- direct|fanout|topic|x-custom
 amqp.consumer.exchangeType=direct
-# Ephemeral AMQP queue name
 amqp.consumer.queue=test-queue
-# AMQP binding key
 amqp.consumer.bindingKey=test-key
-# AMQP consumer tag (should not be blank)
 amqp.consumer.tag=consumer-tag
-# lifetime of process before shutdown (0s=infinite)
 amqp.consumer.lifetimesec=5
 
-### PRODUCER - sends messages
-# AMQP URI
 amqp.producer.uri=amqp://guest:guest@localhost:5672/
-# Durable AMQP exchange name
 amqp.producer.exchangeName=exchange
-# exchange type:- direct|fanout|topic|x-custom
 amqp.producer.exchangeType=direct
-# AMQP routing key
 amqp.producer.routingKey=test-key
-# body of message
 amqp.producer.body=foobar
-# Wait for the publisher confirmation before exiting
 amqp.producer.reliable=true
