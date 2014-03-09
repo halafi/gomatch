@@ -30,8 +30,8 @@ var (
 // Performs parsing of flags, reading of both Tokens and Patterns file,
 // prefix tree construction and output files init.
 // Runs separate goroutine for watching file with patterns.
-// Uses AMQP if flag is set. Otherwise reads input from either socket or
-// input file/pipe.
+// Uses AMQP if flag -a is set. Otherwise reads input from either socket
+// or input file/pipe.
 // For each input line performs matching and writing to output.
 func main() {
 	flag.Parse()
@@ -50,35 +50,19 @@ func main() {
 
 	if *ampqConfigFilePath != "none" {
 		parseAmqpConfigFile(*ampqConfigFilePath)
-
-		// consumer init
-		c, err := NewConsumer(consumerUri, consumerExchangeName, consumerExchangeType, consumerQueue, consumerBindingKey, consumerTag)
-		if err != nil {
-			log.Fatal("%s", err)
+		for {
+			logLines := receiveLogs() // reads messages while it can
+			for i := range logLines {
+				if logLines[i] != "" {
+					match := getMatch(logLines[i], patterns, trie, finalFor, regexes)
+					if match.Type != "" {
+						send(logLines[i])
+					} else {
+						writeFile(noMatchOutputFile, logLines[i]+"\r\n")
+					}
+				}
+			}
 		}
-
-		// start consuming
-		if consumerLifetime > 0 {
-			log.Printf("running for %s", consumerLifetime)
-			time.Sleep(consumerLifetime)
-		} else {
-			log.Printf("running forever")
-			select {}
-		}
-
-		// stop consuming
-		log.Printf("shutting down")
-
-		if err := c.Shutdown(); err != nil {
-			log.Fatal("error during shutdown: ", err)
-		}
-
-		// producer - not belong here
-		if err := publish(producerUri, producerExchangeName, producerExchangeType, producerRoutingKey, producerBody, producerReliable); err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("published %dB OK", len(producerBody))
-
 	} else if *inputSocketFilePath != "none" {
 		connection := openSocket(*inputSocketFilePath)
 
