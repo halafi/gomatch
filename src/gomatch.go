@@ -50,13 +50,14 @@ func main() {
 
 	if *ampqConfigFilePath != "none" {
 		parseAmqpConfigFile(*ampqConfigFilePath)
+
 		for {
-			logLines := receiveLogs() // reads messages while it can
+			logLines := receiveLogs()
 			for i := range logLines {
 				if logLines[i] != "" {
 					match := getMatch(logLines[i], patterns, trie, finalFor, regexes)
 					if match.Type != "" {
-						send(logLines[i])
+						send(convertMatch(match, *matchedDataFormat))
 					} else {
 						writeFile(noMatchOutputFile, logLines[i]+"\r\n")
 					}

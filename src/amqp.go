@@ -40,9 +40,10 @@ func parseAmqpConfigFile(filePath string) {
 	amqpMatchedSendUri = dataMap["amqp.matched.send.uri"]
 }
 
-// receiveLogs reads all of the log messages (exchange logs).
+// receiveLogs reads all log messages (queue: logs, exchange: logs).
 func receiveLogs() []string {
-	data := ""
+	logs := make([]string, 0)
+
 	conn, err := amqp.Dial(amqpReceiveUri)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -52,12 +53,12 @@ func receiveLogs() []string {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"",    // name
-		false, // durable
-		false, // delete when usused
-		false, // exclusive
-		false, // noWait
-		nil,   // arguments
+		"logs", // name
+		false,  // durable
+		false,  // delete when usused
+		false,  // exclusive
+		false,  // noWait
+		nil,    // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 	err = ch.QueueBind(
@@ -71,13 +72,14 @@ func receiveLogs() []string {
 	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
 
 	for d := range msgs {
-		data = data + string(d.Body)
+		logs = append(logs, string(d.Body))
+		ch.Close()
 	}
+	return logs
 
-	return lineSplit(data)
 }
 
-// send sends a single string message using RabbitMQ.
+// send sends a single string message using RabbitMQ (queue: gomatch).
 func send(msg string) {
 	conn, err := amqp.Dial(amqpMatchedSendUri)
 	failOnError(err, "Failed to connect to RabbitMQ")
@@ -117,3 +119,39 @@ func failOnError(err error, msg string) {
 		log.Fatalf("%s: %s", msg, err)
 	}
 }
+
+// emitLog sends one log message. Testing purposes.
+/*func emitLog(msg string) {
+	conn, err := amqp.Dial(amqpMatchedSendUri)
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"logs",    // name
+		"fanout",  // type
+		true,      // durable
+		false,     // auto-deleted
+		false,     // internal
+		false,     // noWait
+		nil,       // arguments
+	)
+	failOnError(err, "Failed to declare an exchange")
+
+	body := msg
+	err = ch.Publish(
+		"logs", // exchange
+		"",     // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType:     "text/plain",
+			Body:            []byte(body),
+		})
+
+	failOnError(err, "Failed to publish a message")
+	log.Println(msg)
+}*/
