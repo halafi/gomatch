@@ -8,11 +8,12 @@ import (
 )
 
 var (
-	amqpReceiveUri   string
-	amqpMatchSendUri string
+	amqpReceiveUri     string
+	amqpMatchedSendUri string
 )
 
 // parseAmqpConfigFile fills up all the necessary variables from a file.
+// The config file can contain single line # comments.
 func parseAmqpConfigFile(filePath string) {
 	dataMap := make(map[string]string)
 	b, err := ioutil.ReadFile(filePath)
@@ -27,15 +28,19 @@ func parseAmqpConfigFile(filePath string) {
 			dataMap[data[0]] = data[1]
 		}
 	}
-	// fill global variables from data in map
-	if dataMap["amqp.receive.uri"] == "" || dataMap["amqp.match.send.uri"] == "" {
-		log.Fatal("missing amqp.receive.uri or amqp.match.send.uri in AMQP config file")
+	// check for missing statements in config file
+	if dataMap["amqp.receive.uri"] == "" {
+		log.Fatal("missing amqp.receive.uri in AMQP config file")
 	}
+	if dataMap["amqp.matched.send.uri"] == "" {
+		log.Fatal("missing amqp.matched.send.uri in AMQP config file")
+	}
+	// fill the amqp global variables from dataMap
 	amqpReceiveUri = dataMap["amqp.receive.uri"]
-	amqpMatchSendUri = dataMap["amqp.match.send.uri"]
+	amqpMatchedSendUri = dataMap["amqp.matched.send.uri"]
 }
 
-// receiveLogs reads all logs (exchange logs) from AMQP.
+// receiveLogs reads all of the log messages (exchange logs).
 func receiveLogs() []string {
 	data := ""
 	conn, err := amqp.Dial(amqpReceiveUri)
@@ -72,9 +77,9 @@ func receiveLogs() []string {
 	return lineSplit(data)
 }
 
-// Function send sends string to AMQP.
+// send sends a single string message using RabbitMQ.
 func send(msg string) {
-	conn, err := amqp.Dial(amqpMatchSendUri)
+	conn, err := amqp.Dial(amqpMatchedSendUri)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 

@@ -1,0 +1,5 @@
+# Gomatch config file for the RabbitMQ messaging system.
+# Gomatch flag "-a". Flag argument "filepath_to_this_file".
+
+amqp.receive.uri = amqp://user:user@localhost:5672/
+amqp.matched.send.uri = amqp://user:user@localhost:5672/

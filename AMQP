@@ -1,6 +1,0 @@
-# AMQP config file for Gomatch.
-
-# Reads log data from
-amqp.receive.uri = amqp://user:user@localhost:5672/
-# Sends matched data to
-amqp.match.send.uri = amqp://user:user@localhost:5672/
