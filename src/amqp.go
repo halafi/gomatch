@@ -2,34 +2,36 @@ package main
 
 import (
 	"github.com/streadway/amqp"
-	"io/ioutil"
 	"log"
 	"strings"
 )
 
 var (
-	amqpReceiveUri     string
-	amqpMatchedSendUri string
+	amqpReceiveUri       string
+	amqpReceiveQueueName = "logs"
+	amqpReceiveExchange  = "logs"
+	amqpMatchedSendUri   string
+	amqpSendQueueName    = "gomatch"
 )
 
 // parseAmqpConfigFile fills up all the necessary variables from a file.
 // The config file can contain single line # comments.
 func parseAmqpConfigFile(filePath string) {
 	dataMap := make(map[string]string)
-	b, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	lines := lineSplit(string(b))
-	for j := range lines {
-		if len(lines[j]) > 0 && lines[j][0] != '#' {
-			lines[j] = strings.Replace(lines[j], " ", "", -1)
-			data := strings.Split(lines[j], "=")
-			if len(data) == 2 {
-				dataMap[data[0]] = data[1]
+	inputReader := openFile(filePath)
+	for {
+		configLine, eof := readLine(inputReader)
+		if len(configLine) > 0 && configLine[0] != '#' {
+			configLineWithoutSpaces := strings.Replace(configLine, " ", "", -1)
+			configData := strings.Split(configLineWithoutSpaces, "=")
+			if len(configData) == 2 {
+				dataMap[configData[0]] = configData[1]
 			} else {
-				log.Println("invalid config line number ",j+1," (will be ignored)")
+				log.Println("invalid config line: \"", configLine, "\" (will be ignored)")
 			}
+		}
+		if eof {
+			break
 		}
 	}
 	// check for missing statements in config file
@@ -44,7 +46,7 @@ func parseAmqpConfigFile(filePath string) {
 	amqpMatchedSendUri = dataMap["amqp.matched.send.uri"]
 }
 
-// receiveLogs reads all log messages (queue: logs, exchange: logs).
+// receiveLogs reads all of the messages.
 func receiveLogs() []string {
 	logs := make([]string, 0)
 
@@ -57,18 +59,18 @@ func receiveLogs() []string {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"logs", // name
-		false,  // durable
-		false,  // delete when usused
-		false,  // exclusive
-		false,  // noWait
-		nil,    // arguments
+		amqpReceiveQueueName, // name
+		false,                // durable
+		false,                // delete when usused
+		false,                // exclusive
+		false,                // noWait
+		nil,                  // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 	err = ch.QueueBind(
-		q.Name, // queue name
-		"",     // routing key
-		"logs", // exchange
+		q.Name,              // queue name
+		"",                  // routing key
+		amqpReceiveExchange, // exchange
 		false,
 		nil)
 	failOnError(err, "Failed to bind a queue")
@@ -95,12 +97,12 @@ func send(msg string) {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"gomatch", // name
-		false,     // durable
-		false,     // delete when usused
-		false,     // exclusive
-		false,     // noWait
-		nil,       // arguments
+		amqpSendQueueName, // name
+		false,             // durable
+		false,             // delete when usused
+		false,             // exclusive
+		false,             // noWait
+		nil,               // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
@@ -135,7 +137,7 @@ func failOnError(err error, msg string) {
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
-		"logs",    // name
+		amqpReceiveQueueName,    // name
 		"fanout",  // type
 		true,      // durable
 		false,     // auto-deleted
@@ -147,7 +149,7 @@ func failOnError(err error, msg string) {
 
 	body := msg
 	err = ch.Publish(
-		"logs", // exchange
+		amqpReceiveExchange, // exchange
 		"",     // routing key
 		false,  // mandatory
 		false,  // immediate
@@ -157,5 +159,5 @@ func failOnError(err error, msg string) {
 		})
 
 	failOnError(err, "Failed to publish a message")
-	log.Println(msg)
+	log.Println("Sent: ",msg)
 }*/

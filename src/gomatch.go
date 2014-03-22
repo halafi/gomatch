@@ -36,6 +36,10 @@ var (
 func main() {
 	flag.Parse()
 
+	if *ampqConfigFilePath != "none" && *inputSocketFilePath != "none" {
+		log.Fatal("cannot use both socket and amqp at the same time")
+	}
+
 	trie, finalFor, state, patternNumber = initTrie()
 
 	regexes, patterns = readPatterns(*patternsFilePath, *tokensFilePath)
