@@ -22,10 +22,14 @@ func parseAmqpConfigFile(filePath string) {
 	}
 	lines := lineSplit(string(b))
 	for j := range lines {
-		if len(lines[j]) != 0 && lines[j][0] != '#' {
+		if len(lines[j]) > 0 && lines[j][0] != '#' {
 			lines[j] = strings.Replace(lines[j], " ", "", -1)
 			data := strings.Split(lines[j], "=")
-			dataMap[data[0]] = data[1]
+			if len(data) == 2 {
+				dataMap[data[0]] = data[1]
+			} else {
+				log.Println("invalid config line number ",j+1," (will be ignored)")
+			}
 		}
 	}
 	// check for missing statements in config file
