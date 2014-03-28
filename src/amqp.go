@@ -41,7 +41,7 @@ func parseAmqpConfigFile(filePath string) {
 	if dataMap["amqp.matched.send.uri"] == "" {
 		log.Fatal("missing amqp.matched.send.uri in AMQP config file")
 	}
-	// fill the amqp global variables from dataMap
+	// fill global variables from dataMap
 	amqpReceiveUri = dataMap["amqp.receive.uri"]
 	amqpMatchedSendUri = dataMap["amqp.matched.send.uri"]
 }
@@ -125,39 +125,3 @@ func failOnError(err error, msg string) {
 		log.Fatalf("%s: %s", msg, err)
 	}
 }
-
-// emitLog sends one log message. Testing purposes.
-/*func emitLog(msg string) {
-	conn, err := amqp.Dial(amqpMatchedSendUri)
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
-	err = ch.ExchangeDeclare(
-		amqpReceiveQueueName,    // name
-		"fanout",  // type
-		true,      // durable
-		false,     // auto-deleted
-		false,     // internal
-		false,     // noWait
-		nil,       // arguments
-	)
-	failOnError(err, "Failed to declare an exchange")
-
-	body := msg
-	err = ch.Publish(
-		amqpReceiveExchange, // exchange
-		"",     // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType:     "text/plain",
-			Body:            []byte(body),
-		})
-
-	failOnError(err, "Failed to publish a message")
-	log.Println("Sent: ",msg)
-}*/
