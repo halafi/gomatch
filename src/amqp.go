@@ -46,82 +46,65 @@ func parseAmqpConfigFile(filePath string) {
 	amqpMatchedSendUri = dataMap["amqp.matched.send.uri"]
 }
 
-// receiveLogs reads all of the messages.
-func receiveLogs() []string {
-	logs := make([]string, 0)
+// openConnection opens up a RabbitMQ connection.
+func openConnection(amqpUri string) *amqp.Connection {
+	conn, err := amqp.Dial(amqpUri)
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %s", err)
+	}
+	return conn
+}
 
-	conn, err := amqp.Dial(amqpReceiveUri)
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
+// openChannel opens up a RabbitMQ channel.
+func openChannel(conn *amqp.Connection) *amqp.Channel {
 	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+	if err != nil {
+		log.Fatalf("Failed to open a channel: %s", err)
+	}
+	return ch
+}
 
+// declareQueue declares a queue - a buffer for messages.
+func declareQueue(name string, ch *amqp.Channel) amqp.Queue {
 	q, err := ch.QueueDeclare(
-		amqpReceiveQueueName, // name
-		false,                // durable
-		false,                // delete when usused
-		false,                // exclusive
-		false,                // noWait
-		nil,                  // arguments
+		name,  // name
+		false, // durable
+		false, // delete when usused
+		false, // exclusive
+		false, // noWait
+		nil,   // arguments
 	)
-	failOnError(err, "Failed to declare a queue")
-	err = ch.QueueBind(
+	if err != nil {
+		log.Fatalf("Failed to declare a queue: %s", err)
+	}
+	return q
+}
+
+// bindReceiveQueue binds the amqpReceiveExchange name to a queue.
+func bindReceiveQueue(ch *amqp.Channel, q amqp.Queue) {
+	err := ch.QueueBind(
 		q.Name,              // queue name
 		"",                  // routing key
 		amqpReceiveExchange, // exchange
 		false,
 		nil)
-	failOnError(err, "Failed to bind a queue")
-
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
-
-	for d := range msgs {
-		logs = append(logs, string(d.Body))
-		ch.Close()
+	if err != nil {
+		log.Fatalf("Failed to bind a queue: %s", err)
 	}
-	return logs
-
 }
 
-// send sends a single string message using RabbitMQ (queue: gomatch).
-func send(msg string) {
-	conn, err := amqp.Dial(amqpMatchedSendUri)
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		amqpSendQueueName, // name
-		false,             // durable
-		false,             // delete when usused
-		false,             // exclusive
-		false,             // noWait
-		nil,               // arguments
-	)
-	failOnError(err, "Failed to declare a queue")
-
-	body := msg
-	err = ch.Publish(
+// send sends a single message using the given queue and a channel.
+func send(msg string, ch *amqp.Channel, q amqp.Queue) {
+	err := ch.Publish(
 		"",     // exchange
 		q.Name, // routing key
 		false,  // mandatory
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(body),
+			Body:        []byte(msg),
 		})
-	failOnError(err, "Failed to publish a message")
-}
-
-// failOnError logs error and fails the program execution.
-func failOnError(err error, msg string) {
 	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
+		log.Fatalf("Failed to publish a message: %s", err)
 	}
 }

@@ -53,26 +53,46 @@ func main() {
 	go watchPatterns()
 
 	if *ampqConfigFilePath != "none" {
+		// init configuration parameters
 		parseAmqpConfigFile(*ampqConfigFilePath)
 
-		for {
-			logLines := receiveLogs()
-			for i := range logLines {
-				if logLines[i] != "" {
-					match := getMatch(logLines[i], patterns, trie, finalFor, regexes)
-					if match.Type != "" {
-						send(convertMatch(match, *matchedDataFormat))
-					} else {
-						writeFile(noMatchOutputFile, logLines[i]+"\r\n")
-					}
-				}
+		// set up connections and channels, ensure that they are closed
+		cSend := openConnection(amqpMatchedSendUri)
+		chSend := openChannel(cSend)
+		defer cSend.Close()
+		defer chSend.Close()
+
+		cReceive := openConnection(amqpReceiveUri)
+		chReceive := openChannel(cReceive)
+		defer cReceive.Close()
+		defer chReceive.Close()
+
+		// declare queues
+		qReceive := declareQueue(amqpReceiveQueueName, chReceive)
+		qSend := declareQueue(amqpSendQueueName, chSend)
+
+		// bind the receive exchange with the receive queue
+		bindReceiveQueue(chSend, qReceive)
+
+		// start consuimng until terminated
+		msgs, err := chReceive.Consume(qReceive.Name, "", true, false, false, false, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for delivery := range msgs {
+			match := getMatch(string(delivery.Body), patterns, trie, finalFor, regexes)
+			if match.Type != "" {
+				send(convertMatch(match, *matchedDataFormat), chSend, qSend)
+			} else {
+				writeFile(noMatchOutputFile, string(delivery.Body)+"\r\n")
 			}
 		}
+
 	} else if *inputSocketFilePath != "none" {
-		connection := openSocket(*inputSocketFilePath)
+		conn := openSocket(*inputSocketFilePath)
 
 		for {
-			lines, eof := readFully(connection)
+			lines, eof := readFully(conn)
 			for i := range lines {
 				match := getMatch(lines[i], patterns, trie, finalFor, regexes)
 				if match.Type != "" {
@@ -85,8 +105,7 @@ func main() {
 				break
 			}
 		}
-
-		connection.Close()
+		defer conn.Close()
 	} else {
 		inputReader := openFile(*inputFilePath)
 
