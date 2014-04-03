@@ -26,8 +26,7 @@ func createTransition(fromState int, overToken Token, toState int, fsm map[int]m
 
 // stateExists returns true if state exists, false otherwise.
 func stateExists(state int, fsm map[int]map[Token]int) bool {
-	_, ok := fsm[state]
-	if !ok || state == -1 || fsm[state] == nil {
+	if _, notEmpty := fsm[state]; !notEmpty || state == -1 || fsm[state] == nil {
 		return false
 	}
 	return true

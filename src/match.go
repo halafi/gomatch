@@ -8,8 +8,8 @@ import (
 type Match struct {
 	// matched event name
 	Type string
-	// token name followed by matched value
-	Body []string
+	// key= matched_token_name, value= log_value
+	Body map[string]string
 }
 
 // getMatch returns match for a given log line. It takes a log line and
@@ -19,7 +19,7 @@ type Match struct {
 // log word, then it returns match with matched data.
 func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int, regexes map[string]Regex) Match {
 	match := Match{}
-	matchBody := make([]string, 0)
+	matchBody := make(map[string]string)
 
 	current := 0
 	logWords := logLineSplit(logLine)
@@ -35,8 +35,7 @@ func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, fi
 				if (regexes[transitionTokens[t].Value].Compiled).MatchString(logWords[i]) {
 					validTokens++
 					current = getTransition(current, transitionTokens[0], trie)
-					matchBody = append(matchBody, transitionTokens[0].OutputName)
-					matchBody = append(matchBody, logWords[i])
+					matchBody[transitionTokens[0].OutputName] = logWords[i]
 				}
 			}
 			if validTokens > 1 {

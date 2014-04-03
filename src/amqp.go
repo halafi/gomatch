@@ -7,25 +7,28 @@ import (
 )
 
 var (
-	amqpReceiveUri       string
-	amqpReceiveQueueName = "logs"
-	amqpReceiveExchange  = "logs"
-	amqpMatchedSendUri   string
-	amqpSendQueueName    = "gomatch"
+	amqpReceiveUri           string
+	amqpReceiveQueueName     string // logs
+	amqpReceiveExchange      string // logs
+	amqpReceiveFormat        string // plain or json
+	amqpMatchedSendUri       string
+	amqpMatchedSendQueueName string // gomatch
 )
 
 // parseAmqpConfigFile fills up all the necessary variables from a file.
 // The config file can contain single line # comments.
 func parseAmqpConfigFile(filePath string) {
-	dataMap := make(map[string]string)
+	m := make(map[string]string)
 	inputReader := openFile(filePath)
+
 	for {
-		configLine, eof := readLine(inputReader)
+		line, eof := readLine(inputReader)
+		configLine := string(line)
 		if len(configLine) > 0 && configLine[0] != '#' {
 			configLineWithoutSpaces := strings.Replace(configLine, " ", "", -1)
 			configData := strings.Split(configLineWithoutSpaces, "=")
 			if len(configData) == 2 {
-				dataMap[configData[0]] = configData[1]
+				m[configData[0]] = configData[1]
 			} else {
 				log.Println("invalid config line: \"", configLine, "\" (will be ignored)")
 			}
@@ -34,16 +37,21 @@ func parseAmqpConfigFile(filePath string) {
 			break
 		}
 	}
+
 	// check for missing statements in config file
-	if dataMap["amqp.receive.uri"] == "" {
-		log.Fatal("missing amqp.receive.uri in AMQP config file")
+	if m["amqp.receive.uri"] == "" || m["amqp.receive.format"] == "" ||
+		m["amqp.receive.queue"] == "" || m["amqp.receive.exchange"] == "" ||
+		m["amqp.matched.send.uri"] == "" || m["amqp.matched.send.queue"] == "" {
+		log.Fatal("missing argument in AMQP config file")
 	}
-	if dataMap["amqp.matched.send.uri"] == "" {
-		log.Fatal("missing amqp.matched.send.uri in AMQP config file")
-	}
+
 	// fill global variables from dataMap
-	amqpReceiveUri = dataMap["amqp.receive.uri"]
-	amqpMatchedSendUri = dataMap["amqp.matched.send.uri"]
+	amqpReceiveUri = m["amqp.receive.uri"]
+	amqpReceiveFormat = m["amqp.receive.format"]
+	amqpReceiveQueueName = m["amqp.receive.queue"]
+	amqpReceiveExchange = m["amqp.receive.exchange"]
+	amqpMatchedSendUri = m["amqp.matched.send.uri"]
+	amqpMatchedSendQueueName = m["amqp.matched.send.queue"]
 }
 
 // openConnection opens up a RabbitMQ connection.
@@ -74,9 +82,11 @@ func declareQueue(name string, ch *amqp.Channel) amqp.Queue {
 		false, // noWait
 		nil,   // arguments
 	)
+
 	if err != nil {
 		log.Fatalf("Failed to declare a queue: %s", err)
 	}
+
 	return q
 }
 
@@ -88,13 +98,14 @@ func bindReceiveQueue(ch *amqp.Channel, q amqp.Queue) {
 		amqpReceiveExchange, // exchange
 		false,
 		nil)
+
 	if err != nil {
 		log.Fatalf("Failed to bind a queue: %s", err)
 	}
 }
 
 // send sends a single message using the given queue and a channel.
-func send(msg string, ch *amqp.Channel, q amqp.Queue) {
+func send(msg []byte, ch *amqp.Channel, q amqp.Queue) {
 	err := ch.Publish(
 		"",     // exchange
 		q.Name, // routing key
@@ -102,9 +113,46 @@ func send(msg string, ch *amqp.Channel, q amqp.Queue) {
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(msg),
+			Body:        msg,
 		})
+
 	if err != nil {
 		log.Fatalf("Failed to publish a message: %s", err)
 	}
 }
+
+// emitLog sends one log message. Testing purposes.
+/*func emitLog(msg string) {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	if err != nil {log.Fatal("emmit", err)}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {log.Fatal("emmit", err)}
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		"logs",    // name
+		"fanout",  // type
+		true,      // durable
+		false,     // auto-deleted
+		false,     // internal
+		false,     // noWait
+		nil,       // arguments
+	)
+	if err != nil {log.Fatal("emmit", err)}
+
+	body := msg
+	err = ch.Publish(
+		"logs", // exchange
+		"",     // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType:     "text/plain",
+			Body:            []byte(body),
+		})
+
+	if err != nil {log.Fatal("emmit", err)}
+	log.Println("Sent: ",msg)
+}*/

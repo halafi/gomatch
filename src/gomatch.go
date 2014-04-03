@@ -15,8 +15,7 @@ var (
 	patternsFilePath      = flag.String("p", "Patterns", "Patterns input.")
 	tokensFilePath        = flag.String("t", "Tokens", "Tokens input.")
 	outputFilePath        = flag.String("o", "/dev/stdout", "Matched data output.")
-	noMatchOutputFilePath = flag.String("u", "no_match.log", "Unmatched data output.")
-	matchedDataFormat     = flag.String("f", "json", "Matched data format. Supported: json, xml, name, none.")
+	noMatchOutputFilePath = flag.String("n", "no_match.log", "Unmatched data output.")
 	// Shared variables between all goroutines.
 	trie          map[int]map[Token]int
 	finalFor      []int
@@ -52,7 +51,7 @@ func main() {
 
 	go watchPatterns()
 
-	if *ampqConfigFilePath != "none" {
+	if *ampqConfigFilePath != "none" { // amqp
 		// init configuration parameters
 		parseAmqpConfigFile(*ampqConfigFilePath)
 
@@ -69,7 +68,7 @@ func main() {
 
 		// declare queues
 		qReceive := declareQueue(amqpReceiveQueueName, chReceive)
-		qSend := declareQueue(amqpSendQueueName, chSend)
+		qSend := declareQueue(amqpMatchedSendQueueName, chSend)
 
 		// bind the receive exchange with the receive queue
 		bindReceiveQueue(chSend, qReceive)
@@ -79,16 +78,40 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		for delivery := range msgs {
-			match := getMatch(string(delivery.Body), patterns, trie, finalFor, regexes)
-			if match.Type != "" {
-				send(convertMatch(match, *matchedDataFormat), chSend, qSend)
-			} else {
-				writeFile(noMatchOutputFile, string(delivery.Body)+"\r\n")
+		switch amqpReceiveFormat {
+		case "plain", "PLAIN": // incoming logs
+			for delivery := range msgs {
+				match := getMatch(string(delivery.Body), patterns, trie, finalFor, regexes)
+				if match.Type != "" {
+					send([]byte(marshalJson(match)), chSend, qSend)
+				} else {
+					writeFile(noMatchOutputFile, string(delivery.Body)+"\r\n")
+				}
 			}
+		case "json", "JSON": // incoming json
+			for delivery := range msgs {
+				m := unmarshalJson(delivery.Body)
+				if attExists("@gomatch", m) { // att @gomatch is present
+					if str, ok := m["@gomatch"].(string); ok {
+						match := getMatch(str, patterns, trie, finalFor, regexes)
+						if match.Type != "" {
+							m["@type"] = match.Type
+							m["@p"] = match.Body
+							delete(m, "@gomatch")
+							send([]byte(marshalJson(m)), chSend, qSend)
+						}
+					} else {
+						log.Println("@gomatch is not a string (skipping)")
+					}
+				} else { // we return the former json msg
+					send(delivery.Body, chSend, qSend)
+				}
+			}
+		default:
+			log.Fatal("Unknown RabbitMQ input format, use either plain or json.")
 		}
 
-	} else if *inputSocketFilePath != "none" {
+	} else if *inputSocketFilePath != "none" { // socket
 		conn := openSocket(*inputSocketFilePath)
 
 		for {
@@ -96,7 +119,7 @@ func main() {
 			for i := range lines {
 				match := getMatch(lines[i], patterns, trie, finalFor, regexes)
 				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
+					writeFile(outputFile, marshalMatch(match)+"\r\n")
 				} else {
 					writeFile(noMatchOutputFile, lines[i]+"\r\n")
 				}
@@ -106,26 +129,20 @@ func main() {
 			}
 		}
 		defer conn.Close()
-	} else {
+	} else { // file, pipeline
 		inputReader := openFile(*inputFilePath)
 
 		for {
-			logLine, eof := readLine(inputReader)
-			if eof {
-				match := getMatch(logLine, patterns, trie, finalFor, regexes)
-				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
-				} else {
-					writeFile(noMatchOutputFile, logLine+"\r\n")
-				}
-				break
+			line, eof := readLine(inputReader)
+			logLine := string(line)
+			match := getMatch(logLine, patterns, trie, finalFor, regexes)
+			if match.Type != "" {
+				writeFile(outputFile, marshalMatch(match)+"\r\n")
 			} else {
-				match := getMatch(logLine, patterns, trie, finalFor, regexes)
-				if match.Type != "" {
-					writeFile(outputFile, convertMatch(match, *matchedDataFormat)+"\r\n")
-				} else {
-					writeFile(noMatchOutputFile, logLine+"\r\n")
-				}
+				writeFile(noMatchOutputFile, logLine+"\r\n")
+			}
+			if eof {
+				break
 			}
 		}
 	}
@@ -156,7 +173,7 @@ func watchPatterns() {
 			line, eof := readLine(patternReader)
 			if !eof {
 				oldLen := len(patterns)
-				regexes, patterns = addPattern(line, patterns, regexes)
+				regexes, patterns = addPattern(string(line), patterns, regexes)
 
 				if len(patterns) > oldLen {
 					finalFor, state, patternNumber = appendPattern(patterns[len(patterns)-1], trie, finalFor, state, patternNumber, regexes)
@@ -164,34 +181,6 @@ func watchPatterns() {
 				}
 				patternsLastModTime = patternsFileInfo.ModTime()
 			}
-		}
-	}
-}
-
-// convertMatch takes a single match and returns string representation
-// for the desired data format.
-func convertMatch(match Match, dataFormat string) string {
-	switch dataFormat {
-	case "json":
-		{
-			return getJSON(match)
-		}
-	case "xml":
-		{
-			return getXML(match)
-		}
-	case "name":
-		{
-			return match.Type
-		}
-	case "none":
-		{
-			return ""
-		}
-	default:
-		{
-			log.Fatal("unknown output format: \"", dataFormat+"\"")
-			return ""
 		}
 	}
 }

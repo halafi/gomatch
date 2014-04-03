@@ -16,18 +16,18 @@ func openFile(filePath string) *bufio.Reader {
 	return bufio.NewReader(file)
 }
 
-// readLine reads a single text line into string using the given reader.
+// readLine reads a single text line as bytes using the given reader.
 // Returns the line and true or false (whether EOF was reached or not).
-func readLine(reader *bufio.Reader) (string, bool) {
+func readLine(reader *bufio.Reader) ([]byte, bool) {
 	line, _, err := reader.ReadLine()
 	if err != nil {
 		if err == io.EOF {
-			return string(line), true
+			return line, true
 		} else {
 			log.Fatal(err)
 		}
 	}
-	return string(line), false
+	return line, false
 }
 
 // createFile creates file at filePath.

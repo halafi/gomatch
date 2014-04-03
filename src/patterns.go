@@ -37,7 +37,7 @@ func readPatterns(patternsFilePath, tokensFilePath string) (map[string]Regex, []
 		if eof {
 			break
 		}
-		regexes, patternsArr = addPattern(line, patternsArr, regexes)
+		regexes, patternsArr = addPattern(string(line), patternsArr, regexes)
 	}
 	return regexes, patternsArr
 }
@@ -121,7 +121,7 @@ func parseTokensFile(filePath string) map[string]Regex {
 		if eof {
 			break
 		}
-		addRegex(line, regexes)
+		addRegex(string(line), regexes)
 	}
 	return regexes
 }
