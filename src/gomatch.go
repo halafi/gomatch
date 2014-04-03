@@ -22,16 +22,14 @@ var (
 	state         int
 	patternNumber int
 	patterns      []Pattern
-	regexes       map[string]Regex
+	regexMap      map[string]Regex
 )
 
-// Starts when the program is executed.
-// Performs parsing of flags, reading of both Tokens and Patterns file,
-// prefix tree construction and output files init.
-// Runs separate goroutine for watching file with patterns.
-// Uses AMQP if flag -a is set. Otherwise reads input from either socket
-// or input file/pipe.
-// For each input line performs matching and writing to output.
+// main starts when the program is executed.
+// Performs parsing of flags, loads up patterns and regexes, constructs
+// a trie and runs a separate goroutine for watching file with patterns.
+// Has three modes: AMQP, Socket, File/Pipeline.
+// Log lines are matched and send to some output in JSON.
 func main() {
 	flag.Parse()
 
@@ -41,13 +39,10 @@ func main() {
 
 	trie, finalFor, state, patternNumber = initTrie()
 
-	regexes, patterns = readPatterns(*patternsFilePath, *tokensFilePath)
+	regexMap, patterns = readPatterns(*patternsFilePath, *tokensFilePath)
 	for p := range patterns {
-		finalFor, state, patternNumber = appendPattern(patterns[p], trie, finalFor, state, patternNumber, regexes)
+		finalFor, state, patternNumber = appendPattern(patterns[p], trie, finalFor, state, patternNumber, regexMap)
 	}
-
-	outputFile := createFile(*outputFilePath)
-	noMatchOutputFile := createFile(*noMatchOutputFilePath)
 
 	go watchPatterns()
 
@@ -80,8 +75,10 @@ func main() {
 		}
 		switch amqpReceiveFormat {
 		case "plain", "PLAIN": // incoming logs
+			noMatchOutputFile := createFile(*noMatchOutputFilePath)
+			defer noMatchOutputFile.Close()
 			for delivery := range msgs {
-				match := getMatch(string(delivery.Body), patterns, trie, finalFor, regexes)
+				match := getMatch(string(delivery.Body), patterns, trie, finalFor, regexMap)
 				if match.Type != "" {
 					send([]byte(marshalJson(match)), chSend, qSend)
 				} else {
@@ -93,7 +90,7 @@ func main() {
 				m := unmarshalJson(delivery.Body)
 				if attExists("@gomatch", m) { // att @gomatch is present
 					if str, ok := m["@gomatch"].(string); ok {
-						match := getMatch(str, patterns, trie, finalFor, regexes)
+						match := getMatch(str, patterns, trie, finalFor, regexMap)
 						if match.Type != "" {
 							m["@type"] = match.Type
 							m["@p"] = match.Body
@@ -113,11 +110,16 @@ func main() {
 
 	} else if *inputSocketFilePath != "none" { // socket
 		conn := openSocket(*inputSocketFilePath)
+		outputFile := createFile(*outputFilePath)
+		noMatchOutputFile := createFile(*noMatchOutputFilePath)
+		defer conn.Close()
+		defer outputFile.Close()
+		defer noMatchOutputFile.Close()
 
 		for {
 			lines, eof := readFully(conn)
 			for i := range lines {
-				match := getMatch(lines[i], patterns, trie, finalFor, regexes)
+				match := getMatch(lines[i], patterns, trie, finalFor, regexMap)
 				if match.Type != "" {
 					writeFile(outputFile, marshalMatch(match)+"\r\n")
 				} else {
@@ -128,14 +130,19 @@ func main() {
 				break
 			}
 		}
-		defer conn.Close()
+
 	} else { // file, pipeline
+		outputFile := createFile(*outputFilePath)
+		noMatchOutputFile := createFile(*noMatchOutputFilePath)
+		defer outputFile.Close()
+		defer noMatchOutputFile.Close()
+
 		inputReader := openFile(*inputFilePath)
 
 		for {
 			line, eof := readLine(inputReader)
 			logLine := string(line)
-			match := getMatch(logLine, patterns, trie, finalFor, regexes)
+			match := getMatch(logLine, patterns, trie, finalFor, regexMap)
 			if match.Type != "" {
 				writeFile(outputFile, marshalMatch(match)+"\r\n")
 			} else {
@@ -146,7 +153,6 @@ func main() {
 			}
 		}
 	}
-	closeFile(outputFile)
 	return
 }
 
@@ -156,7 +162,7 @@ func main() {
 func watchPatterns() {
 	patternsFileInfo, err := os.Stat(*patternsFilePath)
 	if err != nil {
-		log.Fatal("watchPatterns(): ", err)
+		log.Fatal("watchPatterns: ", err)
 	}
 	patternsLastModTime := patternsFileInfo.ModTime()
 	for {
@@ -164,7 +170,7 @@ func watchPatterns() {
 
 		patternsFileInfo, err := os.Stat(*patternsFilePath)
 		if err != nil {
-			log.Println("watchPatterns(): ", err)
+			log.Println("watchPatterns: ", err)
 			break
 		}
 
@@ -173,10 +179,10 @@ func watchPatterns() {
 			line, eof := readLine(patternReader)
 			if !eof {
 				oldLen := len(patterns)
-				regexes, patterns = addPattern(string(line), patterns, regexes)
+				patterns = addPattern(string(line), patterns, regexMap)
 
 				if len(patterns) > oldLen {
-					finalFor, state, patternNumber = appendPattern(patterns[len(patterns)-1], trie, finalFor, state, patternNumber, regexes)
+					finalFor, state, patternNumber = appendPattern(patterns[len(patterns)-1], trie, finalFor, state, patternNumber, regexMap)
 					log.Println("new event: ", patterns[len(patterns)-1].Name)
 				}
 				patternsLastModTime = patternsFileInfo.ModTime()

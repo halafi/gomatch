@@ -1,23 +1,20 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
-// Match is the representation of a single event matched.
+// Match represents a single log event matched.
 type Match struct {
-	// matched event name
-	Type string
-	// key= matched_token_name, value= log_value
-	Body map[string]string
+	Type string            // event name
+	Body map[string]string // key=matched_token, value=matched_value
 }
 
-// getMatch returns match for a given log line. It takes a log line and
-// goes through all log words one by one, changing state using the trie.
+// getMatch returns a match for a log line. It goes through all of the
+// log line words, one by one, changing state using the given trie.
 // Word transitions are prioritized over regex transitions.
-// If it reaches final state for some pattern after moving over last
-// log word, then it returns match with matched data.
-func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int, regexes map[string]Regex) Match {
+// If a final state is reached for some pattern after matching the last
+// log word, then a match with matched data is returned.
+// Otherwise an empty match is returned.
+func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, finalFor []int, regexMap map[string]Regex) Match {
 	match := Match{}
 	matchBody := make(map[string]string)
 
@@ -32,7 +29,7 @@ func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, fi
 			current = getTransition(current, Token{false, logWords[i], ""}, trie)
 		} else if len(transitionTokens) > 0 {
 			for t := range transitionTokens {
-				if (regexes[transitionTokens[t].Value].Compiled).MatchString(logWords[i]) {
+				if (regexMap[transitionTokens[t].Value].Compiled).MatchString(logWords[i]) {
 					validTokens++
 					current = getTransition(current, transitionTokens[0], trie)
 					matchBody[transitionTokens[0].OutputName] = logWords[i]
@@ -56,8 +53,8 @@ func getMatch(logLine string, patterns []Pattern, trie map[int]map[Token]int, fi
 	return match
 }
 
-// logLineSplit splits a single log line string into words, words can
-// only be separated by any ammount of spaces.
+// logLineSplit splits a single log line into words.
+// Words can be separated by a single space or any amount of spaces.
 func logLineSplit(line string) []string {
 	words := make([]string, 0)
 	if line == "" {

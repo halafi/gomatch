@@ -1,23 +1,22 @@
 package main
 
-import (
-	"log"
-)
+import "log"
 
-// initTrie initializes a new prefix tree.
-// State is the number of first state to be created, patternNumber is
-// the number of first pattern to be added, finalFor is an array of
-// states with number of pattern that they are final for, patternNumber
-// is simply the number of first pattern to be added to trie.
+// initTrie initializes a new prefix tree - trie.
+// state is the number of first state to be created.
+// patternNumber is the number of first pattern to be added.
+// finalFor is an array, where index is state and value is the number of
+// pattern that the state is final for. 0 if none.
+// patternNumber is the number of next pattern to be added to trie.
 func initTrie() (trie map[int]map[Token]int, finalFor []int, state int, patternNumber int) {
 	return make(map[int]map[Token]int), make([]int, 1), 1, 1
 }
 
 // appendPattern creates all the necessary transitions for a single
 // pattern to the given trie.
-// At first it reads current pattern for as long as there are
-// transitions, after that it creates all the missing transitions (with
-// checking for conflicts).
+// First it reads the pattern for as long as there are transitions,
+// after that it creates all the missing transitions while checking for
+// conflicts.
 func appendPattern(pattern Pattern, trie map[int]map[Token]int, finalFor []int, state int, patternNumber int, regexes map[string]Regex) ([]int, int, int) {
 	current := 0
 	j := 0

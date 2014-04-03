@@ -6,22 +6,20 @@ func getTransition(from int, over Token, fsm map[int]map[Token]int) int {
 	if !stateExists(from, fsm) {
 		return -1
 	}
-	toState, ok := fsm[from][over]
-	if ok == false {
+	toState, exists := fsm[from][over]
+	if !exists {
 		return -1
 	}
 	return toState
 }
 
 // createTransition creates an ending state if there isn't one yet,
-// after that creates transitionion σ(fromState,overToken) = toState.
-func createTransition(fromState int, overToken Token, toState int, fsm map[int]map[Token]int) {
-	if stateExists(fromState, fsm) {
-		fsm[fromState][overToken] = toState
-	} else {
-		fsm[fromState] = make(map[Token]int)
-		fsm[fromState][overToken] = toState
+// after that creates transition σ(from,over) = toState.
+func createTransition(from int, over Token, toState int, fsm map[int]map[Token]int) {
+	if !stateExists(from, fsm) {
+		fsm[from] = make(map[Token]int)
 	}
+	fsm[from][over] = toState
 }
 
 // stateExists returns true if state exists, false otherwise.
@@ -32,23 +30,23 @@ func stateExists(state int, fsm map[int]map[Token]int) bool {
 	return true
 }
 
-// getAllTransitions returns all transitions leading from state.
+// getAllTransitions returns all the transitions leading from a state.
 func getAllTransitions(state int, fsm map[int]map[Token]int) []Token {
-	tansitions := make([]Token, 0)
+	transitions := make([]Token, 0)
 	for s, _ := range fsm[state] {
-		tansitions = append(tansitions, s)
+		transitions = append(transitions, s)
 	}
-	return tansitions
+	return transitions
 }
 
-// getTransitionRegexes returns all transition tokens from state, that
-// are regullar expressions.
+// getTransitionRegexes returns all the transitions from a state, that
+// are regular expressions.
 func getTransitionRegexes(state int, fsm map[int]map[Token]int) []Token {
-	tansitions := make([]Token, 0)
+	transitions := make([]Token, 0)
 	for s, _ := range fsm[state] {
 		if s.IsRegex {
-			tansitions = append(tansitions, s)
+			transitions = append(transitions, s)
 		}
 	}
-	return tansitions
+	return transitions
 }

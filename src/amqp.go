@@ -7,16 +7,17 @@ import (
 )
 
 var (
+	// AMQP configuration variables.
 	amqpReceiveUri           string
-	amqpReceiveQueueName     string // logs
-	amqpReceiveExchange      string // logs
-	amqpReceiveFormat        string // plain or json
+	amqpReceiveQueueName     string
+	amqpReceiveExchange      string
 	amqpMatchedSendUri       string
-	amqpMatchedSendQueueName string // gomatch
+	amqpMatchedSendQueueName string
+	// AMQP input, either plain or json
+	amqpReceiveFormat string
 )
 
 // parseAmqpConfigFile fills up all the necessary variables from a file.
-// The config file can contain single line # comments.
 func parseAmqpConfigFile(filePath string) {
 	m := make(map[string]string)
 	inputReader := openFile(filePath)
@@ -24,7 +25,7 @@ func parseAmqpConfigFile(filePath string) {
 	for {
 		line, eof := readLine(inputReader)
 		configLine := string(line)
-		if len(configLine) > 0 && configLine[0] != '#' {
+		if len(configLine) > 0 && configLine[0] != '#' { // ignore empty lines and comments
 			configLineWithoutSpaces := strings.Replace(configLine, " ", "", -1)
 			configData := strings.Split(configLineWithoutSpaces, "=")
 			if len(configData) == 2 {
@@ -38,7 +39,7 @@ func parseAmqpConfigFile(filePath string) {
 		}
 	}
 
-	// check for missing statements in config file
+	// check for missing statements
 	if m["amqp.receive.uri"] == "" || m["amqp.receive.format"] == "" ||
 		m["amqp.receive.queue"] == "" || m["amqp.receive.exchange"] == "" ||
 		m["amqp.matched.send.uri"] == "" || m["amqp.matched.send.queue"] == "" {
@@ -104,7 +105,7 @@ func bindReceiveQueue(ch *amqp.Channel, q amqp.Queue) {
 	}
 }
 
-// send sends a single message using the given queue and a channel.
+// send sends a message using the given queue and a channel.
 func send(msg []byte, ch *amqp.Channel, q amqp.Queue) {
 	err := ch.Publish(
 		"",     // exchange
@@ -120,39 +121,3 @@ func send(msg []byte, ch *amqp.Channel, q amqp.Queue) {
 		log.Fatalf("Failed to publish a message: %s", err)
 	}
 }
-
-// emitLog sends one log message. Testing purposes.
-/*func emitLog(msg string) {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {log.Fatal("emmit", err)}
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	if err != nil {log.Fatal("emmit", err)}
-	defer ch.Close()
-
-	err = ch.ExchangeDeclare(
-		"logs",    // name
-		"fanout",  // type
-		true,      // durable
-		false,     // auto-deleted
-		false,     // internal
-		false,     // noWait
-		nil,       // arguments
-	)
-	if err != nil {log.Fatal("emmit", err)}
-
-	body := msg
-	err = ch.Publish(
-		"logs", // exchange
-		"",     // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType:     "text/plain",
-			Body:            []byte(body),
-		})
-
-	if err != nil {log.Fatal("emmit", err)}
-	log.Println("Sent: ",msg)
-}*/

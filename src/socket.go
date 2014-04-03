@@ -8,22 +8,22 @@ import (
 	"strings"
 )
 
-// openSocket connects to target socket file.
+// openSocket opens a target Unix domain socket.
 func openSocket(filePath string) net.Conn {
-	connection, err := net.Dial("unix", filePath)
+	conn, err := net.Dial("unix", filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return connection
+	return conn
 }
 
-// readFully reads everything so far unread from target socket into
-// array of string lines.
+// readFully reads every line so far unread from the target socket.
 // Returns true if EOF was reached, false otherwise.
-func readFully(connection net.Conn) ([]string, bool) {
+func readFully(conn net.Conn) ([]string, bool) {
 	toReturn := bytes.NewBuffer(nil)
 	var buf [512]byte
-	n, err := connection.Read(buf[0:])
+
+	n, err := conn.Read(buf[0:])
 	toReturn.Write(buf[0:n])
 	if err != nil {
 		if err == io.EOF {
@@ -31,27 +31,22 @@ func readFully(connection net.Conn) ([]string, bool) {
 		}
 		log.Fatal(err)
 	}
+
 	return lineSplit(string(toReturn.Bytes())), false
 }
 
-// closeSocket closes the target socket connection.
-func closeSocket(connection net.Conn) {
-	connection.Close()
-}
-
-// lineSplit parses a mutli-line string into single lines (array of
-// strings).
+// lineSplit splits a multi-line string into single lines.
 func lineSplit(input string) []string {
-	inputSplit := make([]string, 1)
+	split := make([]string, 1)
 
-	// default single line
-	inputSplit[0] = input
-	if strings.Contains(input, "\r\n") { //CR+LF
-		inputSplit = strings.Split(input, "\r\n")
-	} else if strings.Contains(input, "\n") { //LF
-		inputSplit = strings.Split(input, "\n")
-	} else if strings.Contains(input, "\r") { //CR
-		inputSplit = strings.Split(input, "\r")
+	// default return is single line
+	split[0] = input
+	if strings.Contains(input, "\r\n") { // CR+LF
+		split = strings.Split(input, "\r\n")
+	} else if strings.Contains(input, "\n") { // LF
+		split = strings.Split(input, "\n")
+	} else if strings.Contains(input, "\r") { // CR
+		split = strings.Split(input, "\r")
 	}
-	return inputSplit
+	return split
 }

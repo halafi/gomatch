@@ -7,5 +7,3 @@ amqp.receive.queue = logs
 amqp.receive.exchange = logs
 amqp.matched.send.uri = amqp://guest:guest@localhost:5672/
 amqp.matched.send.queue = gomatch
-
-

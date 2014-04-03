@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-// marshalJson converts anything into a JSON string.
+// marshalJson converts any object into a JSON string.
 func marshalJson(object interface{}) []byte {
 	b, err := json.Marshal(object)
 	if err != nil {
@@ -15,26 +15,23 @@ func marshalJson(object interface{}) []byte {
 	return b
 }
 
-// marshalMatch converts a given match to JSON string.
-// !!! Faster than marshalJson.
-func getJSON(match Match) string {
+// marshalMatch converts a given match into a JSON string.
+// Performs faster than function marshalJson.
+func marshalMatch(match Match) string {
 	json := "{\"Event\":{\"Type\":\"" + match.Type + "\""
 	if len(match.Body) != 0 {
 		json = json + ",\"Body\":[{"
 		for k, v := range match.Body {
 			json = json + "\"" + k + "\":\"" + v + "\","
 		}
-		json = json[:len(json)-1] // remove extra ,
-		json = json + "}]}}"
+		json = json[:len(json)-1] + "}]}}" // remove extra comma
 	} else {
 		json = json + "}}"
 	}
 	return json
 }
 
-// unmarshalJson takes a json that looks like:
-// {"@stringAtt1":"value1","@stringAtt2":"value2",...,"@gomatch":LOG}
-// and decodes it into a map.
+// unmarshalJson takes a JSON object and decodes it into a map.
 func unmarshalJson(object []byte) map[string]interface{} {
 	var msg interface{}
 	err := json.Unmarshal(object, &msg)

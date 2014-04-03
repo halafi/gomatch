@@ -1,6 +1,6 @@
 Gomatch
 ==================
-Search for multiple patterns/events in single line log records and convert them into desired data format (JSON, XML). 
+Match any number of patterns/events in single line log records and convert them into JSON.
 
 See the project <a href="https://github.com/halafi/gomatch/wiki">wiki</a> to find help getting started.
 

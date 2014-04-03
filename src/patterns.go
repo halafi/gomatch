@@ -6,30 +6,28 @@ import (
 	"strings"
 )
 
-// Pattern is the representation of a single pattern/event.
-// Pattern consists of: name and an array of Tokens to match.
+// Pattern represents a single pattern/event.
 type Pattern struct {
-	Name string
-	Body []Token
+	Name string  // pattern name
+	Body []Token // an array of Tokens to match
 }
 
-// Token represents a single thing to match. Can be regex or a word.
+// Token represents a single regex or a word to match.
 type Token struct {
 	IsRegex    bool
-	Value      string // i.e.: IP
-	OutputName string // i.e.: ipAddress
+	Value      string // token name (i.e.: IP)
+	OutputName string // name used in output (i.e.: ipAddress)
 }
 
-// Regex represents a single string regex with it's compiled value.
+// Regex represents a single regular expression.
 type Regex struct {
-	Expression string         // i.e.: ^\w+$
-	Compiled   *regexp.Regexp // nil or compiled regex, if it was used
+	Expression string         // regex string (i.e.: ^\w+$)
+	Compiled   *regexp.Regexp // nil until first used
 }
 
-// readPatterns reads all patterns at given filePath into an array of
-// strings.
+// readPatterns reads every pattern from a file.
 func readPatterns(patternsFilePath, tokensFilePath string) (map[string]Regex, []Pattern) {
-	regexes := parseTokensFile(tokensFilePath)
+	regexMap := parseTokensFile(tokensFilePath)
 	patternReader := openFile(patternsFilePath)
 	patternsArr := make([]Pattern, 0)
 	for {
@@ -37,29 +35,28 @@ func readPatterns(patternsFilePath, tokensFilePath string) (map[string]Regex, []
 		if eof {
 			break
 		}
-		regexes, patternsArr = addPattern(string(line), patternsArr, regexes)
+		patternsArr = addPattern(string(line), patternsArr, regexMap)
 	}
-	return regexes, patternsArr
+	return regexMap, patternsArr
 }
 
-// addPattern validates the given string. If it's ok, adds it into given
-// array of patterns.
-func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (map[string]Regex, []Pattern) {
+// addPattern validates the given string. If it's ok, appends it.
+func addPattern(pattern string, patterns []Pattern, regexMap map[string]Regex) []Pattern {
 	if pattern != "" && pattern[0] != '#' { // ignore empty lines and comments
 		split := strings.Split(pattern, "##")
 
 		// check for errors
 		if len(split) != 2 {
 			log.Println("invalid pattern: \"", pattern+"\"")
-			return regexes, patterns
+			return patterns
 		}
 		if split[0] == "" {
 			log.Println("invalid pattern \"", pattern, "\": empty name")
-			return regexes, patterns
+			return patterns
 		}
 		if split[1] == "" {
 			log.Println("invalid pattern \"", pattern, "\": is empty")
-			return regexes, patterns
+			return patterns
 		}
 
 		// convert pattern words into Tokens
@@ -82,17 +79,17 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (m
 				}
 
 				// check for missing regex in Tokens file
-				if regexes[regexName].Expression == "" {
+				if regexMap[regexName].Expression == "" {
 					log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
-					return regexes, patterns
+					return patterns
 				}
 
-				if regexes[regexName].Compiled == nil {
-					compiled, err := regexp.Compile(regexes[regexName].Expression)
+				if regexMap[regexName].Compiled == nil {
+					compiled, err := regexp.Compile(regexMap[regexName].Expression)
 					if err != nil {
 						log.Fatal(err)
 					}
-					regexes[regexName] = Regex{regexes[regexName].Expression, compiled}
+					regexMap[regexName] = Regex{regexMap[regexName].Expression, compiled}
 				}
 				// add regex Token
 				body[n] = Token{true, regexName, outputName}
@@ -103,33 +100,27 @@ func addPattern(pattern string, patterns []Pattern, regexes map[string]Regex) (m
 		}
 
 		// add new pattern
-		newArr := make([]Pattern, cap(patterns)+1)
-		copy(newArr, patterns)
-		patterns = newArr
-		patterns[len(patterns)-1] = Pattern{split[0], body}
+		patterns = append(patterns, Pattern{split[0], body})
 	}
-	return regexes, patterns
+	return patterns
 }
 
-// parseTokensFile reads file at given filePath into map of token
-// referencing names and their compiled regexes (default ./Tokens).
+// parseTokensFile reads all regex strings from a file.
 func parseTokensFile(filePath string) map[string]Regex {
-	tokensReader := openFile(filePath)
-	regexes := make(map[string]Regex)
+	r := openFile(filePath)
+	regexMap := make(map[string]Regex)
 	for {
-		line, eof := readLine(tokensReader)
-		if eof {
+		line, eof := readLine(r)
+		if eof && len(line) == 0 {
 			break
 		}
-		addRegex(string(line), regexes)
+		addRegex(string(line), regexMap)
 	}
-	return regexes
+	return regexMap
 }
 
-// addRegex validates the given string. If it's ok, adds it into given
-// map of token referencing names and their regexes (takes lines from
-// Tokens file).
-func addRegex(line string, regexes map[string]Regex) {
+// addRegex validates the given string. If it's ok, appends it.
+func addRegex(line string, regexMap map[string]Regex) {
 	if line == "" || line[0] == '#' { // empty lines and comments
 		return
 	}
@@ -137,10 +128,10 @@ func addRegex(line string, regexes map[string]Regex) {
 	if len(lineSplit) != 2 {
 		log.Fatal("invalid token definition: \"", line, "\"")
 	}
-	regexes[lineSplit[0]] = Regex{lineSplit[1], nil}
+	regexMap[lineSplit[0]] = Regex{lineSplit[1], nil}
 }
 
-// cutWord for a given word performs a cut (both prefix and sufix).
+// cutWord removes initial and ending characters from a word.
 func cutWord(begin, end int, word string) string {
 	if end >= len(word) {
 		return ""
