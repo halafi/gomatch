@@ -63,6 +63,11 @@ func addPattern(pattern string, patterns []Pattern, regexMap map[string]Regex) [
 		patternBody := strings.Split(split[1], " ")
 		body := make([]Token, len(patternBody))
 		for n := range patternBody {
+			// check whether a pattern item contains spaces
+			if len(patternBody[n]) == 0 {
+				log.Println("invalid pattern \"", pattern, "\"")
+				return patterns
+			}
 			if patternBody[n][0] == '<' && patternBody[n][len(patternBody[n])-1] == '>' {
 				regexName := cutWord(1, len(patternBody[n])-2, patternBody[n])
 
@@ -79,9 +84,11 @@ func addPattern(pattern string, patterns []Pattern, regexMap map[string]Regex) [
 				}
 
 				// check for missing regex in Tokens file
+				// if the regex is missing, add the token as word
 				if regexMap[regexName].Expression == "" {
-					log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
-					return patterns
+					//log.Printf(patternBody[n] + " undefined, failed to load event: \"" + split[0] + "\"\n")
+					body[n] = Token{false, patternBody[n], ""}
+					continue
 				}
 				
 				if regexMap[regexName].Compiled == nil {
