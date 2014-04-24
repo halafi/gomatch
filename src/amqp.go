@@ -106,12 +106,12 @@ func bindReceiveQueue(ch *amqp.Channel, q amqp.Queue) {
 }
 
 // send sends a message using the given queue and a channel.
-func send(msg []byte, ch *amqp.Channel, q amqp.Queue) {
+func send(msg []byte, rk string, ch *amqp.Channel, q amqp.Queue) {
 	err := ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
+		"",    // exchange
+		rk,    // routing key
+		false, // mandatory
+		false, // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        msg,

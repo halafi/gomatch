@@ -49,7 +49,6 @@ func main() {
 	if *ampqConfigFilePath != "none" { // amqp
 		// init configuration parameters
 		parseAmqpConfigFile(*ampqConfigFilePath)
-
 		// set up connections and channels, ensure that they are closed
 		cSend := openConnection(amqpMatchedSendUri)
 		chSend := openChannel(cSend)
@@ -80,7 +79,7 @@ func main() {
 			for delivery := range msgs {
 				match := getMatch(string(delivery.Body), patterns, trie, finalFor, regexMap)
 				if match.Type != "" {
-					send([]byte(marshalJson(match)), chSend, qSend)
+					send([]byte(marshalJson(match)), match.Type, chSend, qSend) // routing key = pattern_name
 				} else {
 					writeFile(noMatchOutputFile, string(delivery.Body)+"\r\n")
 				}
@@ -95,13 +94,15 @@ func main() {
 							m["@type"] = match.Type
 							m["@p"] = match.Body
 							delete(m, "@gomatch")
-							send([]byte(marshalJson(m)), chSend, qSend)
+							entityStr, _ := m["@entity"].(string)
+							send([]byte(marshalJson(m)), entityStr+"."+match.Type, chSend, qSend) // routing key = @entity.pattern_name
 						}
 					} else {
 						log.Println("@gomatch is not a string (skipping)")
 					}
 				} else { // we return the former json msg
-					send(delivery.Body, chSend, qSend)
+					entityStr, _ := m["@entity"].(string)
+					send(delivery.Body, entityStr, chSend, qSend) // routing key = @entity
 				}
 			}
 		default:

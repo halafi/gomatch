@@ -90,7 +90,7 @@ func addPattern(pattern string, patterns []Pattern, regexMap map[string]Regex) [
 					body[n] = Token{false, patternBody[n], ""}
 					continue
 				}
-				
+
 				if regexMap[regexName].Compiled == nil {
 					compiled, err := regexp.Compile(regexMap[regexName].Expression)
 					if err != nil {
@@ -98,16 +98,16 @@ func addPattern(pattern string, patterns []Pattern, regexMap map[string]Regex) [
 					}
 					regexMap[regexName] = Regex{regexMap[regexName].Expression, compiled}
 				}
-				
+
 				// check for duplicate token (i.e. pattern_name##... <MONTH> ... <MONTH> ...)
 				if n > 0 {
 					for i := range body {
 						if body[i].OutputName == outputName {
-							log.Fatal("event: \"", split[0], "\" cannot use same token name multiple times (", body[i].OutputName,")")
+							log.Fatal("event: \"", split[0], "\" cannot use same token name multiple times (", body[i].OutputName, ")")
 						}
 					}
 				}
-				
+
 				// add regex Token
 				body[n] = Token{true, regexName, outputName}
 			} else {
