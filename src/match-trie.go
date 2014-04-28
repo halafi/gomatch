@@ -28,23 +28,6 @@ func appendPattern(pattern Pattern, trie map[int]map[Token]int, finalFor []int, 
 
 	for j < len(pattern.Body) {
 		finalFor = append(finalFor, 0) // current state not terminal
-
-		// iterate over all current transitions and check for conflicts
-		transitions := getAllTransitions(current, trie)
-		if len(transitions) > 0 {
-			for t := range transitions {
-				if transitions[t].IsRegex && !pattern.Body[j].IsRegex {
-					if regexes[transitions[t].Value].Compiled.MatchString(pattern.Body[j].Value) {
-						log.Fatal("pattern conflict: <" + transitions[t].Value + "> matches word " + pattern.Body[j].Value)
-					}
-				} else if !transitions[t].IsRegex && pattern.Body[j].IsRegex {
-					if regexes[pattern.Body[j].Value].Compiled.MatchString(transitions[t].Value) {
-						log.Fatal("pattern conflict: <" + pattern.Body[j].Value + "> matches word " + transitions[t].Value)
-					}
-				}
-			}
-		}
-
 		createTransition(current, pattern.Body[j], state, trie)
 		current = state
 		j++
